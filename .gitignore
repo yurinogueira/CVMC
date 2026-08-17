@@ -1,0 +1,26 @@
+# Go
+backend/bin/
+backend/.coverprofile
+
+# Node
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/vite.config.js
+frontend/vite.config.d.ts
+*.tsbuildinfo
+
+# Env
+.env
+backend/.env
+frontend/.env
+
+# OS
+.DS_Store
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+*/terraform.tfvars*
