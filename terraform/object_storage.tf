@@ -12,5 +12,5 @@ resource "oci_objectstorage_bucket" "files" {
 }
 
 data "oci_objectstorage_namespace" "main" {
-  compartment_id = var.tenancy_ocid
+  compartment_id = var.compartment_ocid
 }
