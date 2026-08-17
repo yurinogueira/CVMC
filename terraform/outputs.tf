@@ -14,10 +14,6 @@ output "instance_private_ip" {
   value = oci_core_instance.server.private_ip
 }
 
-output "data_volume_id" {
-  value = oci_core_volume.data.id
-}
-
 output "object_storage_namespace" {
   value = data.oci_objectstorage_namespace.main.namespace
 }
