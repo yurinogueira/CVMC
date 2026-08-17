@@ -41,6 +41,7 @@ jobs:
         uses: hashicorp/setup-terraform@v4
         with:
           terraform_version: 1.15.8
+          terraform_wrapper: false
 
       - name: Terraform Format
         run: terraform fmt -check -recursive
@@ -66,8 +67,12 @@ jobs:
         run: terraform validate -no-color
 
       - name: Terraform Plan
-        run: terraform plan -input=false -no-color
+        run: |
+          terraform plan \
+            -input=false \
+            -no-color \
+            -out=tfplan
 
       - name: Terraform Apply
         if: inputs.apply
-        run: terraform apply -input=false -auto-approve
+        run: terraform apply -input=false -auto-approve tfplan
