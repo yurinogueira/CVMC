@@ -55,12 +55,12 @@ output "mongodb_uri" {
 }
 
 output "frontend_url" {
-  value       = "https://${cloudflare_record.frontend.hostname}"
+  value       = "https://${cloudflare_dns_record.frontend.name}.yurinogueira.dev.br"
   description = "URL de acesso ao Frontend"
 }
 
 output "backend_api_url" {
-  value       = "https://${cloudflare_record.backend.hostname}"
+  value       = "https://${cloudflare_dns_record.backend.name}.yurinogueira.dev.br"
   description = "URL de acesso à API Backend"
 }
 
