@@ -1,23 +1,38 @@
-import { create } from 'zustand';
+import { create } from "zustand";
+import { User } from "../types/auth.types";
+import { safeStorage } from "../../../services/storage/storage";
 
-type AuthState = {
-  accessToken: string | null;
-  refreshToken: string | null;
-  setTokens: (tokens: { accessToken: string; refreshToken: string }) => void;
+interface AuthState {
+  user: User | null;
+  isAuthenticated: boolean;
+  setUser: (user: User) => void;
   clear: () => void;
+}
+
+const getStoredUser = (): User | null => {
+  const userStr = safeStorage.getItem("cvmc.user");
+  if (userStr) {
+    try {
+      return JSON.parse(userStr);
+    } catch {
+      return null;
+    }
+  }
+  return null;
 };
 
-export const useAuthStore = create<AuthState>((set) => ({
-  accessToken: null,
-  refreshToken: null,
-  setTokens: ({ accessToken, refreshToken }) => {
-    localStorage.setItem('cvmc.accessToken', accessToken);
-    localStorage.setItem('cvmc.refreshToken', refreshToken);
-    set({ accessToken, refreshToken });
-  },
-  clear: () => {
-    localStorage.removeItem('cvmc.accessToken');
-    localStorage.removeItem('cvmc.refreshToken');
-    set({ accessToken: null, refreshToken: null });
-  },
-}));
+export const useAuthStore = create<AuthState>((set) => {
+  const user = getStoredUser();
+  return {
+    user,
+    isAuthenticated: Boolean(user),
+    setUser: (user) => {
+      safeStorage.setItem("cvmc.user", JSON.stringify(user));
+      set({ user, isAuthenticated: true });
+    },
+    clear: () => {
+      safeStorage.removeItem("cvmc.user");
+      set({ user: null, isAuthenticated: false });
+    },
+  };
+});

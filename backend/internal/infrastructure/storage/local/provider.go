@@ -4,8 +4,10 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"cvmc/internal/application/ports/storage"
 )
@@ -21,6 +23,14 @@ func New(basePath string) *Provider {
 func (p *Provider) Save(ctx context.Context, path string, file storage.File) (storage.StoredObject, error) {
 	_ = ctx
 	fullPath := filepath.Join(p.basePath, path)
+
+	// Prevent path traversal
+	absBase, _ := filepath.Abs(p.basePath)
+	absFull, _ := filepath.Abs(fullPath)
+	if !strings.HasPrefix(absFull, absBase+string(filepath.Separator)) && absFull != absBase {
+		return storage.StoredObject{}, errors.New("invalid path: traversal detected")
+	}
+
 	if err := os.MkdirAll(filepath.Dir(fullPath), 0o755); err != nil {
 		return storage.StoredObject{}, err
 	}
@@ -35,5 +45,14 @@ func (p *Provider) Save(ctx context.Context, path string, file storage.File) (st
 
 func (p *Provider) Delete(ctx context.Context, path string) error {
 	_ = ctx
-	return os.Remove(filepath.Join(p.basePath, path))
+	fullPath := filepath.Join(p.basePath, path)
+
+	// Prevent path traversal
+	absBase, _ := filepath.Abs(p.basePath)
+	absFull, _ := filepath.Abs(fullPath)
+	if !strings.HasPrefix(absFull, absBase+string(filepath.Separator)) && absFull != absBase {
+		return errors.New("invalid path: traversal detected")
+	}
+
+	return os.Remove(fullPath)
 }

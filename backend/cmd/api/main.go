@@ -13,6 +13,24 @@ import (
 	"cvmc/internal/config"
 )
 
+// @title           CVMC API
+// @version         1.0
+// @description     API REST para gestão inteligente de veículos, revisões e manutenções do CVMC (Como Vai Meu Carro).
+// @termsOfService  http://swagger.io/terms/
+
+// @contact.name   Suporte CVMC
+// @contact.email  suporte@cvmc.com
+
+// @license.name  MIT
+// @license.url   https://opensource.org/licenses/MIT
+
+// @host      localhost:8080
+// @BasePath  /
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Digite "Bearer " seguido do token JWT obtido no login.
 func main() {
 	cfg := config.Load()
 	app := bootstrap.New(cfg)
@@ -21,6 +39,10 @@ func main() {
 		Addr:              cfg.HTTPAddress(),
 		Handler:           app.Handler(),
 		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       120 * time.Second,
+		MaxHeaderBytes:    1 << 20, // 1MB
 	}
 
 	go func() {

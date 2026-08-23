@@ -20,7 +20,13 @@ variable "fingerprint" {
   sensitive   = true
 }
 
-variable "private_key" {
+variable "admin_cidr" {
+  description = "CIDR block allowed to SSH into the server"
+  type        = string
+  default     = "0.0.0.0/0"
+}
+
+variable "private_key_path" {
   description = "Conteúdo da chave privada de API OCI"
   type        = string
   sensitive   = true
@@ -36,6 +42,7 @@ variable "region" {
 variable "availability_domain" {
   description = "Availability Domain"
   type        = string
+  default     = ""
 }
 
 variable "project_name" {
@@ -49,3 +56,33 @@ variable "ssh_public_key" {
   description = "Chave pública SSH"
   type        = string
 }
+
+variable "atlas_org_id" {
+  description = "ID da Organização no MongoDB Atlas"
+  type        = string
+}
+
+variable "atlas_public_key" {
+  description = "Public API Key do MongoDB Atlas"
+  type        = string
+  sensitive   = true
+}
+
+variable "atlas_private_key" {
+  description = "Private API Key do MongoDB Atlas"
+  type        = string
+  sensitive   = true
+}
+
+variable "mongodb_cluster_name" {
+  description = "Nome do cluster MongoDB Atlas"
+  type        = string
+  default     = "cvmc-cluster"
+}
+
+variable "mongodb_app_username" {
+  description = "Nome de usuário da aplicação no MongoDB Atlas"
+  type        = string
+  default     = "cvmc_app"
+}
+

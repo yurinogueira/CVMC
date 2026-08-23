@@ -1,0 +1,657 @@
+basePath: /
+definitions:
+  handlers.CreateCarRequest:
+    properties:
+      lastMileage:
+        example: 32000
+        type: integer
+      manufacturer:
+        example: Honda
+        type: string
+      model:
+        example: Civic Touring
+        type: string
+      name:
+        example: Meu Civic
+        type: string
+      yearManufacture:
+        example: 2023
+        type: integer
+      yearModel:
+        example: 2024
+        type: integer
+    type: object
+  handlers.CreateMaintenanceRequest:
+    properties:
+      date:
+        example: "2026-08-23T00:00:00Z"
+        type: string
+      description:
+        example: Óleo 0W20 Sintético + Filtro original
+        type: string
+      mileage:
+        example: 32000
+        type: integer
+      title:
+        example: Troca de Óleo e Filtro
+        type: string
+    type: object
+  handlers.LoginRequest:
+    properties:
+      email:
+        example: yuri@cvmc.com
+        type: string
+      password:
+        example: senha12345
+        type: string
+    type: object
+  handlers.RegisterRequest:
+    properties:
+      email:
+        example: yuri@cvmc.com
+        type: string
+      name:
+        example: Yuri Nogueira
+        type: string
+      password:
+        example: senha12345
+        type: string
+    type: object
+  handlers.ShareCarRequest:
+    properties:
+      email:
+        example: co-motorista@cvmc.com
+        type: string
+    type: object
+  handlers.UpdateCarRequest:
+    properties:
+      lastMileage:
+        example: 35000
+        type: integer
+      manufacturer:
+        example: Honda
+        type: string
+      model:
+        example: Civic Touring
+        type: string
+      name:
+        example: Meu Civic
+        type: string
+      yearManufacture:
+        example: 2023
+        type: integer
+      yearModel:
+        example: 2024
+        type: integer
+    type: object
+  handlers.UpdateMaintenanceRequest:
+    properties:
+      date:
+        example: "2026-08-23T00:00:00Z"
+        type: string
+      description:
+        example: Óleo 0W20 Sintético + Filtro original
+        type: string
+      mileage:
+        example: 32000
+        type: integer
+      title:
+        example: Troca de Óleo e Filtro
+        type: string
+    type: object
+  httpx.ErrorEnvelope:
+    properties:
+      errors: {}
+      message:
+        type: string
+      success:
+        type: boolean
+    type: object
+  httpx.SuccessEnvelope:
+    properties:
+      data: {}
+      success:
+        type: boolean
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: suporte@cvmc.com
+    name: Suporte CVMC
+  description: API REST para gestão inteligente de veículos, revisões e manutenções
+    do CVMC (Como Vai Meu Carro).
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: CVMC API
+  version: "1.0"
+paths:
+  /api/v1/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Autentica com e-mail e senha, seta cookies httpOnly com tokens
+        e retorna dados do usuário
+      parameters:
+      - description: Credenciais de acesso
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      summary: Autenticação de usuário
+      tags:
+      - Auth
+  /api/v1/auth/logout:
+    post:
+      description: Remove os cookies de autenticação
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+      summary: Encerrar sessão
+      tags:
+      - Auth
+  /api/v1/auth/me:
+    get:
+      description: Retorna as informações do usuário atual com base no cookie de acesso
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Dados do usuário autenticado
+      tags:
+      - Auth
+  /api/v1/auth/refresh:
+    post:
+      description: Gera um novo par de tokens a partir do cookie de refresh
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      summary: Renovar token de acesso
+      tags:
+      - Auth
+  /api/v1/auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Cria uma nova conta de usuário, seta cookies httpOnly com tokens
+        e retorna dados do usuário
+      parameters:
+      - description: Dados de cadastro
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      summary: Cadastro de novo usuário
+      tags:
+      - Auth
+  /api/v1/cars:
+    get:
+      description: Retorna todos os veículos pertencentes ou compartilhados com o
+        usuário autenticado
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Listar veículos
+      tags:
+      - Cars
+    post:
+      consumes:
+      - application/json
+      description: Registra um novo veículo associado à conta do usuário autenticado
+      parameters:
+      - description: Dados do veículo
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateCarRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Cadastrar novo veículo
+      tags:
+      - Cars
+  /api/v1/cars/{id}:
+    delete:
+      description: Remove o veículo do sistema
+      parameters:
+      - description: ID do veículo
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Excluir veículo
+      tags:
+      - Cars
+    get:
+      description: Retorna os dados completos de um veículo específico pelo ID
+      parameters:
+      - description: ID do veículo
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Obter detalhes do veículo
+      tags:
+      - Cars
+    put:
+      consumes:
+      - application/json
+      description: Atualiza os dados cadastrais e quilometragem do veículo
+      parameters:
+      - description: ID do veículo
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Dados atualizados
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateCarRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Atualizar veículo
+      tags:
+      - Cars
+  /api/v1/cars/{id}/maintenances:
+    get:
+      description: Retorna o histórico cronológico de manutenções de um veículo
+      parameters:
+      - description: ID do veículo
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Listar manutenções do veículo
+      tags:
+      - Maintenances
+    post:
+      consumes:
+      - application/json
+      description: Registra um novo registro de revisão ou manutenção para o veículo
+        especificado
+      parameters:
+      - description: ID do veículo
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Dados da manutenção
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateMaintenanceRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Cadastrar manutenção
+      tags:
+      - Maintenances
+  /api/v1/cars/{id}/share:
+    post:
+      consumes:
+      - application/json
+      description: Concede permissão de acesso ao veículo para outro usuário através
+        do e-mail
+      parameters:
+      - description: ID do veículo
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: E-mail do usuário
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.ShareCarRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Compartilhar veículo
+      tags:
+      - Cars
+  /api/v1/cars/{id}/share/{userID}:
+    delete:
+      description: Revoga o acesso de um usuário ao veículo
+      parameters:
+      - description: ID do veículo
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: ID do usuário a desvincular
+        in: path
+        name: userID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Remover compartilhamento
+      tags:
+      - Cars
+  /api/v1/maintenances/{maintenanceID}:
+    delete:
+      description: Remove o registro de manutenção
+      parameters:
+      - description: ID da manutenção
+        in: path
+        name: maintenanceID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Excluir manutenção
+      tags:
+      - Maintenances
+    put:
+      consumes:
+      - application/json
+      description: Atualiza dados de uma manutenção existente
+      parameters:
+      - description: ID da manutenção
+        in: path
+        name: maintenanceID
+        required: true
+        type: string
+      - description: Dados atualizados
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateMaintenanceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Atualizar manutenção
+      tags:
+      - Maintenances
+  /health:
+    get:
+      description: Retorna o status geral de saúde da aplicação
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+      summary: Health check
+      tags:
+      - Health
+  /live:
+    get:
+      description: Verifica se a aplicação está viva em execução
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+      summary: Liveness probe
+      tags:
+      - Health
+  /ready:
+    get:
+      description: Verifica se a aplicação está pronta para receber tráfego
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+      summary: Readiness probe
+      tags:
+      - Health
+securityDefinitions:
+  BearerAuth:
+    description: Digite "Bearer " seguido do token JWT obtido no login.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

@@ -2,8 +2,6 @@ services:
   mongo:
     image: mongo:7
     restart: unless-stopped
-    ports:
-      - "27017:27017"
     volumes:
       - mongo_data:/data/db
 
@@ -22,6 +20,9 @@ services:
       UPLOAD_PATH: ${UPLOAD_PATH:-/app/uploads}
       LOG_LEVEL: ${LOG_LEVEL:-debug}
       STORAGE_PROVIDER: ${STORAGE_PROVIDER:-local}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5173}
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN:-}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
     ports:
       - "8080:8080"
     volumes:
@@ -36,6 +37,7 @@ services:
       - backend
     environment:
       VITE_API_BASE_URL: http://localhost:8080
+      VITE_API_PROXY_TARGET: http://backend:8080
       VITE_BASE_PATH: /
     ports:
       - "5173:5173"

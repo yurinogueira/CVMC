@@ -16,6 +16,7 @@ var (
 	ErrInvalidToken       = errors.New("invalid token")
 	ErrUserNotFound       = errors.New("user not found")
 	ErrEmailInUse         = errors.New("email already in use")
+	ErrWeakPassword       = errors.New("weak password")
 )
 
 type Service struct {
@@ -51,6 +52,9 @@ func (s *Service) Register(ctx context.Context, input RegisterInput) (AuthOutput
 	input.Name = strings.TrimSpace(input.Name)
 	if input.Email == "" || input.Name == "" || input.Password == "" {
 		return AuthOutput{}, ErrInvalidCredentials
+	}
+	if len(input.Password) < 8 {
+		return AuthOutput{}, ErrWeakPassword
 	}
 	if _, err := s.users.FindByEmail(ctx, input.Email); err == nil {
 		return AuthOutput{}, ErrEmailInUse

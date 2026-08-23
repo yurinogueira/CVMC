@@ -70,4 +70,17 @@ func TestServiceRejectsDuplicateEmail(t *testing.T) {
 	}
 }
 
+func TestServiceRejectsWeakPassword(t *testing.T) {
+	users := memoryuser.NewRepository()
+	hasher := bcrypt.NewHasher()
+	tokens := jwtauth.NewProvider("access-secret", "refresh-secret")
+	service := NewService(users, hasher, tokens)
+	ctx := context.Background()
+
+	_, err := service.Register(ctx, RegisterInput{Name: "Ana", Email: "ana@example.com", Password: "short"})
+	if err != ErrWeakPassword {
+		t.Fatalf("expected ErrWeakPassword, got %v", err)
+	}
+}
+
 var _ portauth.TokenService = (*jwtauth.Provider)(nil)

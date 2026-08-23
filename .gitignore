@@ -24,3 +24,4 @@ frontend/.env
 *.tfstate.*
 crash.log
 */terraform.tfvars*
+*/backend.hcl*

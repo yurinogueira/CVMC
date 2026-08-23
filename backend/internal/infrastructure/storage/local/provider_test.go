@@ -27,3 +27,23 @@ func TestSaveCreatesFile(t *testing.T) {
 		t.Fatalf("unexpected size: %d", result.Size)
 	}
 }
+
+func TestSaveRejectsPathTraversal(t *testing.T) {
+	tmp := t.TempDir()
+	provider := New(tmp)
+
+	_, err := provider.Save(context.Background(), "../outside.txt", storage.File{Name: "outside.txt", Data: []byte("malicious"), ContentType: "text/plain"})
+	if err == nil {
+		t.Fatalf("expected path traversal error, got nil")
+	}
+}
+
+func TestDeleteRejectsPathTraversal(t *testing.T) {
+	tmp := t.TempDir()
+	provider := New(tmp)
+
+	err := provider.Delete(context.Background(), "../../outside.txt")
+	if err == nil {
+		t.Fatalf("expected path traversal error, got nil")
+	}
+}

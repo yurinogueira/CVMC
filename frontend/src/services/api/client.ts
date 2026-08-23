@@ -1,16 +1,13 @@
-import axios from 'axios';
+import axios from "axios";
+
+const baseURL = import.meta.env.VITE_API_BASE_URL
+  ? `${import.meta.env.VITE_API_BASE_URL}/api/v1`
+  : "/api/v1";
 
 export const apiClient = axios.create({
-  baseURL: '/api/v1',
+  baseURL,
   timeout: 15000,
-});
-
-apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('cvmc.accessToken');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
+  withCredentials: true,
 });
 
 apiClient.interceptors.response.use(
@@ -18,8 +15,10 @@ apiClient.interceptors.response.use(
   async (error) => {
     const status = error?.response?.status;
     if (status === 401) {
-      localStorage.removeItem('cvmc.accessToken');
-      localStorage.removeItem('cvmc.refreshToken');
+      const currentPath = window.location.pathname;
+      if (currentPath !== "/login" && currentPath !== "/register") {
+        window.location.href = "/login";
+      }
     }
     return Promise.reject(error);
   },
