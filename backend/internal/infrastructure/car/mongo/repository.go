@@ -3,10 +3,12 @@ package mongo
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	carport "cvmc/internal/application/ports/car"
 	domaincar "cvmc/internal/domain/car"
+	mongoinfra "cvmc/internal/infrastructure/database/mongo"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
@@ -53,9 +55,26 @@ func (r *Repository) Create(ctx context.Context, car domaincar.Car) (domaincar.C
 	if car.ID == "" {
 		car.ID = bson.NewObjectID().Hex()
 	}
-	if car.SharedWith == nil {
-		car.SharedWith = []string{}
+	cleanID, err := mongoinfra.SanitizeID(car.ID)
+	if err != nil {
+		return domaincar.Car{}, err
 	}
+	car.ID = cleanID
+
+	cleanOwnerID, err := mongoinfra.SanitizeID(car.OwnerID)
+	if err != nil {
+		return domaincar.Car{}, err
+	}
+	car.OwnerID = cleanOwnerID
+
+	sanitizedShared := make([]string, 0, len(car.SharedWith))
+	for _, s := range car.SharedWith {
+		if sID, err := mongoinfra.SanitizeID(s); err == nil {
+			sanitizedShared = append(sanitizedShared, sID)
+		}
+	}
+	car.SharedWith = sanitizedShared
+
 	if car.CreatedAt.IsZero() {
 		car.CreatedAt = time.Now().UTC()
 	}
@@ -64,7 +83,7 @@ func (r *Repository) Create(ctx context.Context, car domaincar.Car) (domaincar.C
 	}
 
 	doc := toCarDoc(car)
-	_, err := r.coll.InsertOne(ctx, doc)
+	_, err = r.coll.InsertOne(ctx, doc)
 	if err != nil {
 		return domaincar.Car{}, err
 	}
@@ -72,8 +91,14 @@ func (r *Repository) Create(ctx context.Context, car domaincar.Car) (domaincar.C
 }
 
 func (r *Repository) GetByID(ctx context.Context, id string) (domaincar.Car, error) {
+	cleanID, err := mongoinfra.SanitizeID(id)
+	if err != nil {
+		return domaincar.Car{}, carport.ErrNotFound
+	}
+
+	filter := bson.D{{Key: "_id", Value: cleanID}}
 	var doc carDoc
-	err := r.coll.FindOne(ctx, bson.M{"_id": id}).Decode(&doc)
+	err = r.coll.FindOne(ctx, filter).Decode(&doc)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return domaincar.Car{}, carport.ErrNotFound
@@ -84,10 +109,18 @@ func (r *Repository) GetByID(ctx context.Context, id string) (domaincar.Car, err
 }
 
 func (r *Repository) ListByUser(ctx context.Context, userID string) ([]domaincar.Car, error) {
-	filter := bson.M{
-		"$or": []bson.M{
-			{"ownerId": userID},
-			{"sharedWith": userID},
+	cleanUserID, err := mongoinfra.SanitizeID(userID)
+	if err != nil {
+		return []domaincar.Car{}, nil
+	}
+
+	filter := bson.D{
+		{
+			Key: "$or",
+			Value: bson.A{
+				bson.D{{Key: "ownerId", Value: cleanUserID}},
+				bson.D{{Key: "sharedWith", Value: cleanUserID}},
+			},
 		},
 	}
 	opts := options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}})
@@ -110,8 +143,21 @@ func (r *Repository) ListByUser(ctx context.Context, userID string) ([]domaincar
 }
 
 func (r *Repository) Update(ctx context.Context, car domaincar.Car) (domaincar.Car, error) {
+	cleanID, err := mongoinfra.SanitizeID(car.ID)
+	if err != nil {
+		return domaincar.Car{}, carport.ErrNotFound
+	}
+	car.ID = cleanID
+
+	cleanOwnerID, err := mongoinfra.SanitizeID(car.OwnerID)
+	if err != nil {
+		return domaincar.Car{}, carport.ErrNotFound
+	}
+	car.OwnerID = cleanOwnerID
+
 	doc := toCarDoc(car)
-	res, err := r.coll.ReplaceOne(ctx, bson.M{"_id": car.ID}, doc)
+	filter := bson.D{{Key: "_id", Value: cleanID}}
+	res, err := r.coll.ReplaceOne(ctx, filter, doc)
 	if err != nil {
 		return domaincar.Car{}, err
 	}
@@ -122,7 +168,13 @@ func (r *Repository) Update(ctx context.Context, car domaincar.Car) (domaincar.C
 }
 
 func (r *Repository) Delete(ctx context.Context, id string) error {
-	res, err := r.coll.DeleteOne(ctx, bson.M{"_id": id})
+	cleanID, err := mongoinfra.SanitizeID(id)
+	if err != nil {
+		return carport.ErrNotFound
+	}
+
+	filter := bson.D{{Key: "_id", Value: cleanID}}
+	res, err := r.coll.DeleteOne(ctx, filter)
 	if err != nil {
 		return err
 	}
@@ -133,12 +185,27 @@ func (r *Repository) Delete(ctx context.Context, id string) error {
 }
 
 func (r *Repository) Share(ctx context.Context, carID string, userID string) (domaincar.Car, error) {
-	update := bson.M{
-		"$addToSet": bson.M{"sharedWith": userID},
+	cleanCarID, err := mongoinfra.SanitizeID(carID)
+	if err != nil {
+		return domaincar.Car{}, carport.ErrNotFound
+	}
+	cleanUserID, err := mongoinfra.SanitizeID(userID)
+	if err != nil {
+		return domaincar.Car{}, carport.ErrNotFound
+	}
+
+	filter := bson.D{{Key: "_id", Value: cleanCarID}}
+	update := bson.D{
+		{
+			Key: "$addToSet",
+			Value: bson.D{
+				{Key: "sharedWith", Value: cleanUserID},
+			},
+		},
 	}
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
 	var doc carDoc
-	err := r.coll.FindOneAndUpdate(ctx, bson.M{"_id": carID}, update, opts).Decode(&doc)
+	err = r.coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&doc)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return domaincar.Car{}, carport.ErrNotFound
@@ -149,12 +216,27 @@ func (r *Repository) Share(ctx context.Context, carID string, userID string) (do
 }
 
 func (r *Repository) Unshare(ctx context.Context, carID string, userID string) (domaincar.Car, error) {
-	update := bson.M{
-		"$pull": bson.M{"sharedWith": userID},
+	cleanCarID, err := mongoinfra.SanitizeID(carID)
+	if err != nil {
+		return domaincar.Car{}, carport.ErrNotFound
+	}
+	cleanUserID, err := mongoinfra.SanitizeID(userID)
+	if err != nil {
+		return domaincar.Car{}, carport.ErrNotFound
+	}
+
+	filter := bson.D{{Key: "_id", Value: cleanCarID}}
+	update := bson.D{
+		{
+			Key: "$pull",
+			Value: bson.D{
+				{Key: "sharedWith", Value: cleanUserID},
+			},
+		},
 	}
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
 	var doc carDoc
-	err := r.coll.FindOneAndUpdate(ctx, bson.M{"_id": carID}, update, opts).Decode(&doc)
+	err = r.coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&doc)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return domaincar.Car{}, carport.ErrNotFound
@@ -172,9 +254,9 @@ func toCarDoc(c domaincar.Car) carDoc {
 	return carDoc{
 		ID:              c.ID,
 		OwnerID:         c.OwnerID,
-		Name:            c.Name,
-		Manufacturer:    c.Manufacturer,
-		Model:           c.Model,
+		Name:            strings.TrimSpace(c.Name),
+		Manufacturer:    strings.TrimSpace(c.Manufacturer),
+		Model:           strings.TrimSpace(c.Model),
 		YearManufacture: c.YearManufacture,
 		YearModel:       c.YearModel,
 		LastMileage:     c.LastMileage,

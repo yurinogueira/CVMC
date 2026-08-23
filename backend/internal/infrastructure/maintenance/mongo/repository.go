@@ -3,10 +3,12 @@ package mongo
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	maintenanceport "cvmc/internal/application/ports/maintenance"
 	domainmaintenance "cvmc/internal/domain/maintenance"
+	mongoinfra "cvmc/internal/infrastructure/database/mongo"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
@@ -50,6 +52,18 @@ func (r *Repository) Create(ctx context.Context, m domainmaintenance.Maintenance
 	if m.ID == "" {
 		m.ID = bson.NewObjectID().Hex()
 	}
+	cleanID, err := mongoinfra.SanitizeID(m.ID)
+	if err != nil {
+		return domainmaintenance.Maintenance{}, err
+	}
+	m.ID = cleanID
+
+	cleanCarID, err := mongoinfra.SanitizeID(m.CarID)
+	if err != nil {
+		return domainmaintenance.Maintenance{}, err
+	}
+	m.CarID = cleanCarID
+
 	if m.CreatedAt.IsZero() {
 		m.CreatedAt = time.Now().UTC()
 	}
@@ -58,7 +72,7 @@ func (r *Repository) Create(ctx context.Context, m domainmaintenance.Maintenance
 	}
 
 	doc := toMaintenanceDoc(m)
-	_, err := r.coll.InsertOne(ctx, doc)
+	_, err = r.coll.InsertOne(ctx, doc)
 	if err != nil {
 		return domainmaintenance.Maintenance{}, err
 	}
@@ -66,8 +80,14 @@ func (r *Repository) Create(ctx context.Context, m domainmaintenance.Maintenance
 }
 
 func (r *Repository) GetByID(ctx context.Context, id string) (domainmaintenance.Maintenance, error) {
+	cleanID, err := mongoinfra.SanitizeID(id)
+	if err != nil {
+		return domainmaintenance.Maintenance{}, maintenanceport.ErrNotFound
+	}
+
+	filter := bson.D{{Key: "_id", Value: cleanID}}
 	var doc maintenanceDoc
-	err := r.coll.FindOne(ctx, bson.M{"_id": id}).Decode(&doc)
+	err = r.coll.FindOne(ctx, filter).Decode(&doc)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return domainmaintenance.Maintenance{}, maintenanceport.ErrNotFound
@@ -78,7 +98,12 @@ func (r *Repository) GetByID(ctx context.Context, id string) (domainmaintenance.
 }
 
 func (r *Repository) ListByCar(ctx context.Context, carID string) ([]domainmaintenance.Maintenance, error) {
-	filter := bson.M{"carId": carID}
+	cleanCarID, err := mongoinfra.SanitizeID(carID)
+	if err != nil {
+		return []domainmaintenance.Maintenance{}, nil
+	}
+
+	filter := bson.D{{Key: "carId", Value: cleanCarID}}
 	opts := options.Find().SetSort(bson.D{{Key: "date", Value: -1}})
 	cursor, err := r.coll.Find(ctx, filter, opts)
 	if err != nil {
@@ -99,8 +124,21 @@ func (r *Repository) ListByCar(ctx context.Context, carID string) ([]domainmaint
 }
 
 func (r *Repository) Update(ctx context.Context, m domainmaintenance.Maintenance) (domainmaintenance.Maintenance, error) {
+	cleanID, err := mongoinfra.SanitizeID(m.ID)
+	if err != nil {
+		return domainmaintenance.Maintenance{}, maintenanceport.ErrNotFound
+	}
+	m.ID = cleanID
+
+	cleanCarID, err := mongoinfra.SanitizeID(m.CarID)
+	if err != nil {
+		return domainmaintenance.Maintenance{}, maintenanceport.ErrNotFound
+	}
+	m.CarID = cleanCarID
+
 	doc := toMaintenanceDoc(m)
-	res, err := r.coll.ReplaceOne(ctx, bson.M{"_id": m.ID}, doc)
+	filter := bson.D{{Key: "_id", Value: cleanID}}
+	res, err := r.coll.ReplaceOne(ctx, filter, doc)
 	if err != nil {
 		return domainmaintenance.Maintenance{}, err
 	}
@@ -111,7 +149,13 @@ func (r *Repository) Update(ctx context.Context, m domainmaintenance.Maintenance
 }
 
 func (r *Repository) Delete(ctx context.Context, id string) error {
-	res, err := r.coll.DeleteOne(ctx, bson.M{"_id": id})
+	cleanID, err := mongoinfra.SanitizeID(id)
+	if err != nil {
+		return maintenanceport.ErrNotFound
+	}
+
+	filter := bson.D{{Key: "_id", Value: cleanID}}
+	res, err := r.coll.DeleteOne(ctx, filter)
 	if err != nil {
 		return err
 	}
@@ -125,8 +169,8 @@ func toMaintenanceDoc(m domainmaintenance.Maintenance) maintenanceDoc {
 	return maintenanceDoc{
 		ID:          m.ID,
 		CarID:       m.CarID,
-		Title:       m.Title,
-		Description: m.Description,
+		Title:       strings.TrimSpace(m.Title),
+		Description: strings.TrimSpace(m.Description),
 		Date:        m.Date,
 		Mileage:     m.Mileage,
 		CreatedAt:   m.CreatedAt,
