@@ -34,43 +34,58 @@ jobs:
         run: |
           CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -trimpath -o ../dist/cvmc-api ./cmd/api
 
-      - name: Deploy to Oracle OCI via SSH
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.OCI_HOST }}
-          username: ${{ secrets.OCI_USERNAME || 'ubuntu' }}
-          key: ${{ secrets.OCI_SSH_PRIVATE_KEY }}
-          source: 'dist/cvmc-api,deploy/systemd/cvmc-backend.service,deploy/caddy/Caddyfile'
-          target: '/tmp/cvmc-deploy'
-          strip_components: 0
+      - name: Setup SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.OCI_SSH_PRIVATE_KEY }}
+          HOST: ${{ secrets.OCI_HOST || '147.15.90.131' }}
+        run: |
+          if [ -z "$SSH_PRIVATE_KEY" ]; then
+            echo "::error::Secret OCI_SSH_PRIVATE_KEY não está configurada no GitHub!"
+            exit 1
+          fi
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts
+
+      - name: Transfer files to OCI
+        env:
+          HOST: ${{ secrets.OCI_HOST || '147.15.90.131' }}
+          USER: ${{ secrets.OCI_USERNAME || 'ubuntu' }}
+        run: |
+          ssh "$USER@$HOST" "mkdir -p /tmp/cvmc-deploy/dist /tmp/cvmc-deploy/deploy/caddy /tmp/cvmc-deploy/deploy/systemd"
+          scp dist/cvmc-api "$USER@$HOST:/tmp/cvmc-deploy/dist/"
+          scp deploy/systemd/cvmc-backend.service "$USER@$HOST:/tmp/cvmc-deploy/deploy/systemd/"
+          scp deploy/caddy/Caddyfile "$USER@$HOST:/tmp/cvmc-deploy/deploy/caddy/"
 
       - name: Apply updates and restart services on OCI
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.OCI_HOST }}
-          username: ${{ secrets.OCI_USERNAME || 'ubuntu' }}
-          key: ${{ secrets.OCI_SSH_PRIVATE_KEY }}
-          script: |
+        env:
+          HOST: ${{ secrets.OCI_HOST || '147.15.90.131' }}
+          USER: ${{ secrets.OCI_USERNAME || 'ubuntu' }}
+        run: |
+          ssh "$USER@$HOST" << 'EOF'
             set -euo pipefail
-            
+
             # Instalar binário
             sudo install -m 755 -o cvmc -g cvmc /tmp/cvmc-deploy/dist/cvmc-api /opt/cvmc/cvmc-api
-            
+
             # Atualizar Caddyfile se modificado
             if [ -f /tmp/cvmc-deploy/deploy/caddy/Caddyfile ]; then
               sudo cp /tmp/cvmc-deploy/deploy/caddy/Caddyfile /etc/caddy/Caddyfile
               sudo systemctl reload caddy || sudo systemctl restart caddy
             fi
-            
+
             # Atualizar serviço Systemd se modificado
             if [ -f /tmp/cvmc-deploy/deploy/systemd/cvmc-backend.service ]; then
               sudo cp /tmp/cvmc-deploy/deploy/systemd/cvmc-backend.service /etc/systemd/system/cvmc-backend.service
               sudo systemctl daemon-reload
             fi
-            
+
             # Reiniciar aplicação Go
             sudo systemctl restart cvmc-backend
             sudo systemctl is-active --quiet cvmc-backend && echo "cvmc-backend is running successfully!"
-            
+
             # Limpar arquivos temporários
             rm -rf /tmp/cvmc-deploy
+          EOF
