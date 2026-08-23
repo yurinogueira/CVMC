@@ -7,13 +7,13 @@ import (
 )
 
 type Config struct {
-	Port             string
-	JWTSecret        string
-	JWTRefreshSecret string
-	MongoURI         string
-	MongoDatabase    string
-	UploadPath       string
-	LogLevel         string
+	Port                string
+	JWTSecret           string
+	JWTRefreshSecret    string
+	MongoURI            string
+	MongoDatabase       string
+	UploadPath          string
+	LogLevel            string
 	StorageProvider     string
 	OCIStorageBucket    string
 	OCIStorageNamespace string

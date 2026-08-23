@@ -124,7 +124,7 @@ export function AddCarDialog({
           />
 
           <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 label="Fabricante"
@@ -135,7 +135,7 @@ export function AddCarDialog({
                 disabled={loading}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 label="Modelo"
@@ -149,7 +149,7 @@ export function AddCarDialog({
           </Grid>
 
           <Grid container spacing={2}>
-            <Grid item xs={12} sm={4}>
+            <Grid size={{ xs: 12, sm: 4 }}>
               <TextField
                 fullWidth
                 label="Ano Fabricação"
@@ -159,7 +159,7 @@ export function AddCarDialog({
                 disabled={loading}
               />
             </Grid>
-            <Grid item xs={12} sm={4}>
+            <Grid size={{ xs: 12, sm: 4 }}>
               <TextField
                 fullWidth
                 label="Ano Modelo"
@@ -169,7 +169,7 @@ export function AddCarDialog({
                 disabled={loading}
               />
             </Grid>
-            <Grid item xs={12} sm={4}>
+            <Grid size={{ xs: 12, sm: 4 }}>
               <TextField
                 fullWidth
                 label="Km Atual"

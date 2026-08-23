@@ -10,10 +10,12 @@ export function MaintenancePage() {
       {/* Header */}
       <Stack
         direction={{ xs: "column", sm: "row" }}
-        alignItems={{ xs: "flex-start", sm: "center" }}
-        justifyContent="space-between"
         spacing={2}
-        sx={{ mb: 3 }}
+        sx={{
+          alignItems: { xs: "flex-start", sm: "center" },
+          justifyContent: "space-between",
+          mb: 3,
+        }}
       >
         <Box>
           <Typography
@@ -66,9 +68,8 @@ export function MaintenancePage() {
         <Box sx={{ flex: 1 }}>
           <Stack
             direction="row"
-            alignItems="center"
             spacing={1}
-            sx={{ mb: 0.5 }}
+            sx={{ alignItems: "center", mb: 0.5 }}
           >
             <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
               Sua frota está em dia
