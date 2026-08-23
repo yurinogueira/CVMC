@@ -158,9 +158,13 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
                   </ListItemIcon>
                   <ListItemText
                     primary={item.label}
-                    primaryTypographyProps={{
-                      fontSize: "0.9rem",
-                      fontWeight: isActive ? 600 : 500,
+                    slotProps={{
+                      primary: {
+                        sx: {
+                          fontSize: "0.9rem",
+                          fontWeight: isActive ? 600 : 500,
+                        },
+                      },
                     }}
                   />
                   {isActive && (
@@ -186,14 +190,15 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
       <Box sx={{ p: 2, bgcolor: "#F8FAFC" }}>
         <Stack
           direction="row"
-          alignItems="center"
-          justifyContent="space-between"
+          sx={{
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
         >
           <Stack
             direction="row"
-            alignItems="center"
             spacing={1.5}
-            sx={{ minWidth: 0, flex: 1 }}
+            sx={{ alignItems: "center", minWidth: 0, flex: 1 }}
           >
             <Avatar
               sx={{

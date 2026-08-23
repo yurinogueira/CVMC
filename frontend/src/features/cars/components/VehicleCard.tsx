@@ -40,11 +40,13 @@ export function VehicleCard({ car, onDelete }: VehicleCardProps) {
         {/* Card Header */}
         <Stack
           direction="row"
-          alignItems="flex-start"
-          justifyContent="space-between"
-          sx={{ mb: 2 }}
+          sx={{
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            mb: 2,
+          }}
         >
-          <Stack direction="row" spacing={1.5} alignItems="center">
+          <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
             <Box
               sx={{
                 width: 44,

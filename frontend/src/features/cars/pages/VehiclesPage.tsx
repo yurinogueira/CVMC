@@ -40,7 +40,24 @@ export function VehiclesPage() {
   };
 
   useEffect(() => {
-    fetchCars();
+    let isMounted = true;
+    carService
+      .list()
+      .then((data) => {
+        if (isMounted) setCars(data);
+      })
+      .catch(() => {
+        if (isMounted) {
+          setErrorMsg("Não foi possível carregar a lista de veículos.");
+        }
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleCarCreated = (newCar: Car) => {
@@ -68,10 +85,12 @@ export function VehiclesPage() {
       {/* Header Actions */}
       <Stack
         direction={{ xs: "column", sm: "row" }}
-        alignItems={{ xs: "flex-start", sm: "center" }}
-        justifyContent="space-between"
         spacing={2}
-        sx={{ mb: 3 }}
+        sx={{
+          alignItems: { xs: "flex-start", sm: "center" },
+          justifyContent: "space-between",
+          mb: 3,
+        }}
       >
         <Box>
           <Typography
@@ -187,7 +206,7 @@ export function VehiclesPage() {
       ) : (
         <Grid container spacing={3}>
           {filteredCars.map((car) => (
-            <Grid item xs={12} sm={6} md={4} key={car.id}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={car.id}>
               <VehicleCard car={car} onDelete={handleDeleteCar} />
             </Grid>
           ))}
