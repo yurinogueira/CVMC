@@ -7,15 +7,32 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-function spaFallbackPlugin(): Plugin {
+function spaPrerenderPlugin(): Plugin {
   return {
-    name: "spa-fallback-404",
+    name: "spa-prerender-plugin",
     closeBundle() {
       const distDir = path.resolve(__dirname, "dist");
       const indexPath = path.join(distDir, "index.html");
       const notFoundPath = path.join(distDir, "404.html");
+
       if (fs.existsSync(indexPath)) {
+        // Fallback para rotas desconhecidas
         fs.copyFileSync(indexPath, notFoundPath);
+
+        // Gera pastas com index.html para cada rota da aplicação
+        // Garantindo que hosts estáticos como GitHub Pages retornem HTTP 200 OK
+        const routes = [
+          "login",
+          "register",
+          "dashboard",
+          "vehicles",
+          "maintenance",
+        ];
+        for (const route of routes) {
+          const routeDir = path.join(distDir, route);
+          fs.mkdirSync(routeDir, { recursive: true });
+          fs.copyFileSync(indexPath, path.join(routeDir, "index.html"));
+        }
       }
     },
   };
@@ -23,7 +40,7 @@ function spaFallbackPlugin(): Plugin {
 
 export default defineConfig({
   base: process.env.VITE_BASE_PATH || "/",
-  plugins: [react(), spaFallbackPlugin()],
+  plugins: [react(), spaPrerenderPlugin()],
   server: {
     port: 5173,
     host: "0.0.0.0",
@@ -55,13 +72,10 @@ export default defineConfig({
             if (
               id.includes("react") ||
               id.includes("react-dom") ||
-              id.includes("react-router-dom") ||
-              id.includes("zustand") ||
-              id.includes("axios")
+              id.includes("react-router-dom")
             ) {
-              return "vendor-core";
+              return "vendor-react";
             }
-            return "vendor";
           }
         },
       },
