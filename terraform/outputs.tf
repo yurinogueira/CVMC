@@ -54,4 +54,14 @@ output "mongodb_uri" {
   sensitive   = true
 }
 
+output "frontend_url" {
+  value       = "https://${cloudflare_record.frontend.hostname}"
+  description = "URL de acesso ao Frontend"
+}
+
+output "backend_api_url" {
+  value       = "https://${cloudflare_record.backend.hostname}"
+  description = "URL de acesso à API Backend"
+}
+
 

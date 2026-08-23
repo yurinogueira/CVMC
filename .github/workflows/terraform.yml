@@ -19,12 +19,15 @@ env:
   TF_VAR_fingerprint: ${{ secrets.OCI_FINGERPRINT }}
   TF_VAR_private_key: ${{ secrets.OCI_PRIVATE_KEY }}
   TF_VAR_private_key_path: /tmp/oci_api_key.pem
-  TF_VAR_region: ${{ secrets.OCI_REGION }}
+  TF_VAR_region: ${{ secrets.OCI_REGION || 'sa-saopaulo-1' }}
   TF_VAR_availability_domain: ${{ secrets.OCI_AVAILABILITY_DOMAIN }}
   TF_VAR_ssh_public_key: ${{ secrets.OCI_SSH_PUBLIC_KEY }}
   TF_VAR_atlas_org_id: ${{ secrets.MONGODB_ATLAS_ORG_ID }}
   TF_VAR_atlas_public_key: ${{ secrets.MONGODB_ATLAS_PUBLIC_KEY }}
   TF_VAR_atlas_private_key: ${{ secrets.MONGODB_ATLAS_PRIVATE_KEY }}
+  TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+  TF_VAR_github_pages_target: ${{ vars.GITHUB_PAGES_TARGET || 'yurinogueira.github.io' }}
   TF_STATE_KEY: terraform.tfstate
 
 jobs:
@@ -39,7 +42,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v4

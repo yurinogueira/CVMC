@@ -38,6 +38,7 @@ resource "oci_core_instance" "server" {
 
   metadata = {
     ssh_authorized_keys = var.ssh_public_key
+    user_data           = base64encode(file("${path.module}/cloud-init.sh"))
   }
 
   preserve_boot_volume = true

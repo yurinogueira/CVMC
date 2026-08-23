@@ -1,0 +1,36 @@
+[Unit]
+Description=CVMC Backend API Service (Go)
+After=network.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=cvmc
+Group=cvmc
+WorkingDirectory=/opt/cvmc
+ExecStart=/opt/cvmc/cvmc-api
+EnvironmentFile=/etc/cvmc/backend.env
+
+# Limites de Recursos e Proteção contra OOM em VM de 1GB
+MemoryMax=450M
+MemoryHigh=380M
+CPUQuota=90%
+
+# Reinício automático em caso de falha
+Restart=always
+RestartSec=5s
+
+# Hardening de Segurança no Linux
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/opt/cvmc
+PrivateTmp=true
+
+# Logs redirecionados para o journald
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=cvmc-api
+
+[Install]
+WantedBy=multi-user.target

@@ -86,3 +86,20 @@ variable "mongodb_app_username" {
   default     = "cvmc_app"
 }
 
+variable "cloudflare_api_token" {
+  description = "API Token da Cloudflare com permissão Zone.DNS"
+  type        = string
+  sensitive   = true
+}
+
+variable "cloudflare_zone_id" {
+  description = "Zone ID do domínio na Cloudflare (ex: yurinogueira.dev.br)"
+  type        = string
+}
+
+variable "github_pages_target" {
+  description = "Domínio de destino do GitHub Pages (ex: yurinogueira.github.io)"
+  type        = string
+  default     = "yurinogueira.github.io"
+}
+

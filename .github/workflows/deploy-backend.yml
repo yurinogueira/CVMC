@@ -1,0 +1,76 @@
+name: Deploy Backend (Oracle OCI)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+      - 'deploy/**'
+      - '.github/workflows/deploy-backend.yml'
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+          cache-dependency-path: backend/go.sum
+
+      - name: Run tests and vet
+        working-directory: ./backend
+        run: |
+          go vet ./...
+          go test ./...
+
+      - name: Build Go binary (linux/amd64 stripped)
+        working-directory: ./backend
+        run: |
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -trimpath -o ../dist/cvmc-api ./cmd/api
+
+      - name: Deploy to Oracle OCI via SSH
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.OCI_HOST }}
+          username: ${{ secrets.OCI_USERNAME || 'ubuntu' }}
+          key: ${{ secrets.OCI_SSH_PRIVATE_KEY }}
+          source: 'dist/cvmc-api,deploy/systemd/cvmc-backend.service,deploy/caddy/Caddyfile'
+          target: '/tmp/cvmc-deploy'
+          strip_components: 0
+
+      - name: Apply updates and restart services on OCI
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.OCI_HOST }}
+          username: ${{ secrets.OCI_USERNAME || 'ubuntu' }}
+          key: ${{ secrets.OCI_SSH_PRIVATE_KEY }}
+          script: |
+            set -euo pipefail
+            
+            # Instalar binário
+            sudo install -m 755 -o cvmc -g cvmc /tmp/cvmc-deploy/dist/cvmc-api /opt/cvmc/cvmc-api
+            
+            # Atualizar Caddyfile se modificado
+            if [ -f /tmp/cvmc-deploy/deploy/caddy/Caddyfile ]; then
+              sudo cp /tmp/cvmc-deploy/deploy/caddy/Caddyfile /etc/caddy/Caddyfile
+              sudo systemctl reload caddy || sudo systemctl restart caddy
+            fi
+            
+            # Atualizar serviço Systemd se modificado
+            if [ -f /tmp/cvmc-deploy/deploy/systemd/cvmc-backend.service ]; then
+              sudo cp /tmp/cvmc-deploy/deploy/systemd/cvmc-backend.service /etc/systemd/system/cvmc-backend.service
+              sudo systemctl daemon-reload
+            fi
+            
+            # Reiniciar aplicação Go
+            sudo systemctl restart cvmc-backend
+            sudo systemctl is-active --quiet cvmc-backend && echo "cvmc-backend is running successfully!"
+            
+            # Limpar arquivos temporários
+            rm -rf /tmp/cvmc-deploy

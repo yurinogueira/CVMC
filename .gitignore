@@ -1,4 +1,5 @@
-# Go
+# Build outputs
+dist/
 backend/bin/
 backend/.coverprofile
 
@@ -12,8 +13,11 @@ frontend/vite.config.d.ts
 
 # Env
 .env
+*.env
+!*.env.example
 backend/.env
 frontend/.env
+deploy/backend.env
 
 # OS
 .DS_Store
