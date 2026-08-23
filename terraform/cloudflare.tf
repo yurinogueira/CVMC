@@ -19,3 +19,13 @@ resource "cloudflare_dns_record" "backend" {
   ttl     = 1
   comment = "Managed by Terraform - CVMC Backend API OCI"
 }
+
+moved {
+  from = cloudflare_record.frontend
+  to   = cloudflare_dns_record.frontend
+}
+
+moved {
+  from = cloudflare_record.backend
+  to   = cloudflare_dns_record.backend
+}
