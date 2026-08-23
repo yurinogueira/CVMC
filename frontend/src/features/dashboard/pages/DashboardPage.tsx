@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { Link as RouterLink } from "react-router-dom";
 import {
   Box,
@@ -8,7 +8,7 @@ import {
   CardContent,
   Button,
   Stack,
-  CircularProgress,
+  Skeleton,
   Alert,
 } from "@mui/material";
 import DirectionsCarFilledRoundedIcon from "@mui/icons-material/DirectionsCarFilledRounded";
@@ -20,9 +20,14 @@ import { useAuthStore } from "../../auth/state/auth.store";
 import { carService } from "../../cars/services/car.service";
 import { Car } from "../../cars/types/car.types";
 import { VehicleCard } from "../../cars/components/VehicleCard";
-import { AddCarDialog } from "../../cars/components/AddCarDialog";
 import { useDocumentTitle } from "../../shared";
 import { brandColors } from "../../../styles/theme";
+
+const AddCarDialog = lazy(() =>
+  import("../../cars/components/AddCarDialog").then((m) => ({
+    default: m.AddCarDialog,
+  })),
+);
 
 export function DashboardPage() {
   useDocumentTitle("Dashboard");
@@ -140,7 +145,15 @@ export function DashboardPage() {
                     variant="h4"
                     sx={{ fontWeight: 800, my: 0.5, color: "text.primary" }}
                   >
-                    {loading ? "-" : cars.length}
+                    {loading ? (
+                      <Skeleton
+                        width={48}
+                        height={42}
+                        sx={{ display: "inline-block" }}
+                      />
+                    ) : (
+                      cars.length
+                    )}
                   </Typography>
                   <Typography
                     variant="body2"
@@ -205,7 +218,17 @@ export function DashboardPage() {
                     variant="h4"
                     sx={{ fontWeight: 800, my: 0.5, color: brandColors.green }}
                   >
-                    {cars.length > 0 ? "Em dia" : "--"}
+                    {loading ? (
+                      <Skeleton
+                        width={72}
+                        height={42}
+                        sx={{ display: "inline-block" }}
+                      />
+                    ) : cars.length > 0 ? (
+                      "Em dia"
+                    ) : (
+                      "--"
+                    )}
                   </Typography>
                   <Typography
                     variant="body2"
@@ -268,7 +291,15 @@ export function DashboardPage() {
                     variant="h4"
                     sx={{ fontWeight: 800, my: 0.5, color: "text.primary" }}
                   >
-                    {loading ? "-" : totalMileage.toLocaleString("pt-BR")}
+                    {loading ? (
+                      <Skeleton
+                        width={84}
+                        height={42}
+                        sx={{ display: "inline-block" }}
+                      />
+                    ) : (
+                      totalMileage.toLocaleString("pt-BR")
+                    )}
                   </Typography>
                   <Typography
                     variant="body2"
@@ -402,9 +433,33 @@ export function DashboardPage() {
 
       {/* Loading state */}
       {loading ? (
-        <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-          <CircularProgress size={36} />
-        </Box>
+        <Grid container spacing={3}>
+          {[1, 2, 3].map((i) => (
+            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={i}>
+              <Card
+                elevation={0}
+                sx={{
+                  p: 2.5,
+                  border: "1px solid #E2E8F0",
+                  bgcolor: "background.paper",
+                }}
+              >
+                <Skeleton variant="text" width="60%" height={32} />
+                <Skeleton
+                  variant="text"
+                  width="40%"
+                  height={24}
+                  sx={{ mb: 2 }}
+                />
+                <Skeleton
+                  variant="rectangular"
+                  height={80}
+                  sx={{ borderRadius: 1.5 }}
+                />
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
       ) : cars.length === 0 ? (
         /* Modern Empty State */
         <Card
@@ -463,12 +518,16 @@ export function DashboardPage() {
         </Grid>
       )}
 
-      {/* Add Car Modal */}
-      <AddCarDialog
-        open={openAddDialog}
-        onClose={() => setOpenAddDialog(false)}
-        onCarCreated={handleCarCreated}
-      />
+      {/* Add Car Modal (Lazy Loaded) */}
+      {openAddDialog && (
+        <Suspense fallback={null}>
+          <AddCarDialog
+            open={openAddDialog}
+            onClose={() => setOpenAddDialog(false)}
+            onCarCreated={handleCarCreated}
+          />
+        </Suspense>
+      )}
     </Box>
   );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import {
   Box,
   Typography,
@@ -7,7 +7,7 @@ import {
   Stack,
   TextField,
   InputAdornment,
-  CircularProgress,
+  Skeleton,
   Alert,
   Card,
 } from "@mui/material";
@@ -17,8 +17,13 @@ import DirectionsCarFilledRoundedIcon from "@mui/icons-material/DirectionsCarFil
 import { carService } from "../services/car.service";
 import { Car } from "../types/car.types";
 import { VehicleCard } from "../components/VehicleCard";
-import { AddCarDialog } from "../components/AddCarDialog";
 import { useDocumentTitle } from "../../shared";
+
+const AddCarDialog = lazy(() =>
+  import("../components/AddCarDialog").then((m) => ({
+    default: m.AddCarDialog,
+  })),
+);
 
 export function VehiclesPage() {
   useDocumentTitle("Meus Veículos");
@@ -155,9 +160,33 @@ export function VehiclesPage() {
 
       {/* Content */}
       {loading ? (
-        <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-          <CircularProgress size={36} />
-        </Box>
+        <Grid container spacing={3}>
+          {[1, 2, 3].map((i) => (
+            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={i}>
+              <Card
+                elevation={0}
+                sx={{
+                  p: 2.5,
+                  border: "1px solid #E2E8F0",
+                  bgcolor: "background.paper",
+                }}
+              >
+                <Skeleton variant="text" width="60%" height={32} />
+                <Skeleton
+                  variant="text"
+                  width="40%"
+                  height={24}
+                  sx={{ mb: 2 }}
+                />
+                <Skeleton
+                  variant="rectangular"
+                  height={80}
+                  sx={{ borderRadius: 1.5 }}
+                />
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
       ) : filteredCars.length === 0 ? (
         <Card
           elevation={0}
@@ -215,12 +244,16 @@ export function VehiclesPage() {
         </Grid>
       )}
 
-      {/* Add Dialog */}
-      <AddCarDialog
-        open={openAddDialog}
-        onClose={() => setOpenAddDialog(false)}
-        onCarCreated={handleCarCreated}
-      />
+      {/* Add Dialog (Lazy Loaded) */}
+      {openAddDialog && (
+        <Suspense fallback={null}>
+          <AddCarDialog
+            open={openAddDialog}
+            onClose={() => setOpenAddDialog(false)}
+            onCarCreated={handleCarCreated}
+          />
+        </Suspense>
+      )}
     </Box>
   );
 }
