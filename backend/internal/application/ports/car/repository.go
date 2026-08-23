@@ -2,9 +2,12 @@ package car
 
 import (
 	"context"
+	"errors"
 
 	domaincar "cvmc/internal/domain/car"
 )
+
+var ErrNotFound = errors.New("car not found")
 
 type Repository interface {
 	Create(ctx context.Context, car domaincar.Car) (domaincar.Car, error)
@@ -15,3 +18,4 @@ type Repository interface {
 	Share(ctx context.Context, carID string, userID string) (domaincar.Car, error)
 	Unshare(ctx context.Context, carID string, userID string) (domaincar.Car, error)
 }
+

@@ -33,7 +33,14 @@ import (
 // @description Digite "Bearer " seguido do token JWT obtido no login.
 func main() {
 	cfg := config.Load()
-	app := bootstrap.New(cfg)
+
+	initCtx, initCancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer initCancel()
+
+	app, err := bootstrap.New(initCtx, cfg)
+	if err != nil {
+		log.Fatalf("failed to initialize application: %v", err)
+	}
 
 	srv := &http.Server{
 		Addr:              cfg.HTTPAddress(),
@@ -62,4 +69,9 @@ func main() {
 	if err := srv.Shutdown(ctx); err != nil {
 		log.Printf("shutdown error: %v", err)
 	}
+
+	if err := app.Close(ctx); err != nil {
+		log.Printf("error closing database connection: %v", err)
+	}
 }
+

@@ -127,7 +127,7 @@ func (s *Service) Share(ctx context.Context, actorID, carID, email string) (doma
 	}
 	target, err := s.users.FindByEmail(ctx, email)
 	if err != nil {
-		if errors.Is(err, memoryuser.ErrNotFound) {
+		if errors.Is(err, userport.ErrNotFound) || errors.Is(err, memoryuser.ErrNotFound) {
 			return domaincar.Car{}, ErrShareNotFound
 		}
 		return domaincar.Car{}, err
