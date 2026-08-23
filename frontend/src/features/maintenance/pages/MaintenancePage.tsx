@@ -2,9 +2,11 @@ import { Box, Typography, Card, Button, Stack, Chip } from "@mui/material";
 import BuildCircleRoundedIcon from "@mui/icons-material/BuildCircleRounded";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
+import { useDocumentTitle } from "../../shared";
 import { brandColors } from "../../../styles/theme";
 
 export function MaintenancePage() {
+  useDocumentTitle("Histórico de Manutenções");
   return (
     <Box>
       {/* Header */}

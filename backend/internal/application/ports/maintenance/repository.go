@@ -16,4 +16,3 @@ type Repository interface {
 	Update(ctx context.Context, maintenance domainmaintenance.Maintenance) (domainmaintenance.Maintenance, error)
 	Delete(ctx context.Context, id string) error
 }
-

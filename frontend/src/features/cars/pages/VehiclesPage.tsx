@@ -18,8 +18,10 @@ import { carService } from "../services/car.service";
 import { Car } from "../types/car.types";
 import { VehicleCard } from "../components/VehicleCard";
 import { AddCarDialog } from "../components/AddCarDialog";
+import { useDocumentTitle } from "../../shared";
 
 export function VehiclesPage() {
+  useDocumentTitle("Meus Veículos");
   const [cars, setCars] = useState<Car[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);

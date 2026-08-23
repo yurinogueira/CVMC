@@ -34,4 +34,37 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    target: "esnext",
+    cssCodeSplit: true,
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules")) {
+            if (id.includes("@mui/icons-material")) {
+              return "vendor-icons";
+            }
+            if (
+              id.includes("@mui/material") ||
+              id.includes("@emotion/react") ||
+              id.includes("@emotion/styled")
+            ) {
+              return "vendor-mui";
+            }
+            if (
+              id.includes("react") ||
+              id.includes("react-dom") ||
+              id.includes("react-router-dom") ||
+              id.includes("zustand") ||
+              id.includes("axios")
+            ) {
+              return "vendor-core";
+            }
+            return "vendor";
+          }
+        },
+      },
+    },
+  },
 });

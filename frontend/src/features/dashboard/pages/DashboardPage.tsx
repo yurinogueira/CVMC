@@ -21,9 +21,11 @@ import { carService } from "../../cars/services/car.service";
 import { Car } from "../../cars/types/car.types";
 import { VehicleCard } from "../../cars/components/VehicleCard";
 import { AddCarDialog } from "../../cars/components/AddCarDialog";
+import { useDocumentTitle } from "../../shared";
 import { brandColors } from "../../../styles/theme";
 
 export function DashboardPage() {
+  useDocumentTitle("Dashboard");
   const user = useAuthStore((state) => state.user);
   const [cars, setCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
