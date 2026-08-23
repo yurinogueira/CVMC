@@ -17,7 +17,6 @@ import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
 import DirectionsCarRoundedIcon from "@mui/icons-material/DirectionsCarRounded";
-import { DRAWER_WIDTH } from "./Sidebar";
 import { useAuthStore } from "../features/auth/state/auth.store";
 
 interface TopbarProps {
@@ -57,8 +56,7 @@ export function Topbar({ onDrawerToggle }: TopbarProps) {
       position="sticky"
       elevation={0}
       sx={{
-        width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
-        ml: { md: `${DRAWER_WIDTH}px` },
+        width: "100%",
         bgcolor: "background.paper",
         color: "text.primary",
         borderBottom: "1px solid #E2E8F0",
@@ -67,7 +65,8 @@ export function Topbar({ onDrawerToggle }: TopbarProps) {
       <Toolbar
         sx={{
           justifyContent: "space-between",
-          minHeight: 64,
+          height: 64,
+          minHeight: "64px !important",
           px: { xs: 2, sm: 3 },
         }}
       >

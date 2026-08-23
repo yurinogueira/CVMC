@@ -67,7 +67,17 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
       }}
     >
       {/* Brand Header */}
-      <Box sx={{ p: 2.5, display: "flex", alignItems: "center", gap: 1.5 }}>
+      <Box
+        sx={{
+          height: 64,
+          minHeight: 64,
+          px: 2.5,
+          display: "flex",
+          alignItems: "center",
+          gap: 1.5,
+          boxSizing: "border-box",
+        }}
+      >
         <Box
           sx={{
             width: 40,
@@ -77,7 +87,7 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            boxShadow: "0 4px 12px rgba(76, 146, 252, 0.25)",
+            boxShadow: "0 4px 12px rgba(2, 132, 199, 0.25)",
           }}
         >
           <DirectionsCarRoundedIcon sx={{ color: "#FFFFFF", fontSize: 24 }} />
@@ -98,7 +108,7 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
         </Box>
       </Box>
 
-      <Divider sx={{ borderColor: "#F1F5F9" }} />
+      <Divider sx={{ borderColor: "#E2E8F0" }} />
 
       {/* Navigation Links */}
       <Box sx={{ flex: 1, py: 2, px: 1.5 }}>
