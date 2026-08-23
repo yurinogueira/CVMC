@@ -46,7 +46,11 @@ export function AuthHeroBanner() {
     >
       {/* Brand Header */}
       <Box sx={{ position: "relative", zIndex: 1 }}>
-        <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 2 }}>
+        <Stack
+          direction="row"
+          spacing={1.5}
+          sx={{ alignItems: "center", mb: 2 }}
+        >
           <Box
             sx={{
               bgcolor: "rgba(255, 255, 255, 0.2)",
@@ -110,7 +114,7 @@ export function AuthHeroBanner() {
 
         {/* Feature Highlights */}
         <Stack spacing={2}>
-          <Stack direction="row" alignItems="center" spacing={2}>
+          <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
             <Box
               sx={{
                 bgcolor: "rgba(255, 255, 255, 0.18)",
@@ -130,7 +134,7 @@ export function AuthHeroBanner() {
             </Typography>
           </Stack>
 
-          <Stack direction="row" alignItems="center" spacing={2}>
+          <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
             <Box
               sx={{
                 bgcolor: "rgba(255, 255, 255, 0.18)",
@@ -150,7 +154,7 @@ export function AuthHeroBanner() {
             </Typography>
           </Stack>
 
-          <Stack direction="row" alignItems="center" spacing={2}>
+          <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
             <Box
               sx={{
                 bgcolor: "rgba(255, 255, 255, 0.18)",

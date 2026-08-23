@@ -46,7 +46,26 @@ export function DashboardPage() {
   };
 
   useEffect(() => {
-    fetchCars();
+    let isMounted = true;
+    carService
+      .list()
+      .then((data) => {
+        if (isMounted) setCars(data);
+      })
+      .catch(() => {
+        if (isMounted) {
+          setErrorMsg(
+            "Não foi possível carregar os dados de veículos. O servidor pode estar em inicialização.",
+          );
+        }
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleCarCreated = (newCar: Car) => {
@@ -85,7 +104,7 @@ export function DashboardPage() {
       {/* KPI Cards Grid */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {/* KPI 1: Veículos */}
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
           <Card
             elevation={0}
             sx={{
@@ -99,8 +118,10 @@ export function DashboardPage() {
             <CardContent>
               <Stack
                 direction="row"
-                alignItems="center"
-                justifyContent="space-between"
+                sx={{
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
               >
                 <Box>
                   <Typography
@@ -148,7 +169,7 @@ export function DashboardPage() {
         </Grid>
 
         {/* KPI 2: Manutenções */}
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
           <Card
             elevation={0}
             sx={{
@@ -162,8 +183,10 @@ export function DashboardPage() {
             <CardContent>
               <Stack
                 direction="row"
-                alignItems="center"
-                justifyContent="space-between"
+                sx={{
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
               >
                 <Box>
                   <Typography
@@ -209,7 +232,7 @@ export function DashboardPage() {
         </Grid>
 
         {/* KPI 3: Km Total */}
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
           <Card
             elevation={0}
             sx={{
@@ -223,8 +246,10 @@ export function DashboardPage() {
             <CardContent>
               <Stack
                 direction="row"
-                alignItems="center"
-                justifyContent="space-between"
+                sx={{
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
               >
                 <Box>
                   <Typography
@@ -284,10 +309,13 @@ export function DashboardPage() {
       >
         <Stack
           direction={{ xs: "column", sm: "row" }}
-          alignItems={{ xs: "flex-start", sm: "center" }}
-          justifyContent="space-between"
           spacing={2}
-          sx={{ position: "relative", zIndex: 1 }}
+          sx={{
+            alignItems: { xs: "flex-start", sm: "center" },
+            justifyContent: "space-between",
+            position: "relative",
+            zIndex: 1,
+          }}
         >
           <Box>
             <Typography
@@ -330,9 +358,11 @@ export function DashboardPage() {
       {/* Section Header: Meus Veículos */}
       <Stack
         direction="row"
-        alignItems="center"
-        justifyContent="space-between"
-        sx={{ mb: 2.5 }}
+        sx={{
+          alignItems: "center",
+          justifyContent: "space-between",
+          mb: 2.5,
+        }}
       >
         <Typography
           variant="h6"
@@ -424,7 +454,7 @@ export function DashboardPage() {
         /* Vehicles Grid */
         <Grid container spacing={3}>
           {cars.map((car) => (
-            <Grid item xs={12} sm={6} md={4} key={car.id}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={car.id}>
               <VehicleCard car={car} onDelete={handleDeleteCar} />
             </Grid>
           ))}
