@@ -44,4 +44,9 @@ jobs:
         run: terraform init -backend=false
 
       - name: Terraform Validate
-        run: terraform validate -no-color
+        run: |
+          if ! terraform validate; then
+            echo "::error::Terraform validate failed"
+            terraform validate -json || true
+            exit 1
+          fi
