@@ -101,6 +101,7 @@ export function VehiclesPage() {
       >
         <Box>
           <Typography
+            component="h1"
             variant="h5"
             sx={{ fontWeight: 800, color: "text.primary" }}
           >
@@ -214,7 +215,11 @@ export function VehiclesPage() {
           >
             <DirectionsCarFilledRoundedIcon sx={{ fontSize: 32 }} />
           </Box>
-          <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5 }}>
+          <Typography
+            component="h2"
+            variant="h6"
+            sx={{ fontWeight: 700, mb: 0.5 }}
+          >
             {search
               ? "Nenhum veículo encontrado para a busca"
               : "Você ainda não possui veículos cadastrados"}

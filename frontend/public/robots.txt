@@ -2,15 +2,15 @@ User-agent: *
 Allow: /
 Allow: /login
 Allow: /register
+Allow: /dashboard
+Allow: /vehicles
+Allow: /maintenance
 Allow: /assets/
 Allow: /favicon.svg
 Allow: /site.webmanifest
 Allow: /sitemap.xml
 
-# Rotas privadas / autenticadas da aplicação
-Disallow: /dashboard
-Disallow: /vehicles
-Disallow: /maintenance
+# Endpoints de API internos
 Disallow: /api/
 
 Sitemap: https://cvmc.yurinogueira.dev.br/sitemap.xml

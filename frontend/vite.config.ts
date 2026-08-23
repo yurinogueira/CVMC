@@ -16,11 +16,14 @@ function spaPrerenderPlugin(): Plugin {
       const notFoundPath = path.join(distDir, "404.html");
 
       if (fs.existsSync(indexPath)) {
+        const indexHtml = fs.readFileSync(indexPath, "utf8");
+
         // Fallback para rotas desconhecidas
         fs.copyFileSync(indexPath, notFoundPath);
 
         // Gera pastas com index.html para cada rota da aplicação
         // Garantindo que hosts estáticos como GitHub Pages retornem HTTP 200 OK
+        // e possuam a tag rel=canonical correspondente para crawlers/Lighthouse
         const routes = [
           "login",
           "register",
@@ -31,7 +34,15 @@ function spaPrerenderPlugin(): Plugin {
         for (const route of routes) {
           const routeDir = path.join(distDir, route);
           fs.mkdirSync(routeDir, { recursive: true });
-          fs.copyFileSync(indexPath, path.join(routeDir, "index.html"));
+          const routeHtml = indexHtml.replace(
+            /<link\s+rel=["']canonical["']\s+href=["'][^"']*["']\s*\/?>/i,
+            `<link rel="canonical" href="https://cvmc.yurinogueira.dev.br/${route}/" />`,
+          );
+          fs.writeFileSync(
+            path.join(routeDir, "index.html"),
+            routeHtml,
+            "utf8",
+          );
         }
       }
     },

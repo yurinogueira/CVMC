@@ -65,6 +65,7 @@ export function AuthHeroBanner() {
             <DirectionsCarIcon sx={{ fontSize: 32, color: "#FFFFFF" }} />
           </Box>
           <Typography
+            component="div"
             variant="h5"
             sx={{ fontWeight: 800, letterSpacing: -0.5, color: "#FFFFFF" }}
           >
@@ -86,6 +87,7 @@ export function AuthHeroBanner() {
       {/* Main Copy */}
       <Box sx={{ position: "relative", zIndex: 1, my: 6 }}>
         <Typography
+          component="div"
           variant="h3"
           sx={{
             fontWeight: 800,
