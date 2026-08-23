@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "puppeteer": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-puppeteer"
+      ]
+    },
+    "github": {
+      "command": "sh",
+      "args": [
+        "-c",
+        "export GITHUB_PERSONAL_ACCESS_TOKEN=\"$(gh auth token 2>/dev/null || echo \"$GITHUB_PERSONAL_ACCESS_TOKEN\")\" && npx -y @modelcontextprotocol/server-github"
+      ]
+    }
+  }
+}
