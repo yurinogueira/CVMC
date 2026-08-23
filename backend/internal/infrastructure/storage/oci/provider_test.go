@@ -69,4 +69,15 @@ func TestOCIStorageProvider_SaveAndDelete(t *testing.T) {
 	if deletedPath != "/n/test-ns/b/test-bucket/o/uploads/car.png" {
 		t.Errorf("expected deleted path /n/test-ns/b/test-bucket/o/uploads/car.png, got %s", deletedPath)
 	}
+
+	// Test path traversal defense
+	_, err = provider.Save(ctx, "../secret.txt", testFile)
+	if err == nil {
+		t.Error("expected error for path traversal in Save, got nil")
+	}
+
+	err = provider.Delete(ctx, "../secret.txt")
+	if err == nil {
+		t.Error("expected error for path traversal in Delete, got nil")
+	}
 }

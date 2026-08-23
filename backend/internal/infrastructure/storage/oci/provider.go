@@ -60,7 +60,12 @@ func (p *Provider) Save(ctx context.Context, path string, file storage.File) (st
 		return storage.StoredObject{}, errors.New("oci storage: namespace and bucket must be configured")
 	}
 
-	targetURL := p.objectURL(path)
+	cleanPath := strings.TrimPrefix(path, "/")
+	if strings.Contains(cleanPath, "..") {
+		return storage.StoredObject{}, errors.New("invalid path: traversal detected")
+	}
+
+	targetURL := p.objectURL(cleanPath)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPut, targetURL, bytes.NewReader(file.Data))
 	if err != nil {
 		return storage.StoredObject{}, fmt.Errorf("oci storage: failed to create request: %w", err)
@@ -96,7 +101,12 @@ func (p *Provider) Delete(ctx context.Context, path string) error {
 		return errors.New("oci storage: namespace and bucket must be configured")
 	}
 
-	targetURL := p.objectURL(path)
+	cleanPath := strings.TrimPrefix(path, "/")
+	if strings.Contains(cleanPath, "..") {
+		return errors.New("invalid path: traversal detected")
+	}
+
+	targetURL := p.objectURL(cleanPath)
 	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, targetURL, nil)
 	if err != nil {
 		return fmt.Errorf("oci storage: failed to create request: %w", err)
