@@ -21,6 +21,7 @@ export function MaintenancePage() {
       >
         <Box>
           <Typography
+            component="h1"
             variant="h5"
             sx={{ fontWeight: 800, color: "text.primary" }}
           >
@@ -58,7 +59,7 @@ export function MaintenancePage() {
             width: 48,
             height: 48,
             borderRadius: 2,
-            bgcolor: "rgba(76, 252, 127, 0.15)",
+            bgcolor: "rgba(22, 163, 74, 0.12)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -73,7 +74,11 @@ export function MaintenancePage() {
             spacing={1}
             sx={{ alignItems: "center", mb: 0.5 }}
           >
-            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+            <Typography
+              component="h2"
+              variant="subtitle1"
+              sx={{ fontWeight: 700 }}
+            >
               Sua frota está em dia
             </Typography>
             <Chip
@@ -109,7 +114,7 @@ export function MaintenancePage() {
             width: 56,
             height: 56,
             borderRadius: "50%",
-            bgcolor: "rgba(76, 146, 252, 0.1)",
+            bgcolor: "rgba(2, 132, 199, 0.1)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -120,7 +125,11 @@ export function MaintenancePage() {
         >
           <BuildCircleRoundedIcon sx={{ fontSize: 32 }} />
         </Box>
-        <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5 }}>
+        <Typography
+          component="h2"
+          variant="h6"
+          sx={{ fontWeight: 700, mb: 0.5 }}
+        >
           Nenhuma manutenção registrada
         </Typography>
         <Typography

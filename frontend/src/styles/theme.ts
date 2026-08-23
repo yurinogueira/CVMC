@@ -24,40 +24,40 @@ declare module "@mui/material/styles" {
 }
 
 export const brandColors = {
-  blue: "#4C92FC",
-  sky: "#4CCAFC",
-  cyan: "#4CFCF7",
-  mint: "#4CFCBB",
-  green: "#4CFC7F",
-  gradient: "linear-gradient(135deg, #4C92FC 0%, #4CCAFC 50%, #4CFCF7 100%)",
+  blue: "#0284C7",
+  sky: "#38BDF8",
+  cyan: "#06B6D4",
+  mint: "#A7F3D0",
+  green: "#86EFAC",
+  gradient: "linear-gradient(135deg, #0284C7 0%, #0369A1 50%, #0F766E 100%)",
 };
 
 export const appTheme = createTheme({
   palette: {
     mode: "light",
     primary: {
-      main: brandColors.blue,
-      light: "#78ACFD",
-      dark: "#2563EB",
+      main: "#0284C7",
+      light: "#38BDF8",
+      dark: "#0369A1",
       contrastText: "#FFFFFF",
     },
     secondary: {
-      main: brandColors.sky,
-      light: "#8AE0FE",
+      main: "#0EA5E9",
+      light: "#7DD3FC",
       dark: "#0284C7",
       contrastText: "#0F172A",
     },
     success: {
-      main: brandColors.green,
-      light: "#85FDAE",
-      dark: "#16A34A",
-      contrastText: "#064E3B",
+      main: "#16A34A",
+      light: "#86EFAC",
+      dark: "#15803D",
+      contrastText: "#FFFFFF",
     },
     info: {
-      main: brandColors.mint,
-      light: "#8EFDD3",
-      dark: "#0D9488",
-      contrastText: "#064E3B",
+      main: "#0D9488",
+      light: "#99F6E4",
+      dark: "#0F766E",
+      contrastText: "#FFFFFF",
     },
     background: {
       default: "#F8FAFC",
@@ -65,7 +65,7 @@ export const appTheme = createTheme({
     },
     text: {
       primary: "#0F172A",
-      secondary: "#64748B",
+      secondary: "#475569",
     },
     divider: "#E2E8F0",
     brand: brandColors,

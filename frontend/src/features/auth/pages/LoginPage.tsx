@@ -132,6 +132,7 @@ export function LoginPage() {
 
             <Box sx={{ mb: 3.5 }}>
               <Typography
+                component="h1"
                 variant="h4"
                 sx={{ fontWeight: 700, mb: 1, color: "text.primary" }}
               >
