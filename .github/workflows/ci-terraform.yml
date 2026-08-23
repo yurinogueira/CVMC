@@ -44,11 +44,4 @@ jobs:
         run: terraform init -backend=false
 
       - name: Terraform Validate
-        run: |
-          OUT=$(terraform validate 2>&1 || true)
-          echo "$OUT"
-          if echo "$OUT" | grep -iq "Error:"; then
-            MSG=$(echo "$OUT" | tr '\n' ' ')
-            echo "::error title=Terraform Validation Error::$MSG"
-            exit 1
-          fi
+        run: terraform validate -no-color
