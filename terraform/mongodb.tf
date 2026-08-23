@@ -8,12 +8,12 @@ resource "mongodbatlas_project" "project" {
 }
 
 resource "mongodbatlas_cluster" "cluster" {
-  project_id                  = mongodbatlas_project.project.id
-  name                        = var.mongodb_cluster_name
-  provider_name               = "TENANT"
-  backing_provider_name       = "AWS"
-  provider_region_name        = "SA_EAST_1"
-  provider_instance_size_name = "M0"
+  project_id                     = mongodbatlas_project.project.id
+  name                           = var.mongodb_cluster_name
+  provider_name                  = "TENANT"
+  backing_provider_name          = "AWS"
+  provider_region_name           = "SA_EAST_1"
+  provider_instance_size_name    = "M0"
   termination_protection_enabled = true
 
   lifecycle {

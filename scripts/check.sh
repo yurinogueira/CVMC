@@ -67,6 +67,24 @@ check_frontend() {
   return 0
 }
 
+check_terraform() {
+  local tf_dir="$PROJECT_ROOT/terraform"
+  local output=""
+
+  if ! command -v terraform &> /dev/null; then
+    return 0
+  fi
+
+  if ! output=$(cd "$PROJECT_ROOT" && terraform fmt -check -recursive terraform 2>&1); then
+    echo "❌ [Terraform] terraform fmt check failed (run scripts/fix.sh or terraform fmt -recursive to auto-fix):"
+    echo "$output"
+    return 1
+  fi
+
+  echo "✓ [Terraform] OK (fmt check passed)"
+  return 0
+}
+
 TARGET="${1:-all}"
 FAILED=0
 
@@ -77,15 +95,19 @@ case "$TARGET" in
   frontend)
     check_frontend || FAILED=1
     ;;
+  terraform)
+    check_terraform || FAILED=1
+    ;;
   all)
     check_backend || FAILED=1
     check_frontend || FAILED=1
+    check_terraform || FAILED=1
     if [ $FAILED -eq 0 ]; then
       echo "🚀 [CVMC] All checks passed successfully!"
     fi
     ;;
   *)
-    echo "Usage: $0 [backend|frontend|all]"
+    echo "Usage: $0 [backend|frontend|terraform|all]"
     exit 1
     ;;
 esac
