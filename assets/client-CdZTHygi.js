@@ -1,1 +1,0 @@
-import{t as e}from"./vendor-core-CAATKVFE.js";var t=e.create({baseURL:`https://api-cvmc.yurinogueira.dev.br/api/v1`,timeout:15e3,withCredentials:!0});t.interceptors.response.use(e=>e,async e=>{if(e?.response?.status===401){let e=window.location.pathname;e!==`/login`&&e!==`/register`&&(window.location.href=`/login`)}return Promise.reject(e)});export{t};
