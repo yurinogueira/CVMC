@@ -12,7 +12,7 @@ output "instance_public_ip" {
 }
 
 output "instance_private_ip" {
-  value = oci_core_instance.server.private_ip
+  value = data.oci_core_private_ips.server_private_ips.private_ips[0].ip_address
 }
 
 output "object_storage_namespace" {
@@ -55,12 +55,12 @@ output "mongodb_uri" {
 }
 
 output "frontend_url" {
-  value       = "https://${cloudflare_record.frontend.hostname}"
+  value       = "https://${cloudflare_dns_record.frontend.name}.yurinogueira.dev.br"
   description = "URL de acesso ao Frontend"
 }
 
 output "backend_api_url" {
-  value       = "https://${cloudflare_record.backend.hostname}"
+  value       = "https://${cloudflare_dns_record.backend.name}.yurinogueira.dev.br"
   description = "URL de acesso à API Backend"
 }
 
