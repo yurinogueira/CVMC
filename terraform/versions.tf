@@ -8,15 +8,15 @@ terraform {
     }
     mongodbatlas = {
       source  = "mongodb/mongodbatlas"
-      version = "~> 1.28.0"
+      version = "~> 2.16.0"
     }
     random = {
       source  = "hashicorp/random"
-      version = "~> 3.6.0"
+      version = "~> 3.9.0"
     }
     cloudflare = {
       source  = "cloudflare/cloudflare"
-      version = "~> 4.40.0"
+      version = "~> 5.23.0"
     }
   }
 }
