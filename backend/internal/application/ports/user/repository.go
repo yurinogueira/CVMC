@@ -14,4 +14,3 @@ type Repository interface {
 	FindByEmail(ctx context.Context, email string) (domainuser.User, error)
 	FindByID(ctx context.Context, id string) (domainuser.User, error)
 }
-

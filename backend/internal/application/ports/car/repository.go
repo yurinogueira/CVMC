@@ -18,4 +18,3 @@ type Repository interface {
 	Share(ctx context.Context, carID string, userID string) (domaincar.Car, error)
 	Unshare(ctx context.Context, carID string, userID string) (domaincar.Car, error)
 }
-

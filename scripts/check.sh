@@ -35,31 +35,40 @@ check_frontend() {
   local frontend_dir="$PROJECT_ROOT/frontend"
   local output=""
 
+  if [ ! -d "$frontend_dir/node_modules" ]; then
+    echo "⚠️ [Frontend] node_modules not found. Installing dependencies..."
+    (cd "$frontend_dir" && npm ci)
+  fi
+
+  local bin_dir="$frontend_dir/node_modules/.bin"
+  export CI=true
+  export NODE_NO_WARNINGS=1
+
   # 1. TypeCheck
-  if ! output=$(cd "$frontend_dir" && npx tsc -b 2>&1); then
+  if ! output=$(cd "$frontend_dir" && "$bin_dir/tsc" -b 2>&1); then
     echo "❌ [Frontend] Typecheck (tsc) failed:"
     echo "$output"
     return 1
   fi
 
   # 2. Lint
-  if ! output=$(cd "$frontend_dir" && npm run lint --silent 2>&1); then
+  if ! output=$(cd "$frontend_dir" && "$bin_dir/eslint" . 2>&1); then
     echo "❌ [Frontend] ESLint failed:"
     echo "$output"
     return 1
   fi
 
   # 3. Format
-  if ! output=$(cd "$frontend_dir" && npm run format --silent 2>&1); then
+  if ! output=$(cd "$frontend_dir" && "$bin_dir/prettier" --check . 2>&1); then
     echo "❌ [Frontend] Prettier format check failed (run scripts/fix.sh to auto-fix):"
     echo "$output"
     return 1
   fi
 
-  # 4. Vitest (concise reporter)
-  if ! output=$(cd "$frontend_dir" && npx vitest run --reporter=dot 2>&1); then
+  # 4. Vitest (run in CI mode, fast reporter, suppress experimental warnings)
+  if ! output=$(cd "$frontend_dir" && "$bin_dir/vitest" run --reporter=dot 2>&1); then
     echo "❌ [Frontend] Vitest failed:"
-    echo "$output"
+    echo "$output" | grep -v "ExperimentalWarning" || true
     return 1
   fi
 

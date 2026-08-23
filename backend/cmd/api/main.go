@@ -74,4 +74,3 @@ func main() {
 		log.Printf("error closing database connection: %v", err)
 	}
 }
-
