@@ -12,7 +12,7 @@ resource "cloudflare_record" "frontend" {
 # Cloudflare DNS Record para o Backend (Oracle OCI Reserved Public IP)
 resource "cloudflare_record" "backend" {
   zone_id = var.cloudflare_zone_id
-  name    = "api.cvmc"
+  name    = "api-cvmc"
   content = oci_core_public_ip.server_reserved_ip.ip_address
   type    = "A"
   proxied = true

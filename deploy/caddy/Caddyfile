@@ -1,7 +1,7 @@
 # Caddyfile - CVMC Backend Reverse Proxy (Cloudflare Full SSL)
 # https://caddyserver.com/docs/caddyfile
 
-api.cvmc.yurinogueira.dev.br {
+api-cvmc.yurinogueira.dev.br, api.cvmc.yurinogueira.dev.br {
     # Certificado TLS local confiável para comunicação com o proxy Cloudflare (SSL Full)
     tls internal
 

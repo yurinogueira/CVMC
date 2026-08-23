@@ -42,6 +42,15 @@ resource "oci_core_instance" "server" {
   }
 
   preserve_boot_volume = true
+
+  lifecycle {
+    ignore_changes = [
+      metadata,
+      metadata["user_data"],
+      source_details[0].source_id,
+    ]
+    prevent_destroy = true
+  }
 }
 
 data "oci_core_vnic_attachments" "server_vnics" {
