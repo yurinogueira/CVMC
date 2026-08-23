@@ -1,6 +1,6 @@
 services:
   mongo:
-    image: mongo:7
+    image: mongo:8
     restart: unless-stopped
     volumes:
       - mongo_data:/data/db
@@ -30,7 +30,7 @@ services:
     restart: unless-stopped
 
   frontend:
-    image: node:22-alpine
+    image: node:26-alpine
     working_dir: /app
     command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
     depends_on:
