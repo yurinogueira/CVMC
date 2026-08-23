@@ -72,13 +72,10 @@ export default defineConfig({
             if (
               id.includes("react") ||
               id.includes("react-dom") ||
-              id.includes("react-router-dom") ||
-              id.includes("zustand") ||
-              id.includes("axios")
+              id.includes("react-router-dom")
             ) {
-              return "vendor-core";
+              return "vendor-react";
             }
-            return "vendor";
           }
         },
       },
