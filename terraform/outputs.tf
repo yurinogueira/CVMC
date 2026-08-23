@@ -12,7 +12,7 @@ output "instance_public_ip" {
 }
 
 output "instance_private_ip" {
-  value = oci_core_instance.server.private_ip
+  value = data.oci_core_private_ips.server_private_ips.private_ips[0].ip_address
 }
 
 output "object_storage_namespace" {

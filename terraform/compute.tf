@@ -46,8 +46,7 @@ resource "oci_core_instance" "server" {
   lifecycle {
     ignore_changes = [
       metadata,
-      metadata["user_data"],
-      source_details[0].source_id,
+      source_details,
     ]
     prevent_destroy = true
   }
