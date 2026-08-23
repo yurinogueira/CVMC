@@ -45,8 +45,10 @@ jobs:
 
       - name: Terraform Validate
         run: |
-          if ! terraform validate; then
-            echo "::error::Terraform validate failed"
-            terraform validate -json || true
+          OUT=$(terraform validate 2>&1 || true)
+          echo "$OUT"
+          if echo "$OUT" | grep -iq "Error:"; then
+            MSG=$(echo "$OUT" | tr '\n' ' ')
+            echo "::error title=Terraform Validation Error::$MSG"
             exit 1
           fi
