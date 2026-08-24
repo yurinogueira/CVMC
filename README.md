@@ -2,18 +2,17 @@
 
 <div align="center">
 
-[![Go](https://img.shields.io/badge/Go-1.25-00ADD8?style=for-the-badge&logo=go&logoColor=white)](https://golang.org/)
-[![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Material UI](https://img.shields.io/badge/Material_UI-v6-007FFF?style=for-the-badge&logo=mui&logoColor=white)](https://mui.com/)
-[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
-[![CI Backend](https://img.shields.io/github/actions/workflow/status/yurinogueira/CVMC/ci-backend.yml?branch=main&label=CI%20Backend&style=for-the-badge)](https://github.com/yurinogueira/CVMC/actions/workflows/ci-backend.yml)
-[![CI Frontend](https://img.shields.io/github/actions/workflow/status/yurinogueira/CVMC/ci-frontend.yml?branch=main&label=CI%20Frontend&style=for-the-badge)](https://github.com/yurinogueira/CVMC/actions/workflows/ci-frontend.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+![Go](https://img.shields.io/badge/Go-1.25-00ADD8?style=for-the-badge&logo=go&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![Material UI](https://img.shields.io/badge/Material_UI-v6-007FFF?style=for-the-badge&logo=mui&logoColor=white)
+![CI Backend](https://img.shields.io/github/actions/workflow/status/yurinogueira/CVMC/ci-backend.yml?branch=main&label=CI%20Backend&style=for-the-badge)
+![CI Frontend](https://img.shields.io/github/actions/workflow/status/yurinogueira/CVMC/ci-frontend.yml?branch=main&label=CI%20Frontend&style=for-the-badge)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)
 
 **Plataforma moderna para gestão, controle de custos e histórico de manutenção veicular.**
 
-[Acessar Web App](https://cvmc.yurinogueira.dev.br) • [API Swagger Docs](https://api-cvmc.yurinogueira.dev.br/swagger/index.html) • [Reportar Problema](https://github.com/yurinogueira/CVMC/issues)
+[Acessar Web App](https://cvmc.yurinogueira.dev.br)
 
 </div>
 
@@ -23,9 +22,7 @@
 
 | Serviço | URL | Descrição |
 | :--- | :--- | :--- |
-| **🌐 Web App (Frontend)** | [cvmc.yurinogueira.dev.br](https://cvmc.yurinogueira.dev.br) | Aplicação SPA em produção (GitHub Pages + Cloudflare) |
-| **🔌 API Backend** | [api-cvmc.yurinogueira.dev.br](https://api-cvmc.yurinogueira.dev.br) | API RESTful Go hospedada em Oracle Cloud (OCI) |
-| **📖 Swagger Docs** | [api-cvmc.yurinogueira.dev.br/swagger/index.html](https://api-cvmc.yurinogueira.dev.br/swagger/index.html) | Documentação OpenAPI interativa dos endpoints |
+| **🌐 Web App** | [cvmc.yurinogueira.dev.br](https://cvmc.yurinogueira.dev.br) | Aplicação SPA em produção (GitHub Pages + Cloudflare) |
 
 ---
 
