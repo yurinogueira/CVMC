@@ -220,7 +220,9 @@ func handleAuthError(w http.ResponseWriter, err error) {
 	case errors.Is(err, authusecase.ErrEmailInUse):
 		httpx.Error(w, http.StatusConflict, "Email already in use", nil)
 	case errors.Is(err, authusecase.ErrWeakPassword):
-		httpx.Error(w, http.StatusBadRequest, "Password must be at least 8 characters", nil)
+		httpx.Error(w, http.StatusBadRequest, "Password must be between 8 and 72 characters", nil)
+	case errors.Is(err, authusecase.ErrInvalidInput):
+		httpx.Error(w, http.StatusBadRequest, "Invalid input: please verify name, email and password", nil)
 	case errors.Is(err, authusecase.ErrInvalidCredentials):
 		httpx.Error(w, http.StatusUnauthorized, "Invalid credentials", nil)
 	case errors.Is(err, authusecase.ErrInvalidToken):

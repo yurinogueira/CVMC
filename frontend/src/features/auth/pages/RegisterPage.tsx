@@ -43,13 +43,39 @@ export function RegisterPage() {
     e.preventDefault();
     setErrorMsg(null);
 
-    if (!name.trim() || !email.trim() || !password) {
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+
+    if (!trimmedName || !trimmedEmail || !password) {
       setErrorMsg("Por favor, preencha todos os campos obrigatórios.");
       return;
     }
 
-    if (password.length < 6) {
-      setErrorMsg("A senha deve conter no mínimo 6 caracteres.");
+    if (trimmedName.length < 2) {
+      setErrorMsg("O nome deve conter pelo menos 2 caracteres.");
+      return;
+    }
+
+    if (trimmedName.length > 100) {
+      setErrorMsg("O nome não pode exceder 100 caracteres.");
+      return;
+    }
+
+    if (
+      trimmedEmail.length > 254 ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)
+    ) {
+      setErrorMsg("Por favor, insira um endereço de e-mail válido.");
+      return;
+    }
+
+    if (password.length < 8) {
+      setErrorMsg("A senha deve conter no mínimo 8 caracteres.");
+      return;
+    }
+
+    if (password.length > 72) {
+      setErrorMsg("A senha não pode exceder 72 caracteres.");
       return;
     }
 
@@ -61,8 +87,8 @@ export function RegisterPage() {
     try {
       setLoading(true);
       const data = await authService.register({
-        name: name.trim(),
-        email: email.trim(),
+        name: trimmedName,
+        email: trimmedEmail,
         password,
       });
       setUser(data.user);
@@ -178,6 +204,7 @@ export function RegisterPage() {
                   disabled={loading}
                   required
                   slotProps={{
+                    htmlInput: { maxLength: 100 },
                     input: {
                       startAdornment: (
                         <InputAdornment position="start">
@@ -200,6 +227,7 @@ export function RegisterPage() {
                   disabled={loading}
                   required
                   slotProps={{
+                    htmlInput: { maxLength: 254 },
                     input: {
                       startAdornment: (
                         <InputAdornment position="start">
@@ -216,12 +244,13 @@ export function RegisterPage() {
                   fullWidth
                   label="Senha"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Mínimo 6 caracteres"
+                  placeholder="Mínimo 8 caracteres (máx. 72)"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={loading}
                   required
                   slotProps={{
+                    htmlInput: { maxLength: 72 },
                     input: {
                       startAdornment: (
                         <InputAdornment position="start">
@@ -260,6 +289,7 @@ export function RegisterPage() {
                   disabled={loading}
                   required
                   slotProps={{
+                    htmlInput: { maxLength: 72 },
                     input: {
                       startAdornment: (
                         <InputAdornment position="start">

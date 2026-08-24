@@ -161,6 +161,7 @@ export function LoginPage() {
                   disabled={loading}
                   required
                   slotProps={{
+                    htmlInput: { maxLength: 254 },
                     input: {
                       startAdornment: (
                         <InputAdornment position="start">
@@ -183,6 +184,7 @@ export function LoginPage() {
                   disabled={loading}
                   required
                   slotProps={{
+                    htmlInput: { maxLength: 72 },
                     input: {
                       startAdornment: (
                         <InputAdornment position="start">
