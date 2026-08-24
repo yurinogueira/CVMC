@@ -1,0 +1,86 @@
+name: ✨ Proposta de Feature
+description: Sugira uma nova funcionalidade, caso de uso ou melhoria para o CVMC.
+title: "feat: "
+labels: ["enhancement", "feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Obrigado por contribuir com novas ideias para o **CVMC**! Por favor, detalhe a proposta abaixo para facilitar a análise arquitetural e a execução técnica.
+
+  - type: textarea
+    id: user-story
+    attributes:
+      label: Visão Geral e Contexto de Negócio
+      description: Explique a motivação da funcionalidade e o valor entregue ao usuário (ex: formato de User Story).
+      placeholder: |
+        **Como** proprietário de veículo cadastrado no CVMC,
+        **Quero** receber alertas automáticos quando uma revisão preventiva estiver próxima do vencimento,
+        **Para que** eu não perca os prazos de manutenção recomendados.
+    validations:
+      required: true
+
+  - type: textarea
+    id: requirements-acceptance-criteria
+    attributes:
+      label: Requisitos Funcionais e Critérios de Aceite
+      description: Detalhe as regras de negócio esperadas e os critérios necessários para considerar a feature concluída.
+      placeholder: |
+        - [ ] O sistema deve permitir configurar intervalo de alerta (dias ou km).
+        - [ ] Na listagem de manutenções (`/maintenances`), destacar itens com status "Próximo".
+        - [ ] A API deve retornar o campo `isUpcoming: boolean` no DTO de resposta.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: impacted-layers
+    attributes:
+      label: Camadas Técnicas Impactadas
+      description: Selecione todas as camadas que precisarão de alterações ou novas implementações.
+      options:
+        - label: "Backend - Domínio e Contratos (`internal/domain/`, `internal/application/ports/`)"
+        - label: "Backend - Casos de Uso e Testes (`internal/application/usecase/`)"
+        - label: "Backend - Interfaces REST e Swagger (`internal/interfaces/rest/`, `./scripts/swagger.sh`)"
+        - label: "Backend - Infraestrutura / Banco MongoDB (`internal/infrastructure/`)"
+        - label: "Frontend - Telas e Componentes MUI (`frontend/src/features/`)"
+        - label: "Frontend - Gerenciamento de Estado Zustand e Serviços API (`auth.store`, `client.ts`)"
+        - label: "Infraestrutura / Docker Compose / Scripts de Suporte"
+    validations:
+      required: false
+
+  - type: textarea
+    id: technical-details
+    attributes:
+      label: Detalhes Técnicos e Arquitetura Proposta
+      description: Liste novos endpoints REST, DTOs, novos componentes React ou alterações de modelo.
+      placeholder: |
+        - **Novos Endpoints**: `GET /api/v1/maintenances/alerts`
+        - **Novos Componentes**: `MaintenanceAlertBanner.tsx` em `frontend/src/features/maintenance/`
+        - **Estado**: Adicionar action `fetchAlerts` em store Zustand.
+    validations:
+      required: false
+
+  - type: textarea
+    id: security-performance
+    attributes:
+      label: Considerações de Segurança e Performance
+      description: Especifique aspectos de segurança (ex: validação de ownership, cookies HttpOnly, rate limit, sanitização) e impacto em performance.
+      placeholder: |
+        - Validar que o usuário só pode acessar alertas dos seus próprios veículos (`userID` extraído do contexto de autenticação).
+        - Sanitizar inputs para evitar XSS e injeção NoSQL no MongoDB.
+    validations:
+      required: false
+
+  - type: textarea
+    id: implementation-checklist
+    attributes:
+      label: Checklist Sugerido de Implementação
+      description: Tarefas técnicas recomendadas para implementação e validação.
+      placeholder: |
+        - [ ] Criar testes unitários para o usecase no backend
+        - [ ] Implementar regra de negócio no backend e atualizar Swagger (`./scripts/swagger.sh`)
+        - [ ] Validar backend com `./scripts/check.sh backend`
+        - [ ] Implementar UI no frontend com componentes MUI e React 19
+        - [ ] Validar frontend com `./scripts/check.sh frontend`
+    validations:
+      required: false

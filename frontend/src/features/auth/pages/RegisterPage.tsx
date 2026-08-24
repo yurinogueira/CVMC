@@ -23,9 +23,11 @@ import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
 import { AuthHeroBanner } from "../components/AuthHeroBanner";
 import { authService } from "../services/auth.service";
 import { useAuthStore } from "../state/auth.store";
+import { useDocumentTitle } from "../../shared";
 import { brandColors } from "../../../styles/theme";
 
 export function RegisterPage() {
+  useDocumentTitle("Criar Conta");
   const navigate = useNavigate();
   const setUser = useAuthStore((state) => state.setUser);
 
@@ -147,6 +149,7 @@ export function RegisterPage() {
 
             <Box sx={{ mb: 3 }}>
               <Typography
+                component="h1"
                 variant="h4"
                 sx={{ fontWeight: 700, mb: 1, color: "text.primary" }}
               >

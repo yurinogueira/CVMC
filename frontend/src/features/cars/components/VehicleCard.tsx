@@ -64,6 +64,7 @@ export function VehicleCard({ car, onDelete }: VehicleCardProps) {
             <Box>
               <Typography
                 variant="subtitle1"
+                component="h3"
                 sx={{ fontWeight: 700, lineHeight: 1.2 }}
               >
                 {car.name}

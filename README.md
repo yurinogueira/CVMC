@@ -22,9 +22,7 @@
 
 | Serviço | URL | Descrição |
 | :--- | :--- | :--- |
-| **🌐 Web App (Frontend)** | [cvmc.yurinogueira.dev.br](https://cvmc.yurinogueira.dev.br) | Aplicação SPA em produção (GitHub Pages + Cloudflare) |
-| **🔌 API Backend** | `api-cvmc.yurinogueira.dev.br` | API RESTful Go hospedada em Oracle Cloud (OCI) |
-| **📖 Swagger Docs** | `api-cvmc.yurinogueira.dev.br/swagger/index.html` | Documentação OpenAPI interativa dos endpoints |
+| **🌐 Web App** | [cvmc.yurinogueira.dev.br](https://cvmc.yurinogueira.dev.br) | Aplicação SPA em produção (GitHub Pages + Cloudflare) |
 
 ---
 
@@ -92,8 +90,8 @@ CVMC/
 ## 🚀 Como Executar Localmente
 
 ### Pré-requisitos
-- Docker e Docker Compose instalados **OU**
-- Go 1.25+ e Node.js 22+
+- [Docker](https://www.docker.com/) e Docker Compose instalados **OU**
+- [Go 1.25+](https://golang.org/) e [Node.js 22+](https://nodejs.org/)
 
 ### 1. Clonar o Repositório
 
@@ -160,16 +158,16 @@ O repositório inclui utilitários em `scripts/` para desenvolvimento ágil e va
 
 ## 🔒 Segurança
 
-Diretrizes de segurança e canais para reporte responsável de vulnerabilidades estão documentados em `SECURITY.md`.
+Diretrizes de segurança e canais para reporte responsável de vulnerabilidades estão documentados em [SECURITY.md](.github/SECURITY.md).
 
 ---
 
 ## 📄 Licença
 
-Este projeto está sob a licença **MIT**. Consulte o arquivo `LICENSE` para mais detalhes.
+Este projeto está sob a licença **MIT**. Consulte o arquivo [LICENSE](LICENSE) para mais detalhes.
 
 ---
 
 <div align="center">
-Desenvolvido por Yuri Nogueira
+Desenvolvido por <a href="https://github.com/yurinogueira">Yuri Nogueira</a>
 </div>
