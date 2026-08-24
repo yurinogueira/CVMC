@@ -1,0 +1,95 @@
+name: 🐛 Relato de Bug
+description: Reporte um erro, falha ou comportamento inesperado no CVMC.
+title: "fix: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Obrigado por relatar o problema! Por favor, preencha as informações abaixo para que o problema possa ser analisado, reproduzido e corrigido rapidamente.
+
+  - type: textarea
+    id: problem-description
+    attributes:
+      label: Descrição do Problema
+      description: Descreva de forma clara e objetiva o que está acontecendo de forma incorreta.
+      placeholder: Ao tentar realizar a ação X, ocorre o erro Y...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: affected-component
+    attributes:
+      label: Componente / Camada Afetada
+      description: Selecione o componente principal onde o problema foi detectado.
+      options:
+        - "Backend (API Go / Clean Architecture)"
+        - "Frontend (React 19 / Vite / Material UI)"
+        - "Infraestrutura / Docker Compose / Scripts"
+        - "Banco de Dados / Migrações / MongoDB"
+        - "Autenticação / Sessão / Cookies HttpOnly"
+        - "Documentação / Swagger"
+    validations:
+      required: true
+
+  - type: textarea
+    id: affected-locations
+    attributes:
+      label: Onde o Problema Ocorre (Localização Técnica)
+      description: Especifique endpoints HTTP, rotas do frontend, arquivos de código, funções ou componentes impactados.
+      placeholder: |
+        - Rota / Endpoint: POST /api/v1/auth/login
+        - Arquivo(s): backend/internal/interfaces/rest/handlers/auth_handler.go
+        - Componente Frontend: frontend/src/features/auth/LoginPage.tsx
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Comportamento Esperado
+      description: Como o sistema deveria funcionar corretamente nesta situação?
+      placeholder: O sistema deveria responder HTTP 200 e configurar o cookie HttpOnly de sessão...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Passos para Reproduzir
+      description: Liste o passo a passo sequencial para reproduzir o bug.
+      placeholder: |
+        1. Executar `./scripts/dev.sh start`
+        2. Acessar `http://localhost:5173/login`
+        3. Preencher credenciais inválidas e clicar em "Entrar"
+        4. Observar que...
+    validations:
+      required: true
+
+  - type: textarea
+    id: technical-context
+    attributes:
+      label: Evidências e Contexto Técnico
+      description: Inclua logs, stack traces, respostas de erro da API (JSON), prints de tela ou payloads utilizados.
+      placeholder: |
+        ```json
+        {
+          "status": 500,
+          "error": "internal server error"
+        }
+        ```
+    validations:
+      required: false
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Gravidade / Severidade
+      description: Qual o impacto deste problema no funcionamento da aplicação?
+      options:
+        - "🔴 Bloqueante (Impede uso essencial da aplicação / Crash / Falha crítica de segurança)"
+        - "🟠 Alta (Funcionalidade importante quebrada sem workaround simples)"
+        - "🟡 Média (Problema relevante com contorno ou afeta fluxo secundário)"
+        - "🟢 Baixa (Ajuste visual, inconsistência textual ou melhoria cosmética)"
+    validations:
+      required: true
