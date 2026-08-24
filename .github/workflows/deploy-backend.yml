@@ -10,6 +10,16 @@ on:
       - '.github/workflows/deploy-backend.yml'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+env:
+  OCI_CLI_TENANCY: ${{ secrets.OCI_TENANCY_OCID }}
+  OCI_CLI_USER: ${{ secrets.OCI_USER_OCID }}
+  OCI_CLI_FINGERPRINT: ${{ secrets.OCI_FINGERPRINT }}
+  OCI_CLI_KEY_CONTENT: ${{ secrets.OCI_PRIVATE_KEY }}
+  OCI_CLI_REGION: ${{ secrets.OCI_REGION || 'sa-saopaulo-1' }}
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -32,7 +42,56 @@ jobs:
       - name: Build Go binary (linux/amd64 stripped)
         working-directory: ./backend
         run: |
-          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -trimpath -o ../dist/cvmc-api ./cmd/api
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+            go build -ldflags="-s -w" -trimpath \
+            -o ../dist/cvmc-api ./cmd/api
+
+      - name: Install OCI CLI
+        run: |
+          pip install oci-cli --quiet
+          oci --version
+
+      - name: Get runner public IP
+        id: runner-ip
+        run: |
+          RUNNER_IP=$(curl -s https://checkip.amazonaws.com)
+          echo "ip=${RUNNER_IP}" >> "$GITHUB_OUTPUT"
+          echo "Runner IP: ${RUNNER_IP}"
+
+      - name: Open SSH on NSG (temporary)
+        id: open-ssh
+        env:
+          NSG_ID: ${{ secrets.OCI_SSH_NSG_ID }}
+        run: |
+          RESULT=$(oci network nsg rules add \
+            --nsg-id "$NSG_ID" \
+            --security-rules "[{
+              \"direction\": \"INGRESS\",
+              \"protocol\": \"6\",
+              \"source\": \"${{ steps.runner-ip.outputs.ip }}/32\",
+              \"sourceType\": \"CIDR_BLOCK\",
+              \"isStateless\": false,
+              \"tcpOptions\": {
+                \"destinationPortRange\": {
+                  \"min\": 22,
+                  \"max\": 22
+                }
+              },
+              \"description\": \"Temporary SSH for GitHub Actions deploy\"
+            }]" 2>&1)
+          echo "$RESULT"
+          RULE_ID=$(echo "$RESULT" | python3 -c "
+          import sys, json
+          data = json.load(sys.stdin)
+          rules = data.get('data', {}).get('security-rules', [])
+          for r in rules:
+              if 'Temporary SSH' in r.get('description', ''):
+                  print(r['id'])
+                  break
+          ")
+          echo "rule_id=${RULE_ID}" >> "$GITHUB_OUTPUT"
+          echo "SSH rule added: ${RULE_ID}"
+          sleep 10
 
       - name: Setup SSH
         env:
@@ -40,7 +99,7 @@ jobs:
           HOST: ${{ secrets.OCI_HOST || '147.15.90.131' }}
         run: |
           if [ -z "$SSH_PRIVATE_KEY" ]; then
-            echo "::error::Secret OCI_SSH_PRIVATE_KEY não está configurada no GitHub!"
+            echo "::error::Secret OCI_SSH_PRIVATE_KEY not configured!"
             exit 1
           fi
           mkdir -p ~/.ssh
@@ -54,10 +113,13 @@ jobs:
           HOST: ${{ secrets.OCI_HOST || '147.15.90.131' }}
           USER: ${{ secrets.OCI_USERNAME || 'ubuntu' }}
         run: |
-          ssh "$USER@$HOST" "mkdir -p /tmp/cvmc-deploy/dist /tmp/cvmc-deploy/deploy/caddy /tmp/cvmc-deploy/deploy/systemd"
+          ssh "$USER@$HOST" "mkdir -p /tmp/cvmc-deploy/dist \
+            /tmp/cvmc-deploy/deploy/caddy /tmp/cvmc-deploy/deploy/systemd"
           scp dist/cvmc-api "$USER@$HOST:/tmp/cvmc-deploy/dist/"
-          scp deploy/systemd/cvmc-backend.service "$USER@$HOST:/tmp/cvmc-deploy/deploy/systemd/"
-          scp deploy/caddy/Caddyfile "$USER@$HOST:/tmp/cvmc-deploy/deploy/caddy/"
+          scp deploy/systemd/cvmc-backend.service \
+            "$USER@$HOST:/tmp/cvmc-deploy/deploy/systemd/"
+          scp deploy/caddy/Caddyfile \
+            "$USER@$HOST:/tmp/cvmc-deploy/deploy/caddy/"
 
       - name: Apply updates and restart services on OCI
         env:
@@ -68,24 +130,44 @@ jobs:
             set -euo pipefail
 
             # Instalar binário
-            sudo install -m 755 -o cvmc -g cvmc /tmp/cvmc-deploy/dist/cvmc-api /opt/cvmc/cvmc-api
+            sudo install -m 755 -o cvmc -g cvmc \
+              /tmp/cvmc-deploy/dist/cvmc-api /opt/cvmc/cvmc-api
 
             # Atualizar Caddyfile se modificado
             if [ -f /tmp/cvmc-deploy/deploy/caddy/Caddyfile ]; then
-              sudo cp /tmp/cvmc-deploy/deploy/caddy/Caddyfile /etc/caddy/Caddyfile
+              sudo cp /tmp/cvmc-deploy/deploy/caddy/Caddyfile \
+                /etc/caddy/Caddyfile
               sudo systemctl reload caddy || sudo systemctl restart caddy
             fi
 
             # Atualizar serviço Systemd se modificado
             if [ -f /tmp/cvmc-deploy/deploy/systemd/cvmc-backend.service ]; then
-              sudo cp /tmp/cvmc-deploy/deploy/systemd/cvmc-backend.service /etc/systemd/system/cvmc-backend.service
+              sudo cp /tmp/cvmc-deploy/deploy/systemd/cvmc-backend.service \
+                /etc/systemd/system/cvmc-backend.service
               sudo systemctl daemon-reload
             fi
 
             # Reiniciar aplicação Go
             sudo systemctl restart cvmc-backend
-            sudo systemctl is-active --quiet cvmc-backend && echo "cvmc-backend is running successfully!"
+            sudo systemctl is-active --quiet cvmc-backend \
+              && echo "cvmc-backend is running successfully!"
 
             # Limpar arquivos temporários
             rm -rf /tmp/cvmc-deploy
           EOF
+
+      - name: Close SSH on NSG (cleanup)
+        if: always()
+        env:
+          NSG_ID: ${{ secrets.OCI_SSH_NSG_ID }}
+        run: |
+          RULE_ID="${{ steps.open-ssh.outputs.rule_id }}"
+          if [ -n "$RULE_ID" ]; then
+            oci network nsg rules remove \
+              --nsg-id "$NSG_ID" \
+              --security-rule-ids "[\"${RULE_ID}\"]" \
+              --force
+            echo "SSH rule removed: ${RULE_ID}"
+          else
+            echo "No SSH rule to remove (rule_id was empty)"
+          fi

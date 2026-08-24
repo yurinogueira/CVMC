@@ -27,6 +27,11 @@ output "ssh_command" {
   value = "ssh ubuntu@${oci_core_public_ip.server_reserved_ip.ip_address}"
 }
 
+output "ssh_nsg_id" {
+  value       = oci_core_network_security_group.ssh.id
+  description = "OCID do NSG usado para regras dinâmicas de SSH"
+}
+
 output "mongodb_project_id" {
   value       = mongodbatlas_project.project.id
   description = "ID do projeto no MongoDB Atlas"
