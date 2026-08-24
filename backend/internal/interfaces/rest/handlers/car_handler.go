@@ -31,6 +31,10 @@ type CreateCarRequest struct {
 	YearManufacture int    `json:"yearManufacture" example:"2023"`
 	YearModel       int    `json:"yearModel" example:"2024"`
 	LastMileage     int    `json:"lastMileage" example:"32000"`
+	VehicleType     string `json:"vehicleType,omitempty" example:"cars"`
+	FIPECode        string `json:"fipeCode,omitempty" example:"005487-9"`
+	FIPEPrice       string `json:"fipePrice,omitempty" example:"R$ 150.000,00"`
+	Fuel            string `json:"fuel,omitempty" example:"Gasolina"`
 }
 
 type UpdateCarRequest struct {
@@ -40,6 +44,10 @@ type UpdateCarRequest struct {
 	YearManufacture int    `json:"yearManufacture" example:"2023"`
 	YearModel       int    `json:"yearModel" example:"2024"`
 	LastMileage     int    `json:"lastMileage" example:"35000"`
+	VehicleType     string `json:"vehicleType,omitempty" example:"cars"`
+	FIPECode        string `json:"fipeCode,omitempty" example:"005487-9"`
+	FIPEPrice       string `json:"fipePrice,omitempty" example:"R$ 150.000,00"`
+	Fuel            string `json:"fuel,omitempty" example:"Gasolina"`
 }
 
 type ShareCarRequest struct {
@@ -100,6 +108,10 @@ func (h *CarHandler) Create(w http.ResponseWriter, r *http.Request) {
 		YearManufacture: input.YearManufacture,
 		YearModel:       input.YearModel,
 		LastMileage:     input.LastMileage,
+		VehicleType:     input.VehicleType,
+		FIPECode:        input.FIPECode,
+		FIPEPrice:       input.FIPEPrice,
+		Fuel:            input.Fuel,
 	})
 	if err != nil {
 		handleCarError(w, err)
@@ -190,6 +202,10 @@ func (h *CarHandler) Update(w http.ResponseWriter, r *http.Request) {
 		YearManufacture: input.YearManufacture,
 		YearModel:       input.YearModel,
 		LastMileage:     input.LastMileage,
+		VehicleType:     input.VehicleType,
+		FIPECode:        input.FIPECode,
+		FIPEPrice:       input.FIPEPrice,
+		Fuel:            input.Fuel,
 	})
 	if err != nil {
 		handleCarError(w, err)

@@ -23,6 +23,8 @@ type Config struct {
 	TrustedProxies      []string
 	CookieDomain        string
 	CookieSecure        bool
+	FIPEToken           string
+	FIPEBaseURL         string
 }
 
 func Load() Config {
@@ -43,6 +45,8 @@ func Load() Config {
 		TrustedProxies:      parseCommaSeparated(getenv("TRUSTED_PROXIES", "127.0.0.1,::1")),
 		CookieDomain:        getenv("COOKIE_DOMAIN", ""),
 		CookieSecure:        getenv("COOKIE_SECURE", "true") == "true",
+		FIPEToken:           getenv("FIPE_API_TOKEN", ""),
+		FIPEBaseURL:         getenv("FIPE_BASE_URL", "https://fipe.parallelum.com.br/api/v2"),
 	}
 
 	// Prevent deploying with insecure JWT secrets in production.

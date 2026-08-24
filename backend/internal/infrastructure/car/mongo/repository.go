@@ -23,6 +23,10 @@ type carDoc struct {
 	YearManufacture int       `bson:"yearManufacture"`
 	YearModel       int       `bson:"yearModel"`
 	LastMileage     int       `bson:"lastMileage"`
+	VehicleType     string    `bson:"vehicleType,omitempty"`
+	FIPECode        string    `bson:"fipeCode,omitempty"`
+	FIPEPrice       string    `bson:"fipePrice,omitempty"`
+	Fuel            string    `bson:"fuel,omitempty"`
 	SharedWith      []string  `bson:"sharedWith"`
 	CreatedAt       time.Time `bson:"createdAt"`
 	UpdatedAt       time.Time `bson:"updatedAt"`
@@ -260,6 +264,10 @@ func toCarDoc(c domaincar.Car) carDoc {
 		YearManufacture: c.YearManufacture,
 		YearModel:       c.YearModel,
 		LastMileage:     c.LastMileage,
+		VehicleType:     strings.TrimSpace(c.VehicleType),
+		FIPECode:        strings.TrimSpace(c.FIPECode),
+		FIPEPrice:       strings.TrimSpace(c.FIPEPrice),
+		Fuel:            strings.TrimSpace(c.Fuel),
 		SharedWith:      shared,
 		CreatedAt:       c.CreatedAt,
 		UpdatedAt:       c.UpdatedAt,
@@ -280,6 +288,10 @@ func toDomainCar(d carDoc) domaincar.Car {
 		YearManufacture: d.YearManufacture,
 		YearModel:       d.YearModel,
 		LastMileage:     d.LastMileage,
+		VehicleType:     d.VehicleType,
+		FIPECode:        d.FIPECode,
+		FIPEPrice:       d.FIPEPrice,
+		Fuel:            d.Fuel,
 		SharedWith:      shared,
 		CreatedAt:       d.CreatedAt,
 		UpdatedAt:       d.UpdatedAt,

@@ -649,6 +649,256 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/fipe/{vehicleType}/brands": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna a lista de marcas para um tipo de veículo com cache multinível no MongoDB",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Fipe"
+                ],
+                "summary": "Listar marcas de veículos (Fipe)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tipo de veículo (cars, motorcycles, trucks)",
+                        "name": "vehicleType",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.SuccessEnvelope"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorEnvelope"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorEnvelope"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorEnvelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/fipe/{vehicleType}/brands/{brandId}/models": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna a lista de modelos de uma determinada marca com cache multinível no MongoDB",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Fipe"
+                ],
+                "summary": "Listar modelos de uma marca (Fipe)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tipo de veículo (cars, motorcycles, trucks)",
+                        "name": "vehicleType",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Código da marca Fipe",
+                        "name": "brandId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.SuccessEnvelope"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorEnvelope"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorEnvelope"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorEnvelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/fipe/{vehicleType}/brands/{brandId}/models/{modelId}/years": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna a lista de anos/versões de um determinado modelo com cache no MongoDB",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Fipe"
+                ],
+                "summary": "Listar anos e versões de um modelo (Fipe)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tipo de veículo (cars, motorcycles, trucks)",
+                        "name": "vehicleType",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Código da marca Fipe",
+                        "name": "brandId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Código do modelo Fipe",
+                        "name": "modelId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.SuccessEnvelope"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorEnvelope"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorEnvelope"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorEnvelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/fipe/{vehicleType}/brands/{brandId}/models/{modelId}/years/{yearId}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna os detalhes completos, código Fipe, combustível e preço de mercado atualizado",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Fipe"
+                ],
+                "summary": "Obter detalhes e preço Fipe de um veículo",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tipo de veículo (cars, motorcycles, trucks)",
+                        "name": "vehicleType",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Código da marca Fipe",
+                        "name": "brandId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Código do modelo Fipe",
+                        "name": "modelId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Código do ano Fipe (ex: 2023-1)",
+                        "name": "yearId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.SuccessEnvelope"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorEnvelope"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorEnvelope"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorEnvelope"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/maintenances/{maintenanceID}": {
             "put": {
                 "security": [
@@ -834,6 +1084,18 @@ const docTemplate = `{
         "handlers.CreateCarRequest": {
             "type": "object",
             "properties": {
+                "fipeCode": {
+                    "type": "string",
+                    "example": "005487-9"
+                },
+                "fipePrice": {
+                    "type": "string",
+                    "example": "R$ 150.000,00"
+                },
+                "fuel": {
+                    "type": "string",
+                    "example": "Gasolina"
+                },
                 "lastMileage": {
                     "type": "integer",
                     "example": 32000
@@ -849,6 +1111,10 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "example": "Meu Civic"
+                },
+                "vehicleType": {
+                    "type": "string",
+                    "example": "cars"
                 },
                 "yearManufacture": {
                     "type": "integer",
@@ -923,6 +1189,18 @@ const docTemplate = `{
         "handlers.UpdateCarRequest": {
             "type": "object",
             "properties": {
+                "fipeCode": {
+                    "type": "string",
+                    "example": "005487-9"
+                },
+                "fipePrice": {
+                    "type": "string",
+                    "example": "R$ 150.000,00"
+                },
+                "fuel": {
+                    "type": "string",
+                    "example": "Gasolina"
+                },
                 "lastMileage": {
                     "type": "integer",
                     "example": 35000
@@ -938,6 +1216,10 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "example": "Meu Civic"
+                },
+                "vehicleType": {
+                    "type": "string",
+                    "example": "cars"
                 },
                 "yearManufacture": {
                     "type": "integer",

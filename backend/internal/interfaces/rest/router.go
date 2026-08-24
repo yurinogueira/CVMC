@@ -9,6 +9,7 @@ import (
 	maintport "cvmc/internal/application/ports/maintenance"
 	userport "cvmc/internal/application/ports/user"
 	carusecase "cvmc/internal/application/usecase/car"
+	fipeusecase "cvmc/internal/application/usecase/fipe"
 	maintusecase "cvmc/internal/application/usecase/maintenance"
 	"cvmc/internal/config"
 	"cvmc/internal/interfaces/rest/handlers"
@@ -22,12 +23,13 @@ type Router struct {
 	handler http.Handler
 }
 
-func NewRouter(cfg config.Config, users userport.Repository, hasher portauth.PasswordHasher, tokens portauth.TokenService, cars carport.Repository, maintenances maintport.Repository) *Router {
+func NewRouter(cfg config.Config, users userport.Repository, hasher portauth.PasswordHasher, tokens portauth.TokenService, cars carport.Repository, maintenances maintport.Repository, fipeService *fipeusecase.Service) *Router {
 	mux := http.NewServeMux()
 	healthHandler := handlers.NewHealthHandler()
 	authHandler := handlers.NewAuthHandler(users, hasher, tokens, cfg.CookieDomain, cfg.CookieSecure)
 	carHandler := handlers.NewCarHandler(carusecase.NewService(cars, users), tokens)
 	maintenanceHandler := handlers.NewMaintenanceHandler(maintusecase.NewService(maintenances, cars), tokens)
+	fipeHandler := handlers.NewFipeHandler(fipeService, tokens)
 
 	// Rate limiters
 	globalLimiter := middleware.NewRateLimiter(100.0/60.0, 100, cfg.TrustedProxies...) // 100 req/min burst 100
@@ -68,6 +70,12 @@ func NewRouter(cfg config.Config, users userport.Repository, hasher portauth.Pas
 	mux.Handle("POST /api/v1/cars/{id}/maintenances", middleware.Chain(http.HandlerFunc(maintenanceHandler.Create), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
 	mux.Handle("PUT /api/v1/maintenances/{maintenanceID}", middleware.Chain(http.HandlerFunc(maintenanceHandler.Update), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
 	mux.Handle("DELETE /api/v1/maintenances/{maintenanceID}", middleware.Chain(http.HandlerFunc(maintenanceHandler.Delete), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
+
+	// Fipe endpoints
+	mux.Handle("GET /api/v1/fipe/{vehicleType}/brands", middleware.Chain(http.HandlerFunc(fipeHandler.ListBrands), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
+	mux.Handle("GET /api/v1/fipe/{vehicleType}/brands/{brandId}/models", middleware.Chain(http.HandlerFunc(fipeHandler.ListModels), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
+	mux.Handle("GET /api/v1/fipe/{vehicleType}/brands/{brandId}/models/{modelId}/years", middleware.Chain(http.HandlerFunc(fipeHandler.ListYears), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
+	mux.Handle("GET /api/v1/fipe/{vehicleType}/brands/{brandId}/models/{modelId}/years/{yearId}", middleware.Chain(http.HandlerFunc(fipeHandler.GetVehicleDetail), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
 
 	// Apply global middleware: Security Headers → CORS → Rate Limit → Body Limit → Mux
 	handler := middleware.SecurityHeaders(
