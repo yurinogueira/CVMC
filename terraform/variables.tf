@@ -20,12 +20,6 @@ variable "fingerprint" {
   sensitive   = true
 }
 
-variable "admin_cidr" {
-  description = "CIDR block allowed to SSH into the server"
-  type        = string
-  default     = "0.0.0.0/0"
-}
-
 variable "private_key_path" {
   description = "Conteúdo da chave privada de API OCI"
   type        = string

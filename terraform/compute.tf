@@ -25,6 +25,7 @@ resource "oci_core_instance" "server" {
     subnet_id                 = oci_core_subnet.public.id
     assign_public_ip          = false
     assign_private_dns_record = true
+    nsg_ids                   = [oci_core_network_security_group.ssh.id]
 
     hostname_label = "server"
   }
