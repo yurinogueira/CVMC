@@ -126,6 +126,18 @@ export function VehicleCard({ car, onDelete }: VehicleCardProps) {
               borderRadius: 1,
             }}
           />
+          {car.fipePrice && (
+            <Chip
+              label={`FIPE: ${car.fipePrice}`}
+              size="small"
+              sx={{
+                bgcolor: "rgba(76, 146, 252, 0.1)",
+                color: "primary.main",
+                fontWeight: 600,
+                borderRadius: 1,
+              }}
+            />
+          )}
         </Stack>
       </CardContent>
     </Card>

@@ -34,6 +34,10 @@ type CreateInput struct {
 	YearManufacture int
 	YearModel       int
 	LastMileage     int
+	VehicleType     string
+	FIPECode        string
+	FIPEPrice       string
+	Fuel            string
 }
 
 type UpdateInput struct {
@@ -43,6 +47,10 @@ type UpdateInput struct {
 	YearManufacture int
 	YearModel       int
 	LastMileage     int
+	VehicleType     string
+	FIPECode        string
+	FIPEPrice       string
+	Fuel            string
 }
 
 func NewService(cars carport.Repository, users userport.Repository) *Service {
@@ -61,6 +69,10 @@ func (s *Service) Create(ctx context.Context, ownerID string, input CreateInput)
 		YearManufacture: input.YearManufacture,
 		YearModel:       input.YearModel,
 		LastMileage:     input.LastMileage,
+		VehicleType:     strings.TrimSpace(input.VehicleType),
+		FIPECode:        strings.TrimSpace(input.FIPECode),
+		FIPEPrice:       strings.TrimSpace(input.FIPEPrice),
+		Fuel:            strings.TrimSpace(input.Fuel),
 		SharedWith:      []string{},
 		CreatedAt:       s.now().UTC(),
 		UpdatedAt:       s.now().UTC(),
@@ -102,6 +114,18 @@ func (s *Service) Update(ctx context.Context, actorID, carID string, input Updat
 	car.YearManufacture = input.YearManufacture
 	car.YearModel = input.YearModel
 	car.LastMileage = input.LastMileage
+	if input.VehicleType != "" {
+		car.VehicleType = strings.TrimSpace(input.VehicleType)
+	}
+	if input.FIPECode != "" {
+		car.FIPECode = strings.TrimSpace(input.FIPECode)
+	}
+	if input.FIPEPrice != "" {
+		car.FIPEPrice = strings.TrimSpace(input.FIPEPrice)
+	}
+	if input.Fuel != "" {
+		car.Fuel = strings.TrimSpace(input.Fuel)
+	}
 	car.UpdatedAt = s.now().UTC()
 	return s.cars.Update(ctx, car)
 }

@@ -6,6 +6,10 @@ export interface Car {
   yearManufacture: number;
   yearModel: number;
   lastMileage: number;
+  vehicleType?: string;
+  fipeCode?: string;
+  fipePrice?: string;
+  fuel?: string;
   ownerId: string;
   sharedWith?: string[];
   createdAt?: string;
@@ -19,6 +23,10 @@ export interface CreateCarPayload {
   yearManufacture: number;
   yearModel: number;
   lastMileage: number;
+  vehicleType?: string;
+  fipeCode?: string;
+  fipePrice?: string;
+  fuel?: string;
 }
 
 export interface UpdateCarPayload {
@@ -28,4 +36,8 @@ export interface UpdateCarPayload {
   yearManufacture: number;
   yearModel: number;
   lastMileage: number;
+  vehicleType?: string;
+  fipeCode?: string;
+  fipePrice?: string;
+  fuel?: string;
 }

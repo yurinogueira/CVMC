@@ -2,6 +2,15 @@ basePath: /
 definitions:
   handlers.CreateCarRequest:
     properties:
+      fipeCode:
+        example: 005487-9
+        type: string
+      fipePrice:
+        example: R$ 150.000,00
+        type: string
+      fuel:
+        example: Gasolina
+        type: string
       lastMileage:
         example: 32000
         type: integer
@@ -13,6 +22,9 @@ definitions:
         type: string
       name:
         example: Meu Civic
+        type: string
+      vehicleType:
+        example: cars
         type: string
       yearManufacture:
         example: 2023
@@ -65,6 +77,15 @@ definitions:
     type: object
   handlers.UpdateCarRequest:
     properties:
+      fipeCode:
+        example: 005487-9
+        type: string
+      fipePrice:
+        example: R$ 150.000,00
+        type: string
+      fuel:
+        example: Gasolina
+        type: string
       lastMileage:
         example: 35000
         type: integer
@@ -76,6 +97,9 @@ definitions:
         type: string
       name:
         example: Meu Civic
+        type: string
+      vehicleType:
+        example: cars
         type: string
       yearManufacture:
         example: 2023
@@ -532,6 +556,172 @@ paths:
       summary: Remover compartilhamento
       tags:
       - Cars
+  /api/v1/fipe/{vehicleType}/brands:
+    get:
+      description: Retorna a lista de marcas para um tipo de veículo com cache multinível
+        no MongoDB
+      parameters:
+      - description: Tipo de veículo (cars, motorcycles, trucks)
+        in: path
+        name: vehicleType
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Listar marcas de veículos (Fipe)
+      tags:
+      - Fipe
+  /api/v1/fipe/{vehicleType}/brands/{brandId}/models:
+    get:
+      description: Retorna a lista de modelos de uma determinada marca com cache multinível
+        no MongoDB
+      parameters:
+      - description: Tipo de veículo (cars, motorcycles, trucks)
+        in: path
+        name: vehicleType
+        required: true
+        type: string
+      - description: Código da marca Fipe
+        in: path
+        name: brandId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Listar modelos de uma marca (Fipe)
+      tags:
+      - Fipe
+  /api/v1/fipe/{vehicleType}/brands/{brandId}/models/{modelId}/years:
+    get:
+      description: Retorna a lista de anos/versões de um determinado modelo com cache
+        no MongoDB
+      parameters:
+      - description: Tipo de veículo (cars, motorcycles, trucks)
+        in: path
+        name: vehicleType
+        required: true
+        type: string
+      - description: Código da marca Fipe
+        in: path
+        name: brandId
+        required: true
+        type: string
+      - description: Código do modelo Fipe
+        in: path
+        name: modelId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Listar anos e versões de um modelo (Fipe)
+      tags:
+      - Fipe
+  /api/v1/fipe/{vehicleType}/brands/{brandId}/models/{modelId}/years/{yearId}:
+    get:
+      description: Retorna os detalhes completos, código Fipe, combustível e preço
+        de mercado atualizado
+      parameters:
+      - description: Tipo de veículo (cars, motorcycles, trucks)
+        in: path
+        name: vehicleType
+        required: true
+        type: string
+      - description: Código da marca Fipe
+        in: path
+        name: brandId
+        required: true
+        type: string
+      - description: Código do modelo Fipe
+        in: path
+        name: modelId
+        required: true
+        type: string
+      - description: 'Código do ano Fipe (ex: 2023-1)'
+        in: path
+        name: yearId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Obter detalhes e preço Fipe de um veículo
+      tags:
+      - Fipe
   /api/v1/maintenances/{maintenanceID}:
     delete:
       description: Remove o registro de manutenção
