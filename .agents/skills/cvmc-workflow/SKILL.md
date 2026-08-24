@@ -29,49 +29,51 @@ flowchart LR
 ## 📋 Protocolo de Execução Passo a Passo
 
 ### 1. Início da Tarefa & Preparação da Branch
-- Analise a issue utilizando o GitHub MCP (`get_issue`).
-- Garanta que está trabalhando em uma branch dedicada incluindo obrigatoriamente o **ID da issue**:
-  - Formato: `<tipo>/<id_da_issue>-<descricao-curta>`
-  - Exemplos:
-    - `feat/12-auth-refresh-token`: Novas funcionalidades vinculadas à issue #12.
-    - `fix/15-empty-results`: Correções de bugs vinculadas à issue #15.
-    - `docs/16-github-page-enhancement`: Documentação vinculada à issue #16.
-    - `refactor/18-database-adapter`: Refatorações vinculadas à issue #18.
-    - `chore/20-workflow-skill`: Tarefas e manutenções vinculadas à issue #20.
+- Analise a issue utilizando o GitHub MCP (`get_issue`) ou o contexto da tarefa solicitada.
+- Garanta que está trabalhando em uma branch dedicada a partir da `main` atualizada:
+  - **Com Issue vinculada**: `<tipo>/<id_da_issue>-<descricao-curta>`
+    - `feat/20-workflow-standardization`: Novas funcionalidades ou melhorias vinculadas à issue #20.
+    - `fix/21-auth-session-timeout`: Correções de bugs vinculadas à issue #21.
+    - `feat/22-fipe-cache-integration`: Features vinculadas à issue #22.
+  - **Sem Issue vinculada (manutenções internas/skills)**: `<tipo>/<descricao-curta>`
+    - `chore/skills-enhancement`: Ajustes de documentação interna e skills.
+    - `docs/readme-update`: Atualizações de documentação.
 
 ### 2. Desenvolvimento & Validação Mandatória
 - Execute as modificações necessárias seguindo as diretrizes da arquitetura (`cvmc-dev`) e segurança (`cvmc-security`).
-- Se houver alteração em rotas ou handlers HTTP da API Go, execute `./scripts/swagger.sh`.
-- Execute a checagem completa e assegure 100% de aprovação:
+- Se houver alteração em rotas ou handlers HTTP da API Go, execute obrigatoriamente:
+  ```bash
+  ./scripts/swagger.sh
+  ```
+- Execute a checagem completa e assegure 100% de aprovação antes de qualquer commit:
   ```bash
   ./scripts/check.sh all
   ```
 
 ### 3. Commits Semânticos (Conventional Commits)
-- Organize os commits de forma atômica seguindo o padrão Conventional Commits com referência à issue:
-  - Formato: `<tipo>(<escopo>): <descrição clara no imperativo> (#<id_da_issue>)`
-  - Exemplos:
-    - `feat(auth): implement refresh token rotation with httponly cookies (#12)`
-    - `fix(cars): handle empty results on car search filter (#15)`
-    - `docs(readme): add project badges, production urls and license (#16)`
-    - `chore(skills): add cvmc-workflow skill (#16)`
+- Organize os commits de forma atômica seguindo o padrão Conventional Commits:
+  - **Com Issue**: `<tipo>(<escopo>): <descrição clara no imperativo> (#<id_da_issue>)`
+    - `feat(workflows): unificar e padronizar pipelines de ci e deploy (#20)`
+    - `fix(auth): implementar silent refresh e sessao de 24h (#21)`
+    - `feat(cars): integrar fipe api com cache multinivel no mongodb (#22)`
+  - **Sem Issue**: `<tipo>(<escopo>): <descrição clara no imperativo>`
+    - `chore(skills): enhance cvmc-issues and cvmc-workflow guidelines`
 
 ### 4. Criação do Pull Request para `main` (GitHub MCP)
 - Faça o push da branch para o repositório remoto.
 - Abra o Pull Request apontando para a base `main` utilizando a ferramenta MCP do GitHub (`create_pull_request`):
-  - **Title**: `<tipo>(<escopo>): <título semântico claro> (#<id_da_issue>)`
-  - **Head**: `<nome-da-sua-branch>` (ex: `docs/16-github-page-enhancement`)
+  - **Title**: `<tipo>(<escopo>): <título semântico claro>` (com `(#<id_da_issue>)` se houver).
+  - **Head**: `<nome-da-sua-branch>`
   - **Base**: `main`
   - **Body**: Deve conter:
     - Resumo detalhado das alterações realizadas.
-    - Referência de fechamento da issue: `Closes #<id_da_issue>` ou `Resolves #<id_da_issue>`.
+    - Referência de fechamento se aplicável: `Closes #<id_da_issue>` ou `Resolves #<id_da_issue>`.
     - Checklist de validações executadas (`./scripts/check.sh all`, `./scripts/swagger.sh`).
 
 ### 5. Atualização e Fechamento da Issue (GitHub MCP)
-- Adicione um comentário no GitHub Issue utilizando o MCP do GitHub (`add_issue_comment`):
-  - Informe a conclusão da tarefa com resumo dos entregáveis.
-  - Anexe o link e número do Pull Request criado.
-- Atualize o status da issue para fechada utilizando `update_issue(state: "closed")` quando o trabalho for concluído.
+- Se a tarefa estiver vinculada a uma issue:
+  - Adicione um comentário na issue utilizando `add_issue_comment` informando a entrega com o link do PR criado.
+  - Atualize o status da issue para fechada utilizando `update_issue(state: "closed")` quando o trabalho for entregue.
 
 ---
 
