@@ -165,8 +165,7 @@ jobs:
           if [ -n "$RULE_ID" ]; then
             oci network nsg rules remove \
               --nsg-id "$NSG_ID" \
-              --security-rule-ids "[\"${RULE_ID}\"]" \
-              --no-confirm
+              --security-rule-ids "[\"${RULE_ID}\"]"
             echo "SSH rule removed: ${RULE_ID}"
           else
             echo "No SSH rule to remove (rule_id was empty)"
