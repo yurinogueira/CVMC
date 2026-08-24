@@ -15,12 +15,14 @@ Issues bem escritas garantem que agentes de IA e desenvolvedores possam implemen
 
 ## 🎯 Princípios Fundamentais para Criação de Issues
 
-1. **Investigação Prévia Obrigatória**: Antes de redigir a issue, explore a base de código para mapear os arquivos, rotas, contratos e componentes envolvidos.
-2. **Precisão de Localização**: Toda issue deve conter caminhos de arquivo exatos (`backend/...`, `frontend/...`), nomes de structs, funções, endpoints REST (`/api/v1/...`) e stores Zustand.
-3. **Título Semântico**: Use a convenção do Conventional Commits para títulos de issue:
+1. **Intenção de Especificação (User Story / Feature Issue)**: Quando o usuário solicitar "Crie uma feature...", "Especifique a user story...", "Levante os requisitos...", o objetivo principal é formular e registrar uma **Issue de alta precisão técnica e funcional**, detalhando os requisitos e critérios de aceite antes da codificação. A implementação ocorrerá posteriormente no ciclo de desenvolvimento (`cvmc-workflow`).
+2. **Investigação Prévia Obrigatória**: Antes de redigir a issue, explore a base de código para mapear os arquivos, rotas, contratos, workflows ou componentes envolvidos.
+3. **Precisão de Localização**: Toda issue deve conter caminhos de arquivo exatos (`backend/...`, `frontend/...`, `.github/workflows/...`, `terraform/...`), nomes de structs, funções, endpoints REST (`/api/v1/...`) ou jobs de pipeline.
+4. **Título Semântico**: Use a convenção do Conventional Commits para títulos de issue:
    - Bugs: `fix(<modulo>): <descrição sucinta em minúsculas>` (ex: `fix(auth): cookie de sessão não enviado na rota de perfil`)
-   - Features: `feat(<modulo>): <descrição sucinta em minúsculas>` (ex: `feat(maintenance): alerta de vencimento de revisão por quilometragem`)
-4. **Alinhamento Arquitetural**: Respeite os padrões documentados em `cvmc-dev` (Clean Arch + DDD no Go 1.25 e React 19 + MUI v6 no Frontend) e `cvmc-security` (Cookies HttpOnly, validação rigorosa de ownership, sanitização).
+   - Features/Melhorias: `feat(<modulo>): <descrição sucinta em minúsculas>` (ex: `feat(workflows): unificar e padronizar pipelines de ci e deploy`)
+   - Manutenções/Infra: `chore(<modulo>): <descrição sucinta>` ou `ci(<modulo>): <descrição sucinta>`
+5. **Alinhamento Arquitetural**: Respeite os padrões documentados em `cvmc-dev`, `cvmc-security` e as diretrizes de CI/CD do repositório.
 
 ---
 
@@ -31,7 +33,7 @@ Ao relatar um defeito, siga rigorosamente a seguinte estrutura:
 ### 1. Investigação do Bug
 - Identifique a causa raiz ou o ponto de falha navegando no repositório.
 - Colete payloads de requisição/resposta, logs do backend (`./scripts/dev.sh logs backend`) ou erros no console do frontend.
-- Identifique se o problema ocorre no backend, frontend, banco MongoDB, infraestrutura Docker ou documentação Swagger.
+- Identifique se o problema ocorre no backend, frontend, banco MongoDB, infraestrutura Docker, workflows de CI/CD ou documentação Swagger.
 
 ### 2. Estrutura Padrão do Relato de Bug
 
@@ -40,10 +42,10 @@ Ao relatar um defeito, siga rigorosamente a seguinte estrutura:
 [Descrição clara e objetiva do erro observado]
 
 ### Componente / Camada Afetada
-[Backend | Frontend | Infraestrutura / Docker | Banco MongoDB | Autenticação | Swagger]
+[Backend | Frontend | CI/CD & Workflows | Infraestrutura / Docker | Banco MongoDB | Autenticação | Swagger]
 
 ### Onde o Problema Ocorre (Localização Técnica)
-- **Rota / Endpoint**: `METODO /api/v1/...`
+- **Rota / Endpoint / Workflow**: `METODO /api/v1/...` ou `.github/workflows/arquivo.yml`
 - **Arquivo(s) Backend**: `backend/internal/.../arquivo.go` (função/método `NomeFuncao`)
 - **Componente(s) Frontend**: `frontend/src/features/.../Componente.tsx`
 - **Store / Serviço**: `frontend/src/features/.../store.ts`
@@ -71,58 +73,52 @@ Ao relatar um defeito, siga rigorosamente a seguinte estrutura:
 
 ---
 
-## ✨ Fluxo para Criação de Issues de Feature
+## ✨ Fluxo para Criação de Issues de Feature / User Story
 
-Ao propor uma nova funcionalidade ou melhoria técnica, detalhe a especificação funcional e arquitetural:
+Ao propor uma nova funcionalidade, melhoria técnica ou automação de infraestrutura/CI:
 
-### 1. Levantamento Arquitetural
-- Mapeie as camadas que serão impactadas no backend:
-  - Entidades e regras puras (`backend/internal/domain/`)
-  - Interfaces de repositório e serviços (`backend/internal/application/ports/`)
-  - Use cases e testes unitários (`backend/internal/application/usecase/`)
-  - Adapters de infraestrutura (`backend/internal/infrastructure/`)
-  - Handlers REST, rotas e Swagger (`backend/internal/interfaces/rest/`)
-- Mapeie o fluxo no frontend:
-  - Telas e componentes visuais (`frontend/src/features/<feature>/`)
-  - Estado global e stores Zustand (`frontend/src/features/<feature>/state/`)
-  - Integração com cliente Axios (`frontend/src/services/api/client.ts`)
+### 1. Levantamento Arquitetural & Escopo
+- Mapeie as camadas impactadas:
+  - **Backend**: Entidades (`internal/domain/`), Contratos (`internal/application/ports/`), Use Cases (`internal/application/usecase/`), Adapters (`internal/infrastructure/`), REST/Swagger (`internal/interfaces/rest/`).
+  - **Frontend**: Telas e componentes (`frontend/src/features/`), Stores Zustand (`features/<f>/state/`), Cliente API (`services/api/client.ts`).
+  - **CI/CD & DevOps**: Workflows (`.github/workflows/`), scripts auxiliares (`scripts/`), Terraform (`terraform/`), Docker (`docker-compose.yml`, `deploy/`).
 
-### 2. Estrutura Padrão da Proposta de Feature
+### 2. Estrutura Padrão da Proposta de Feature / User Story
 
 ```markdown
-### Visão Geral e Contexto de Negócio
-**Como** [tipo de usuário/ator],
-**Quero** [ação ou capacidade desejada],
-**Para que** [benefício ou valor entregue].
+### Visão Geral e Contexto de Negócio / Técnico
+**Como** [tipo de usuário/desenvolvedor/mantenedor],
+**Quero** [ação, capacidade ou automação desejada],
+**Para que** [benefício, redução de duplicidade, ganho de confiabilidade ou valor entregue].
 
 ### Requisitos Funcionais e Critérios de Aceite
-- [ ] [Critério 1: Regra de negócio específica]
-- [ ] [Critério 2: Validação de dados de entrada]
-- [ ] [Critério 3: Resposta da API ou comportamento da interface]
+- [ ] [Critério 1: Regra ou comportamento específico]
+- [ ] [Critério 2: Validação de entradas / triggers / concorrência]
+- [ ] [Critério 3: Resposta da API, comportamento da interface ou resultado de pipeline]
 
-### Camadas Técnicas Impactadas
-- [x] Backend - Domínio e Contratos (`internal/domain/`, `internal/application/ports/`)
-- [x] Backend - Casos de Uso e Testes (`internal/application/usecase/`)
-- [x] Backend - Interfaces REST e Swagger (`internal/interfaces/rest/`, `./scripts/swagger.sh`)
+### Camadas / Componentes Técnicos Impactados
+- [ ] Backend - Domínio e Contratos (`internal/domain/`, `internal/application/ports/`)
+- [ ] Backend - Casos de Uso e Testes (`internal/application/usecase/`)
+- [ ] Backend - Interfaces REST e Swagger (`internal/interfaces/rest/`, `./scripts/swagger.sh`)
 - [ ] Frontend - Telas e Componentes MUI (`frontend/src/features/`)
+- [ ] CI/CD & Workflows - GitHub Actions (`.github/workflows/`)
+- [ ] Infraestrutura & IaC - Terraform / Docker (`terraform/`, `deploy/`)
 
 ### Detalhes Técnicos e Arquitetura Proposta
-- **Endpoints REST**: `POST /api/v1/recurso`
-- **DTOs / Estruturas**: Structs em Go com tags `json:"camelCase"`
-- **Componentes UI**: Componentes do Design System MUI e ícones de `@mui/icons-material`
+- **Arquivos Criados / Modificados / Deletados**: Caminhos exatos no repositório.
+- **Triggers / Endpoints / Estruturas**: Detalhes de execução, parâmetros, contratos DTO ou eventos.
+- **Estratégia de Execução & Artefatos**: Reaproveitamento de compilação, jobs condicionais, dependências (`needs`).
 
-### Considerações de Segurança e Performance
-- Autenticação e autorização via cookies `HttpOnly` com validação de ownership (`userID`).
-- Defesa em profundidade (sanitização de inputs, rate limiting, CORS restrito).
-- Execução de testes compactos sem poluição de tokens (`./scripts/check.sh all`).
+### Considerações de Segurança, Performance e Concorrência
+- Princípio do menor privilégio em permissões (ex: `permissions: contents: read`, tokens restritos, cookies `HttpOnly`).
+- Concorrência e idempotência (`concurrency` com `cancel-in-progress` em PRs, integridade de branches).
+- Paridade com scripts locais de verificação (`./scripts/check.sh all`).
 
 ### Checklist de Implementação
-- [ ] Criar/atualizar entidades e interfaces no backend
-- [ ] Implementar caso de uso e testes unitários (`*_test.go`)
-- [ ] Adicionar handlers REST e anotações Swagger
-- [ ] Executar `./scripts/swagger.sh` e `./scripts/check.sh backend`
-- [ ] Implementar componentes e integração no frontend
-- [ ] Validar com `./scripts/check.sh frontend`
+- [ ] [Passo 1: Criação/ajuste de arquivos estruturais]
+- [ ] [Passo 2: Implementação dos fluxos principais / jobs / use cases]
+- [ ] [Passo 3: Remoção de arquivos obsoletos ou código redundante]
+- [ ] [Passo 4: Validação completa via `./scripts/check.sh all`]
 ```
 
 ---
@@ -141,9 +137,9 @@ Utilize a ferramenta `call_mcp_tool` chamando o servidor `github` e a tool `crea
   "Arguments": {
     "owner": "yurinogueira",
     "repo": "CVMC",
-    "title": "fix(auth): validar expiracao do cookie de sessao no middleware",
-    "body": "### Descrição do Problema\n...",
-    "labels": ["bug"]
+    "title": "feat(workflows): unificar e padronizar pipelines de ci e deploy",
+    "body": "### Visão Geral...\n...",
+    "labels": ["enhancement", "ci/cd"]
   }
 }
 ```
@@ -160,4 +156,4 @@ gh issue create \
 ```
 
 ### Opção 3: Apresentação Estruturada para Validação do Usuário
-Se o usuário solicitar apenas o rascunho ou a estruturação antes do envio, gere o Markdown completo dentro do chat ou artefato estruturado para revisão.
+Apresente a User Story / Issue completa com todos os critérios de aceite e detalhes arquiteturais para revisão do usuário antes ou durante a criação.
