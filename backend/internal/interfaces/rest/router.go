@@ -30,8 +30,8 @@ func NewRouter(cfg config.Config, users userport.Repository, hasher portauth.Pas
 	maintenanceHandler := handlers.NewMaintenanceHandler(maintusecase.NewService(maintenances, cars), tokens)
 
 	// Rate limiters
-	globalLimiter := middleware.NewRateLimiter(100.0/60.0, 100) // 100 req/min burst 100
-	authLimiter := middleware.NewRateLimiter(10.0/60.0, 10)     // 10 req/min burst 10
+	globalLimiter := middleware.NewRateLimiter(100.0/60.0, 100, cfg.TrustedProxies...) // 100 req/min burst 100
+	authLimiter := middleware.NewRateLimiter(10.0/60.0, 10, cfg.TrustedProxies...)     // 10 req/min burst 10
 
 	// Swagger: only available in debug mode
 	if cfg.LogLevel == "debug" {

@@ -20,6 +20,7 @@ type Config struct {
 	OCIStorageRegion    string
 	OCIStorageEndpoint  string
 	AllowedOrigins      []string
+	TrustedProxies      []string
 	CookieDomain        string
 	CookieSecure        bool
 }
@@ -38,7 +39,8 @@ func Load() Config {
 		OCIStorageNamespace: getenv("OCI_STORAGE_NAMESPACE", ""),
 		OCIStorageRegion:    getenv("OCI_STORAGE_REGION", "sa-saopaulo-1"),
 		OCIStorageEndpoint:  getenv("OCI_STORAGE_ENDPOINT", ""),
-		AllowedOrigins:      parseOrigins(getenv("ALLOWED_ORIGINS", "http://localhost:5173")),
+		AllowedOrigins:      parseCommaSeparated(getenv("ALLOWED_ORIGINS", "http://localhost:5173")),
+		TrustedProxies:      parseCommaSeparated(getenv("TRUSTED_PROXIES", "127.0.0.1,::1")),
 		CookieDomain:        getenv("COOKIE_DOMAIN", ""),
 		CookieSecure:        getenv("COOKIE_SECURE", "true") == "true",
 	}
@@ -64,13 +66,13 @@ func getenv(key, fallback string) string {
 	return fallback
 }
 
-func parseOrigins(raw string) []string {
-	var origins []string
-	for _, o := range strings.Split(raw, ",") {
-		o = strings.TrimSpace(o)
-		if o != "" {
-			origins = append(origins, o)
+func parseCommaSeparated(raw string) []string {
+	var items []string
+	for _, item := range strings.Split(raw, ",") {
+		item = strings.TrimSpace(item)
+		if item != "" {
+			items = append(items, item)
 		}
 	}
-	return origins
+	return items
 }
