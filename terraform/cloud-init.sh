@@ -31,9 +31,11 @@ fi
 echo "=== Configurando usuário e diretórios ==="
 id -u cvmc &>/dev/null || useradd -r -s /bin/false -d /opt/cvmc cvmc
 mkdir -p /opt/cvmc /etc/cvmc
+touch /etc/cvmc/backend.env
 chown -R cvmc:cvmc /opt/cvmc
 chown -R root:cvmc /etc/cvmc
 chmod 750 /etc/cvmc
+chmod 640 /etc/cvmc/backend.env
 
 # 5. Configurar regras de firewall na instância OCI (Ubuntu)
 echo "=== Configurando regras de Firewall (Portas 80 e 443) ==="

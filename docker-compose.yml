@@ -23,6 +23,8 @@ services:
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5173}
       COOKIE_DOMAIN: ${COOKIE_DOMAIN:-}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      FIPE_API_TOKEN: ${FIPE_API_TOKEN:-}
+      FIPE_BASE_URL: ${FIPE_BASE_URL:-https://fipe.parallelum.com.br/api/v2}
     ports:
       - "8080:8080"
     volumes:
