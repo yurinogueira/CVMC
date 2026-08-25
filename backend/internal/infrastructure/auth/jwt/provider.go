@@ -32,11 +32,15 @@ type jwtClaims struct {
 }
 
 func NewProvider(accessSecret, refreshSecret string) *Provider {
+	return NewProviderWithTTL(accessSecret, refreshSecret, 24*time.Hour, 7*24*time.Hour)
+}
+
+func NewProviderWithTTL(accessSecret, refreshSecret string, accessTTL, refreshTTL time.Duration) *Provider {
 	return &Provider{
 		accessSecret:  []byte(accessSecret),
 		refreshSecret: []byte(refreshSecret),
-		accessTTL:     15 * time.Minute,
-		refreshTTL:    7 * 24 * time.Hour,
+		accessTTL:     accessTTL,
+		refreshTTL:    refreshTTL,
 	}
 }
 
