@@ -25,6 +25,12 @@ const AddCarDialog = lazy(() =>
   })),
 );
 
+const EditCarDialog = lazy(() =>
+  import("../components/EditCarDialog").then((m) => ({
+    default: m.EditCarDialog,
+  })),
+);
+
 export function VehiclesPage() {
   useDocumentTitle("Meus Veículos");
   const [cars, setCars] = useState<Car[]>([]);
@@ -32,6 +38,8 @@ export function VehiclesPage() {
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [openAddDialog, setOpenAddDialog] = useState(false);
+  const [editingCar, setEditingCar] = useState<Car | null>(null);
+  const [openEditDialog, setOpenEditDialog] = useState(false);
 
   const fetchCars = async () => {
     try {
@@ -69,6 +77,17 @@ export function VehiclesPage() {
 
   const handleCarCreated = (newCar: Car) => {
     setCars((prev) => [newCar, ...prev]);
+  };
+
+  const handleEditCar = (car: Car) => {
+    setEditingCar(car);
+    setOpenEditDialog(true);
+  };
+
+  const handleCarUpdated = (updatedCar: Car) => {
+    setCars((prev) =>
+      prev.map((c) => (c.id === updatedCar.id ? updatedCar : c)),
+    );
   };
 
   const handleDeleteCar = async (carId: string) => {
@@ -243,7 +262,11 @@ export function VehiclesPage() {
         <Grid container spacing={3}>
           {filteredCars.map((car) => (
             <Grid size={{ xs: 12, sm: 6, md: 4 }} key={car.id}>
-              <VehicleCard car={car} onDelete={handleDeleteCar} />
+              <VehicleCard
+                car={car}
+                onEdit={handleEditCar}
+                onDelete={handleDeleteCar}
+              />
             </Grid>
           ))}
         </Grid>
@@ -256,6 +279,21 @@ export function VehiclesPage() {
             open={openAddDialog}
             onClose={() => setOpenAddDialog(false)}
             onCarCreated={handleCarCreated}
+          />
+        </Suspense>
+      )}
+
+      {/* Edit Dialog (Lazy Loaded) */}
+      {openEditDialog && editingCar && (
+        <Suspense fallback={null}>
+          <EditCarDialog
+            open={openEditDialog}
+            car={editingCar}
+            onClose={() => {
+              setOpenEditDialog(false);
+              setEditingCar(null);
+            }}
+            onCarUpdated={handleCarUpdated}
           />
         </Suspense>
       )}
