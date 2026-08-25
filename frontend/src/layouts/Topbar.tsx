@@ -18,6 +18,7 @@ import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
 import DirectionsCarRoundedIcon from "@mui/icons-material/DirectionsCarRounded";
 import { useAuthStore } from "../features/auth/state/auth.store";
+import { authService } from "../features/auth/services/auth.service";
 
 interface TopbarProps {
   onDrawerToggle: () => void;
@@ -45,8 +46,13 @@ export function Topbar({ onDrawerToggle }: TopbarProps) {
     setAnchorEl(null);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     handleMenuClose();
+    try {
+      await authService.logout();
+    } catch {
+      // Ignore network error during logout
+    }
     clear();
     navigate("/login", { replace: true });
   };

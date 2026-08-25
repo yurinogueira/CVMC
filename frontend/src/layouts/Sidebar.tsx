@@ -20,6 +20,7 @@ import BuildRoundedIcon from "@mui/icons-material/BuildRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import { brandColors } from "../styles/theme";
 import { useAuthStore } from "../features/auth/state/auth.store";
+import { authService } from "../features/auth/services/auth.service";
 
 export const DRAWER_WIDTH = 260;
 
@@ -51,7 +52,12 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
   const navigate = useNavigate();
   const { user, clear } = useAuthStore();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+    } catch {
+      // Ignore network error during logout
+    }
     clear();
     navigate("/login", { replace: true });
   };

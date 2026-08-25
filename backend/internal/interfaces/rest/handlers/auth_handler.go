@@ -173,7 +173,7 @@ func (h *AuthHandler) setTokenCookies(w http.ResponseWriter, accessToken, refres
 		Value:    accessToken,
 		Path:     "/",
 		Domain:   h.cookieDomain,
-		MaxAge:   900, // 15 minutes
+		MaxAge:   24 * 3600, // 24 hours
 		HttpOnly: true,
 		Secure:   h.cookieSecure,
 		SameSite: http.SameSiteLaxMode,
