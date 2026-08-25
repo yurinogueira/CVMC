@@ -6,8 +6,8 @@
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![Material UI](https://img.shields.io/badge/Material_UI-v6-007FFF?style=for-the-badge&logo=mui&logoColor=white)
-![CI Backend](https://img.shields.io/github/actions/workflow/status/yurinogueira/CVMC/ci-backend.yml?branch=main&label=CI%20Backend&style=for-the-badge)
-![CI Frontend](https://img.shields.io/github/actions/workflow/status/yurinogueira/CVMC/ci-frontend.yml?branch=main&label=CI%20Frontend&style=for-the-badge)
+![CI Backend](https://img.shields.io/github/actions/workflow/status/yurinogueira/CVMC/backend.yml?branch=main&label=CI%20Backend&style=for-the-badge)
+![CI Frontend](https://img.shields.io/github/actions/workflow/status/yurinogueira/CVMC/frontend.yml?branch=main&label=CI%20Frontend&style=for-the-badge)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)
 
 **Plataforma moderna para gestão, controle de custos e histórico de manutenção veicular.**

@@ -1,6 +1,18 @@
 name: Terraform
 
 on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'terraform/**'
+      - '.github/workflows/terraform.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'terraform/**'
+      - '.github/workflows/terraform.yml'
   workflow_dispatch:
     inputs:
       apply:
@@ -9,39 +21,22 @@ on:
         type: boolean
         default: false
 
+concurrency:
+  group: terraform-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 permissions:
   contents: read
 
-env:
-  TF_VAR_tenancy_ocid: ${{ secrets.OCI_TENANCY_OCID }}
-  TF_VAR_compartment_ocid: ${{ secrets.OCI_COMPARTMENT_OCID }}
-  TF_VAR_user_ocid: ${{ secrets.OCI_USER_OCID }}
-  TF_VAR_fingerprint: ${{ secrets.OCI_FINGERPRINT }}
-  TF_VAR_private_key: ${{ secrets.OCI_PRIVATE_KEY }}
-  TF_VAR_private_key_path: /tmp/oci_api_key.pem
-  TF_VAR_region: ${{ secrets.OCI_REGION || 'sa-saopaulo-1' }}
-  TF_VAR_availability_domain: ${{ secrets.OCI_AVAILABILITY_DOMAIN }}
-  TF_VAR_ssh_public_key: ${{ secrets.OCI_SSH_PUBLIC_KEY }}
-  TF_VAR_atlas_org_id: ${{ secrets.MONGODB_ATLAS_ORG_ID }}
-  TF_VAR_atlas_public_key: ${{ secrets.MONGODB_ATLAS_PUBLIC_KEY }}
-  TF_VAR_atlas_private_key: ${{ secrets.MONGODB_ATLAS_PRIVATE_KEY }}
-  TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-  TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
-  TF_VAR_github_pages_target: ${{ vars.GH_PAGES_TARGET || 'yurinogueira.github.io' }}
-  TF_STATE_KEY: terraform.tfstate
-
 jobs:
-  terraform:
-    name: Terraform
+  validate:
+    name: Terraform Lint & Validate
     runs-on: ubuntu-latest
-    environment: manual-approval
-
     defaults:
       run:
         working-directory: terraform
-
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v7
 
       - name: Setup Terraform
@@ -50,8 +45,50 @@ jobs:
           terraform_version: 1.15.9
           terraform_wrapper: false
 
-      - name: Terraform Format
+      - name: Terraform Format Check
         run: terraform fmt -check -recursive
+
+      - name: Terraform Init (No Backend)
+        run: terraform init -backend=false
+
+      - name: Terraform Validate
+        run: terraform validate -no-color
+
+  plan-apply:
+    name: Terraform Plan & Apply
+    needs: [validate]
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: manual-approval
+    defaults:
+      run:
+        working-directory: terraform
+    env:
+      TF_VAR_tenancy_ocid: ${{ secrets.OCI_TENANCY_OCID }}
+      TF_VAR_compartment_ocid: ${{ secrets.OCI_COMPARTMENT_OCID }}
+      TF_VAR_user_ocid: ${{ secrets.OCI_USER_OCID }}
+      TF_VAR_fingerprint: ${{ secrets.OCI_FINGERPRINT }}
+      TF_VAR_private_key: ${{ secrets.OCI_PRIVATE_KEY }}
+      TF_VAR_private_key_path: /tmp/oci_api_key.pem
+      TF_VAR_region: ${{ secrets.OCI_REGION || 'sa-saopaulo-1' }}
+      TF_VAR_availability_domain: ${{ secrets.OCI_AVAILABILITY_DOMAIN }}
+      TF_VAR_ssh_public_key: ${{ secrets.OCI_SSH_PUBLIC_KEY }}
+      TF_VAR_atlas_org_id: ${{ secrets.MONGODB_ATLAS_ORG_ID }}
+      TF_VAR_atlas_public_key: ${{ secrets.MONGODB_ATLAS_PUBLIC_KEY }}
+      TF_VAR_atlas_private_key: ${{ secrets.MONGODB_ATLAS_PRIVATE_KEY }}
+      TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+      TF_VAR_github_pages_target: ${{ vars.GH_PAGES_TARGET || 'yurinogueira.github.io' }}
+      TF_STATE_KEY: terraform.tfstate
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: 1.15.9
+          terraform_wrapper: false
 
       - name: Write OCI private key
         run: |
@@ -69,9 +106,6 @@ jobs:
             -backend-config="user_ocid=${TF_VAR_user_ocid}" \
             -backend-config="fingerprint=${TF_VAR_fingerprint}" \
             -backend-config="private_key_path=/tmp/oci_api_key.pem"
-
-      - name: Terraform Validate
-        run: terraform validate -no-color
 
       - name: Terraform Plan
         run: |
