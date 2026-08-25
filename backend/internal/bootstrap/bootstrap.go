@@ -62,7 +62,7 @@ func New(ctx context.Context, cfg config.Config) (*App, error) {
 
 		bootstrapper := mongoinfra.NewBootstrapper(
 			db,
-			[]string{"users", "cars", "maintenances", "marcas"},
+			[]string{"users", "cars", "maintenances", "brands"},
 			uMongo,
 			cMongo,
 			mMongo,
@@ -74,7 +74,7 @@ func New(ctx context.Context, cfg config.Config) (*App, error) {
 			return nil, fmt.Errorf("failed to bootstrap mongodb collections and indexes: %w", err)
 		}
 
-		log.Printf("Successfully bootstrapped MongoDB collections (users, cars, maintenances, marcas) and indexes on %q", cfg.MongoDatabase)
+		log.Printf("Successfully bootstrapped MongoDB collections (users, cars, maintenances, brands) and indexes on %q", cfg.MongoDatabase)
 
 		users = uMongo
 		cars = cMongo
