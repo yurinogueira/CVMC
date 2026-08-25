@@ -47,7 +47,9 @@ func (s *Service) GetBrands(ctx context.Context, vehicleType domainfipe.VehicleT
 	if s.client != nil {
 		externalBrands, fetchErr := s.client.FetchBrands(ctx, vehicleType)
 		if fetchErr == nil && len(externalBrands) > 0 {
-			_ = s.repo.UpsertBrands(ctx, vehicleType, externalBrands, s.now().UTC())
+			if saveErr := s.repo.UpsertBrands(ctx, vehicleType, externalBrands, s.now().UTC()); saveErr != nil {
+				log.Printf("[ERROR] Failed to save brands in database: %v", saveErr)
+			}
 			return externalBrands, nil
 		}
 		log.Printf("[WARN] Failed to fetch brands from external FIPE API: %v", fetchErr)
@@ -76,7 +78,9 @@ func (s *Service) GetModels(ctx context.Context, vehicleType domainfipe.VehicleT
 	if s.client != nil {
 		externalModels, fetchErr := s.client.FetchModels(ctx, vehicleType, brandCode)
 		if fetchErr == nil && len(externalModels) > 0 {
-			_ = s.repo.UpdateModels(ctx, vehicleType, brandCode, externalModels, s.now().UTC())
+			if saveErr := s.repo.UpdateModels(ctx, vehicleType, brandCode, externalModels, s.now().UTC()); saveErr != nil {
+				log.Printf("[ERROR] Failed to save models in database: %v", saveErr)
+			}
 			return externalModels, nil
 		}
 		log.Printf("[WARN] Failed to fetch models from external FIPE API: %v", fetchErr)
@@ -119,7 +123,9 @@ func (s *Service) GetYears(ctx context.Context, vehicleType domainfipe.VehicleTy
 	if s.client != nil {
 		externalYears, fetchErr := s.client.FetchYears(ctx, vehicleType, brandCode, modelCode)
 		if fetchErr == nil && len(externalYears) > 0 {
-			_ = s.repo.UpdateModelYears(ctx, vehicleType, brandCode, modelCode, externalYears, s.now().UTC())
+			if saveErr := s.repo.UpdateModelYears(ctx, vehicleType, brandCode, modelCode, externalYears, s.now().UTC()); saveErr != nil {
+				log.Printf("[ERROR] Failed to save years in database: %v", saveErr)
+			}
 			return externalYears, nil
 		}
 		log.Printf("[WARN] Failed to fetch years from external FIPE API: %v", fetchErr)
@@ -165,7 +171,9 @@ func (s *Service) GetVehicleDetail(ctx context.Context, vehicleType domainfipe.V
 	if s.client != nil {
 		detail, fetchErr := s.client.FetchVehicleDetail(ctx, vehicleType, brandCode, modelCode, yearCode)
 		if fetchErr == nil && detail.Price != "" {
-			_ = s.repo.UpdateYearDetail(ctx, vehicleType, brandCode, modelCode, yearCode, detail, s.now().UTC())
+			if saveErr := s.repo.UpdateYearDetail(ctx, vehicleType, brandCode, modelCode, yearCode, detail, s.now().UTC()); saveErr != nil {
+				log.Printf("[ERROR] Failed to save vehicle detail in database: %v", saveErr)
+			}
 			return detail, nil
 		}
 		log.Printf("[WARN] Failed to fetch vehicle detail from external FIPE API: %v", fetchErr)

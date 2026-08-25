@@ -109,17 +109,24 @@ func TestService_GetModelsAndYearsAndDetails(t *testing.T) {
 	ctx := context.Background()
 	repo := memoryfipe.NewRepository()
 
+	modelsFetchCount := 0
+	yearsFetchCount := 0
+	detailFetchCount := 0
+
 	client := &mockExternalClient{
 		brandsFunc: func(ctx context.Context, vt domainfipe.VehicleType) ([]domainfipe.Brand, error) {
 			return []domainfipe.Brand{{Code: "59", Name: "VW - VolksWagen"}}, nil
 		},
 		modelsFunc: func(ctx context.Context, vt domainfipe.VehicleType, brandCode string) ([]domainfipe.Model, error) {
+			modelsFetchCount++
 			return []domainfipe.Model{{Code: "5940", Name: "Gol 1.0"}}, nil
 		},
 		yearsFunc: func(ctx context.Context, vt domainfipe.VehicleType, brandCode, modelCode string) ([]domainfipe.Year, error) {
+			yearsFetchCount++
 			return []domainfipe.Year{{Code: "2023-1", Name: "2023 Gasolina"}}, nil
 		},
 		detailFunc: func(ctx context.Context, vt domainfipe.VehicleType, brandCode, modelCode, yearCode string) (domainfipe.VehicleDetail, error) {
+			detailFetchCount++
 			return domainfipe.VehicleDetail{
 				Brand:          "VW - VolksWagen",
 				Model:          "Gol 1.0",
@@ -142,7 +149,7 @@ func TestService_GetModelsAndYearsAndDetails(t *testing.T) {
 		t.Fatalf("failed to get brands: %v", err)
 	}
 
-	// Models
+	// Models - Call 1 (miss)
 	models, err := svc.GetModels(ctx, domainfipe.VehicleTypeCars, "59")
 	if err != nil || len(models) == 0 {
 		t.Fatalf("failed to get models: %v", err)
@@ -150,8 +157,20 @@ func TestService_GetModelsAndYearsAndDetails(t *testing.T) {
 	if models[0].Name != "Gol 1.0" {
 		t.Fatalf("expected Gol 1.0, got %s", models[0].Name)
 	}
+	if modelsFetchCount != 1 {
+		t.Fatalf("expected modelsFetchCount 1, got %d", modelsFetchCount)
+	}
 
-	// Years
+	// Models - Call 2 (cache hit, no external call)
+	models, err = svc.GetModels(ctx, domainfipe.VehicleTypeCars, "59")
+	if err != nil || len(models) == 0 {
+		t.Fatalf("failed to get models from cache: %v", err)
+	}
+	if modelsFetchCount != 1 {
+		t.Fatalf("expected modelsFetchCount still 1 on cache hit, got %d", modelsFetchCount)
+	}
+
+	// Years - Call 1 (miss)
 	years, err := svc.GetYears(ctx, domainfipe.VehicleTypeCars, "59", "5940")
 	if err != nil || len(years) == 0 {
 		t.Fatalf("failed to get years: %v", err)
@@ -159,13 +178,40 @@ func TestService_GetModelsAndYearsAndDetails(t *testing.T) {
 	if years[0].Code != "2023-1" {
 		t.Fatalf("expected 2023-1, got %s", years[0].Code)
 	}
+	if yearsFetchCount != 1 {
+		t.Fatalf("expected yearsFetchCount 1, got %d", yearsFetchCount)
+	}
 
-	// Detail
+	// Years - Call 2 (cache hit)
+	years, err = svc.GetYears(ctx, domainfipe.VehicleTypeCars, "59", "5940")
+	if err != nil || len(years) == 0 {
+		t.Fatalf("failed to get years from cache: %v", err)
+	}
+	if yearsFetchCount != 1 {
+		t.Fatalf("expected yearsFetchCount still 1 on cache hit, got %d", yearsFetchCount)
+	}
+
+	// Detail - Call 1 (miss)
 	detail, err := svc.GetVehicleDetail(ctx, domainfipe.VehicleTypeCars, "59", "5940", "2023-1")
 	if err != nil {
 		t.Fatalf("failed to get vehicle detail: %v", err)
 	}
 	if detail.CodeFipe != "005487-9" {
 		t.Fatalf("expected 005487-9, got %s", detail.CodeFipe)
+	}
+	if detailFetchCount != 1 {
+		t.Fatalf("expected detailFetchCount 1, got %d", detailFetchCount)
+	}
+
+	// Detail - Call 2 (cache hit)
+	detail, err = svc.GetVehicleDetail(ctx, domainfipe.VehicleTypeCars, "59", "5940", "2023-1")
+	if err != nil {
+		t.Fatalf("failed to get vehicle detail from cache: %v", err)
+	}
+	if detail.CodeFipe != "005487-9" {
+		t.Fatalf("expected 005487-9, got %s", detail.CodeFipe)
+	}
+	if detailFetchCount != 1 {
+		t.Fatalf("expected detailFetchCount still 1 on cache hit, got %d", detailFetchCount)
 	}
 }

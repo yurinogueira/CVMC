@@ -64,7 +64,7 @@ type VehicleDetail struct {
 }
 
 type BrandDocument struct {
-	ID               string          `bson:"_id,omitempty" json:"id,omitempty"`
+	ID               any             `bson:"_id,omitempty" json:"-"`
 	Code             string          `bson:"code" json:"code"`
 	Name             string          `bson:"name" json:"name"`
 	VehicleType      string          `bson:"vehicleType" json:"vehicleType"`
