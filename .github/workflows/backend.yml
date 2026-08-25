@@ -1,27 +1,32 @@
-name: Deploy Backend (Oracle OCI)
+name: Backend
 
 on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+      - 'deploy/**'
+      - '.github/workflows/backend.yml'
   push:
     branches:
       - main
     paths:
       - 'backend/**'
       - 'deploy/**'
-      - '.github/workflows/deploy-backend.yml'
+      - '.github/workflows/backend.yml'
   workflow_dispatch:
+
+concurrency:
+  group: backend-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 permissions:
   contents: read
 
-env:
-  OCI_CLI_TENANCY: ${{ secrets.OCI_TENANCY_OCID }}
-  OCI_CLI_USER: ${{ secrets.OCI_USER_OCID }}
-  OCI_CLI_FINGERPRINT: ${{ secrets.OCI_FINGERPRINT }}
-  OCI_CLI_KEY_CONTENT: ${{ secrets.OCI_PRIVATE_KEY }}
-  OCI_CLI_REGION: ${{ secrets.OCI_REGION || 'sa-saopaulo-1' }}
-
 jobs:
-  build-and-deploy:
+  build-and-test:
+    name: Build and Test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -33,7 +38,7 @@ jobs:
           go-version: '1.25'
           cache-dependency-path: backend/go.sum
 
-      - name: Run tests and vet
+      - name: Run Go vet & tests
         working-directory: ./backend
         run: |
           go vet ./...
@@ -45,6 +50,37 @@ jobs:
           CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
             go build -ldflags="-s -w" -trimpath \
             -o ../dist/cvmc-api ./cmd/api
+
+      - name: Upload backend binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-dist
+          path: dist/cvmc-api
+          retention-days: 1
+
+  deploy-oci:
+    name: Deploy to Oracle OCI
+    needs: [build-and-test]
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    env:
+      OCI_CLI_TENANCY: ${{ secrets.OCI_TENANCY_OCID }}
+      OCI_CLI_USER: ${{ secrets.OCI_USER_OCID }}
+      OCI_CLI_FINGERPRINT: ${{ secrets.OCI_FINGERPRINT }}
+      OCI_CLI_KEY_CONTENT: ${{ secrets.OCI_PRIVATE_KEY }}
+      OCI_CLI_REGION: ${{ secrets.OCI_REGION || 'sa-saopaulo-1' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Download backend binary artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-dist
+          path: dist
+
+      - name: Ensure binary executable
+        run: chmod +x dist/cvmc-api
 
       - name: Install OCI CLI
         run: |
