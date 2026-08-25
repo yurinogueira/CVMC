@@ -415,6 +415,10 @@ export function AddCarDialog({
                 <Autocomplete
                   options={brands}
                   getOptionLabel={(option) => option.name}
+                  getOptionKey={(option) => option.code}
+                  isOptionEqualToValue={(option, value) =>
+                    option.code === value.code
+                  }
                   value={selectedBrand}
                   onChange={(_, newValue) => handleBrandChange(newValue)}
                   loading={loadingBrands}
@@ -426,14 +430,15 @@ export function AddCarDialog({
                       placeholder="Busque a marca..."
                       required
                       slotProps={{
+                        ...params.slotProps,
                         input: {
-                          ...params.slotProps?.input,
+                          ...params.slotProps.input,
                           endAdornment: (
                             <>
                               {loadingBrands ? (
                                 <CircularProgress color="inherit" size={18} />
                               ) : null}
-                              {params.slotProps?.input?.endAdornment}
+                              {params.slotProps.input.endAdornment}
                             </>
                           ),
                         },
@@ -448,6 +453,10 @@ export function AddCarDialog({
                 <Autocomplete
                   options={models}
                   getOptionLabel={(option) => option.name}
+                  getOptionKey={(option) => option.code}
+                  isOptionEqualToValue={(option, value) =>
+                    option.code === value.code
+                  }
                   value={selectedModel}
                   onChange={(_, newValue) => handleModelChange(newValue)}
                   loading={loadingModels}
@@ -463,14 +472,15 @@ export function AddCarDialog({
                       }
                       required
                       slotProps={{
+                        ...params.slotProps,
                         input: {
-                          ...params.slotProps?.input,
+                          ...params.slotProps.input,
                           endAdornment: (
                             <>
                               {loadingModels ? (
                                 <CircularProgress color="inherit" size={18} />
                               ) : null}
-                              {params.slotProps?.input?.endAdornment}
+                              {params.slotProps.input.endAdornment}
                             </>
                           ),
                         },
@@ -485,6 +495,10 @@ export function AddCarDialog({
                 <Autocomplete
                   options={years}
                   getOptionLabel={(option) => option.name}
+                  getOptionKey={(option) => option.code}
+                  isOptionEqualToValue={(option, value) =>
+                    option.code === value.code
+                  }
                   value={selectedYear}
                   onChange={(_, newValue) => handleYearChange(newValue)}
                   loading={loadingYears}
@@ -500,14 +514,15 @@ export function AddCarDialog({
                       }
                       required
                       slotProps={{
+                        ...params.slotProps,
                         input: {
-                          ...params.slotProps?.input,
+                          ...params.slotProps.input,
                           endAdornment: (
                             <>
                               {loadingYears || loadingDetail ? (
                                 <CircularProgress color="inherit" size={18} />
                               ) : null}
-                              {params.slotProps?.input?.endAdornment}
+                              {params.slotProps.input.endAdornment}
                             </>
                           ),
                         },
