@@ -282,6 +282,21 @@ export function AddCarDialog({
       return;
     }
 
+    if (Number(lastMileage) < 0) {
+      setErrorMsg("A quilometragem não pode ser negativa.");
+      return;
+    }
+
+    if (
+      Number(yearManufacture) < 1900 ||
+      Number(yearManufacture) > currentYear + 1 ||
+      Number(yearModel) < 1900 ||
+      Number(yearModel) > currentYear + 2
+    ) {
+      setErrorMsg("Informe anos de fabricação e modelo válidos.");
+      return;
+    }
+
     try {
       setLoading(true);
       const newCar = await carService.create({
@@ -490,7 +505,7 @@ export function AddCarDialog({
                 />
               </Grid>
 
-              {/* Ano / Combustível */}
+              {/* Ano / Combustível / Versão */}
               <Grid size={{ xs: 12, md: 4 }}>
                 <Autocomplete
                   options={years}
@@ -506,10 +521,10 @@ export function AddCarDialog({
                   renderInput={(params) => (
                     <TextField
                       {...params}
-                      label="Ano / Versão"
+                      label="Modelo / Versão"
                       placeholder={
                         selectedModel
-                          ? "Selecione o ano..."
+                          ? "Selecione o modelo / versão..."
                           : "Selecione o modelo primeiro"
                       }
                       required
@@ -685,6 +700,45 @@ export function AddCarDialog({
                   value={lastMileage}
                   onChange={(e) => setLastMileage(Number(e.target.value))}
                   disabled={loading}
+                  slotProps={{
+                    htmlInput: {
+                      min: 0,
+                    },
+                  }}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  fullWidth
+                  label="Ano de Fabricação"
+                  type="number"
+                  placeholder="Ex: 2022"
+                  value={yearManufacture || ""}
+                  onChange={(e) => setYearManufacture(Number(e.target.value))}
+                  disabled={loading}
+                  slotProps={{
+                    htmlInput: {
+                      min: 1900,
+                      max: currentYear + 1,
+                    },
+                  }}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  fullWidth
+                  label="Ano do Modelo"
+                  type="number"
+                  placeholder="Ex: 2023"
+                  value={yearModel || ""}
+                  onChange={(e) => setYearModel(Number(e.target.value))}
+                  disabled={loading}
+                  slotProps={{
+                    htmlInput: {
+                      min: 1900,
+                      max: currentYear + 2,
+                    },
+                  }}
                 />
               </Grid>
             </Grid>

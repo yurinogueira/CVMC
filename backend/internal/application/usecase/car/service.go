@@ -108,12 +108,27 @@ func (s *Service) Update(ctx context.Context, actorID, carID string, input Updat
 	if car.OwnerID != actorID {
 		return domaincar.Car{}, ErrForbidden
 	}
-	car.Name = strings.TrimSpace(input.Name)
-	car.Manufacturer = strings.TrimSpace(input.Manufacturer)
-	car.Model = strings.TrimSpace(input.Model)
-	car.YearManufacture = input.YearManufacture
-	car.YearModel = input.YearModel
-	car.LastMileage = input.LastMileage
+	if input.LastMileage < 0 {
+		return domaincar.Car{}, ErrInvalidPayload
+	}
+	if strings.TrimSpace(input.Name) != "" {
+		car.Name = strings.TrimSpace(input.Name)
+	}
+	if strings.TrimSpace(input.Manufacturer) != "" {
+		car.Manufacturer = strings.TrimSpace(input.Manufacturer)
+	}
+	if strings.TrimSpace(input.Model) != "" {
+		car.Model = strings.TrimSpace(input.Model)
+	}
+	if input.YearManufacture > 0 {
+		car.YearManufacture = input.YearManufacture
+	}
+	if input.YearModel > 0 {
+		car.YearModel = input.YearModel
+	}
+	if input.LastMileage >= 0 {
+		car.LastMileage = input.LastMileage
+	}
 	if input.VehicleType != "" {
 		car.VehicleType = strings.TrimSpace(input.VehicleType)
 	}

@@ -11,16 +11,18 @@ import {
 import DirectionsCarFilledRoundedIcon from "@mui/icons-material/DirectionsCarFilledRounded";
 import SpeedRoundedIcon from "@mui/icons-material/SpeedRounded";
 import CalendarMonthRoundedIcon from "@mui/icons-material/CalendarMonthRounded";
+import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import { Car } from "../types/car.types";
 import { brandColors } from "../../../styles/theme";
 
 interface VehicleCardProps {
   car: Car;
+  onEdit?: (car: Car) => void;
   onDelete?: (id: string) => void;
 }
 
-export function VehicleCard({ car, onDelete }: VehicleCardProps) {
+export function VehicleCard({ car, onEdit, onDelete }: VehicleCardProps) {
   return (
     <Card
       elevation={0}
@@ -78,20 +80,39 @@ export function VehicleCard({ car, onDelete }: VehicleCardProps) {
             </Box>
           </Stack>
 
-          {onDelete && (
-            <Tooltip title="Remover veículo">
-              <IconButton
-                size="small"
-                onClick={() => onDelete(car.id)}
-                sx={{
-                  color: "text.secondary",
-                  "&:hover": { color: "#EF4444" },
-                }}
-              >
-                <DeleteOutlineRoundedIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          )}
+          <Stack direction="row" spacing={0.5}>
+            {onEdit && (
+              <Tooltip title="Editar veículo">
+                <IconButton
+                  size="small"
+                  onClick={() => onEdit(car)}
+                  sx={{
+                    color: "text.secondary",
+                    "&:hover": { color: "primary.main" },
+                  }}
+                  aria-label="Editar veículo"
+                >
+                  <EditRoundedIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+
+            {onDelete && (
+              <Tooltip title="Remover veículo">
+                <IconButton
+                  size="small"
+                  onClick={() => onDelete(car.id)}
+                  sx={{
+                    color: "text.secondary",
+                    "&:hover": { color: "#EF4444" },
+                  }}
+                  aria-label="Remover veículo"
+                >
+                  <DeleteOutlineRoundedIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+          </Stack>
         </Stack>
 
         {/* Badges / Details */}
