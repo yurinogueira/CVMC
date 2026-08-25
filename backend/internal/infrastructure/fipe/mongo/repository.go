@@ -175,41 +175,39 @@ func (r *Repository) UpdateModels(ctx context.Context, vehicleType domainfipe.Ve
 				{Key: "updatedAt", Value: syncTime},
 			},
 		},
+		{
+			Key: "$setOnInsert",
+			Value: bson.D{
+				{Key: "code", Value: brandCode},
+				{Key: "vehicleType", Value: string(vehicleType)},
+				{Key: "createdAt", Value: syncTime},
+			},
+		},
 	}
 
-	res, err := r.coll.UpdateOne(ctx, filter, update)
-	if err != nil {
-		return err
-	}
-	if res.MatchedCount == 0 {
-		return domainfipe.ErrBrandNotFound
-	}
-	return nil
+	opts := options.UpdateOne().SetUpsert(true)
+	_, err = r.coll.UpdateOne(ctx, filter, update, opts)
+	return err
 }
 
 func (r *Repository) UpdateModelYears(ctx context.Context, vehicleType domainfipe.VehicleType, brandCode string, modelCode string, years []domainfipe.Year, syncTime time.Time) error {
 	filter := bson.D{
 		{Key: "vehicleType", Value: string(vehicleType)},
 		{Key: "code", Value: brandCode},
-		{Key: "models.code", Value: modelCode},
 	}
 
 	// Fetch existing to preserve year details
 	var existing domainfipe.BrandDocument
-	err := r.coll.FindOne(ctx, bson.D{
-		{Key: "vehicleType", Value: string(vehicleType)},
-		{Key: "code", Value: brandCode},
-	}).Decode(&existing)
-	if err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return domainfipe.ErrBrandNotFound
-		}
+	err := r.coll.FindOne(ctx, filter).Decode(&existing)
+	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 		return err
 	}
 
+	modelFound := false
 	existingYearsMap := make(map[string]domainfipe.YearDocument)
 	for _, m := range existing.Models {
 		if m.Code == modelCode {
+			modelFound = true
 			for _, y := range m.Years {
 				existingYearsMap[y.Code] = y
 			}
@@ -234,25 +232,58 @@ func (r *Repository) UpdateModelYears(ctx context.Context, vehicleType domainfip
 		yearDocs = append(yearDocs, yDoc)
 	}
 
+	if modelFound {
+		updateFilter := bson.D{
+			{Key: "vehicleType", Value: string(vehicleType)},
+			{Key: "code", Value: brandCode},
+			{Key: "models.code", Value: modelCode},
+		}
+		update := bson.D{
+			{
+				Key: "$set",
+				Value: bson.D{
+					{Key: "models.$.years", Value: yearDocs},
+					{Key: "models.$.yearsLastSyncAt", Value: syncTime},
+					{Key: "updatedAt", Value: syncTime},
+				},
+			},
+		}
+		_, err = r.coll.UpdateOne(ctx, updateFilter, update)
+		return err
+	}
+
+	newModel := domainfipe.ModelDocument{
+		Code:            modelCode,
+		Name:            modelCode,
+		Years:           yearDocs,
+		YearsLastSyncAt: syncTime,
+	}
+
 	update := bson.D{
+		{
+			Key: "$push",
+			Value: bson.D{
+				{Key: "models", Value: newModel},
+			},
+		},
 		{
 			Key: "$set",
 			Value: bson.D{
-				{Key: "models.$.years", Value: yearDocs},
-				{Key: "models.$.yearsLastSyncAt", Value: syncTime},
 				{Key: "updatedAt", Value: syncTime},
 			},
 		},
+		{
+			Key: "$setOnInsert",
+			Value: bson.D{
+				{Key: "code", Value: brandCode},
+				{Key: "vehicleType", Value: string(vehicleType)},
+				{Key: "createdAt", Value: syncTime},
+			},
+		},
 	}
-
-	res, err := r.coll.UpdateOne(ctx, filter, update)
-	if err != nil {
-		return err
-	}
-	if res.MatchedCount == 0 {
-		return domainfipe.ErrModelNotFound
-	}
-	return nil
+	opts := options.UpdateOne().SetUpsert(true)
+	_, err = r.coll.UpdateOne(ctx, filter, update, opts)
+	return err
 }
 
 func (r *Repository) UpdateYearDetail(ctx context.Context, vehicleType domainfipe.VehicleType, brandCode string, modelCode string, yearCode string, detail domainfipe.VehicleDetail, syncTime time.Time) error {
@@ -261,32 +292,117 @@ func (r *Repository) UpdateYearDetail(ctx context.Context, vehicleType domainfip
 		{Key: "code", Value: brandCode},
 	}
 
+	var existing domainfipe.BrandDocument
+	err := r.coll.FindOne(ctx, filter).Decode(&existing)
+	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
+		return err
+	}
+
+	modelIdx := -1
+	yearIdx := -1
+	for i, m := range existing.Models {
+		if m.Code == modelCode {
+			modelIdx = i
+			for j, y := range m.Years {
+				if y.Code == yearCode {
+					yearIdx = j
+					break
+				}
+			}
+			break
+		}
+	}
+
+	if modelIdx != -1 && yearIdx != -1 {
+		update := bson.D{
+			{
+				Key: "$set",
+				Value: bson.D{
+					{Key: "models.$[m].years.$[y].price", Value: detail.Price},
+					{Key: "models.$[m].years.$[y].priceValue", Value: detail.PriceValue},
+					{Key: "models.$[m].years.$[y].fipeCode", Value: detail.CodeFipe},
+					{Key: "models.$[m].years.$[y].fuel", Value: detail.Fuel},
+					{Key: "models.$[m].years.$[y].referenceMonth", Value: detail.ReferenceMonth},
+					{Key: "models.$[m].years.$[y].detailsLastSyncAt", Value: syncTime},
+					{Key: "updatedAt", Value: syncTime},
+				},
+			},
+		}
+
+		opts := options.UpdateOne().SetArrayFilters(bson.A{
+			bson.D{{Key: "m.code", Value: modelCode}},
+			bson.D{{Key: "y.code", Value: yearCode}},
+		})
+
+		_, err = r.coll.UpdateOne(ctx, filter, update, opts)
+		return err
+	}
+
+	newYear := domainfipe.YearDocument{
+		Code:              yearCode,
+		Name:              yearCode,
+		Price:             detail.Price,
+		PriceValue:        detail.PriceValue,
+		FIPECode:          detail.CodeFipe,
+		Fuel:              detail.Fuel,
+		ReferenceMonth:    detail.ReferenceMonth,
+		DetailsLastSyncAt: syncTime,
+	}
+
+	if modelIdx != -1 {
+		updateFilter := bson.D{
+			{Key: "vehicleType", Value: string(vehicleType)},
+			{Key: "code", Value: brandCode},
+			{Key: "models.code", Value: modelCode},
+		}
+		update := bson.D{
+			{
+				Key: "$push",
+				Value: bson.D{
+					{Key: "models.$.years", Value: newYear},
+				},
+			},
+			{
+				Key: "$set",
+				Value: bson.D{
+					{Key: "updatedAt", Value: syncTime},
+				},
+			},
+		}
+		_, err = r.coll.UpdateOne(ctx, updateFilter, update)
+		return err
+	}
+
+	newModel := domainfipe.ModelDocument{
+		Code:            modelCode,
+		Name:            detail.Model,
+		Years:           []domainfipe.YearDocument{newYear},
+		YearsLastSyncAt: syncTime,
+	}
 	update := bson.D{
+		{
+			Key: "$push",
+			Value: bson.D{
+				{Key: "models", Value: newModel},
+			},
+		},
 		{
 			Key: "$set",
 			Value: bson.D{
-				{Key: "models.$[m].years.$[y].price", Value: detail.Price},
-				{Key: "models.$[m].years.$[y].priceValue", Value: detail.PriceValue},
-				{Key: "models.$[m].years.$[y].fipeCode", Value: detail.CodeFipe},
-				{Key: "models.$[m].years.$[y].fuel", Value: detail.Fuel},
-				{Key: "models.$[m].years.$[y].referenceMonth", Value: detail.ReferenceMonth},
-				{Key: "models.$[m].years.$[y].detailsLastSyncAt", Value: syncTime},
 				{Key: "updatedAt", Value: syncTime},
 			},
 		},
+		{
+			Key: "$setOnInsert",
+			Value: bson.D{
+				{Key: "code", Value: brandCode},
+				{Key: "name", Value: detail.Brand},
+				{Key: "vehicleType", Value: string(vehicleType)},
+				{Key: "createdAt", Value: syncTime},
+			},
+		},
 	}
-
-	opts := options.UpdateOne().SetArrayFilters(bson.A{
-		bson.D{{Key: "m.code", Value: modelCode}},
-		bson.D{{Key: "y.code", Value: yearCode}},
-	})
-
-	res, err := r.coll.UpdateOne(ctx, filter, update, opts)
-	if err != nil {
-		return err
-	}
-	if res.MatchedCount == 0 {
-		return domainfipe.ErrBrandNotFound
-	}
-	return nil
+	opts := options.UpdateOne().SetUpsert(true)
+	_, err = r.coll.UpdateOne(ctx, filter, update, opts)
+	return err
 }

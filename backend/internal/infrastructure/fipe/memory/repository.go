@@ -104,7 +104,12 @@ func (r *Repository) UpdateModels(ctx context.Context, vehicleType domainfipe.Ve
 	k := key(vehicleType, brandCode)
 	doc, ok := r.brands[k]
 	if !ok {
-		return domainfipe.ErrBrandNotFound
+		doc = &domainfipe.BrandDocument{
+			Code:        brandCode,
+			VehicleType: string(vehicleType),
+			CreatedAt:   syncTime,
+		}
+		r.brands[k] = doc
 	}
 
 	existingMap := make(map[string]domainfipe.ModelDocument)
@@ -140,7 +145,20 @@ func (r *Repository) UpdateModelYears(ctx context.Context, vehicleType domainfip
 	k := key(vehicleType, brandCode)
 	doc, ok := r.brands[k]
 	if !ok {
-		return domainfipe.ErrBrandNotFound
+		doc = &domainfipe.BrandDocument{
+			Code:        brandCode,
+			VehicleType: string(vehicleType),
+			CreatedAt:   syncTime,
+		}
+		r.brands[k] = doc
+	}
+
+	newYears := make([]domainfipe.YearDocument, 0, len(years))
+	for _, y := range years {
+		newYears = append(newYears, domainfipe.YearDocument{
+			Code: y.Code,
+			Name: y.Name,
+		})
 	}
 
 	for i := range doc.Models {
@@ -150,7 +168,7 @@ func (r *Repository) UpdateModelYears(ctx context.Context, vehicleType domainfip
 				existingYearsMap[y.Code] = y
 			}
 
-			newYears := make([]domainfipe.YearDocument, 0, len(years))
+			mergedYears := make([]domainfipe.YearDocument, 0, len(years))
 			for _, y := range years {
 				yDoc := domainfipe.YearDocument{
 					Code: y.Code,
@@ -164,17 +182,24 @@ func (r *Repository) UpdateModelYears(ctx context.Context, vehicleType domainfip
 					yDoc.ReferenceMonth = prev.ReferenceMonth
 					yDoc.DetailsLastSyncAt = prev.DetailsLastSyncAt
 				}
-				newYears = append(newYears, yDoc)
+				mergedYears = append(mergedYears, yDoc)
 			}
 
-			doc.Models[i].Years = newYears
+			doc.Models[i].Years = mergedYears
 			doc.Models[i].YearsLastSyncAt = syncTime
 			doc.UpdatedAt = syncTime
 			return nil
 		}
 	}
 
-	return domainfipe.ErrModelNotFound
+	doc.Models = append(doc.Models, domainfipe.ModelDocument{
+		Code:            modelCode,
+		Name:            modelCode,
+		Years:           newYears,
+		YearsLastSyncAt: syncTime,
+	})
+	doc.UpdatedAt = syncTime
+	return nil
 }
 
 func (r *Repository) UpdateYearDetail(ctx context.Context, vehicleType domainfipe.VehicleType, brandCode string, modelCode string, yearCode string, detail domainfipe.VehicleDetail, syncTime time.Time) error {
@@ -184,7 +209,24 @@ func (r *Repository) UpdateYearDetail(ctx context.Context, vehicleType domainfip
 	k := key(vehicleType, brandCode)
 	doc, ok := r.brands[k]
 	if !ok {
-		return domainfipe.ErrBrandNotFound
+		doc = &domainfipe.BrandDocument{
+			Code:        brandCode,
+			Name:        detail.Brand,
+			VehicleType: string(vehicleType),
+			CreatedAt:   syncTime,
+		}
+		r.brands[k] = doc
+	}
+
+	newYearDoc := domainfipe.YearDocument{
+		Code:              yearCode,
+		Name:              yearCode,
+		Price:             detail.Price,
+		PriceValue:        detail.PriceValue,
+		FIPECode:          detail.CodeFipe,
+		Fuel:              detail.Fuel,
+		ReferenceMonth:    detail.ReferenceMonth,
+		DetailsLastSyncAt: syncTime,
 	}
 
 	for i := range doc.Models {
@@ -201,9 +243,18 @@ func (r *Repository) UpdateYearDetail(ctx context.Context, vehicleType domainfip
 					return nil
 				}
 			}
-			return domainfipe.ErrYearNotFound
+			doc.Models[i].Years = append(doc.Models[i].Years, newYearDoc)
+			doc.UpdatedAt = syncTime
+			return nil
 		}
 	}
 
-	return domainfipe.ErrModelNotFound
+	doc.Models = append(doc.Models, domainfipe.ModelDocument{
+		Code:            modelCode,
+		Name:            detail.Model,
+		Years:           []domainfipe.YearDocument{newYearDoc},
+		YearsLastSyncAt: syncTime,
+	})
+	doc.UpdatedAt = syncTime
+	return nil
 }
