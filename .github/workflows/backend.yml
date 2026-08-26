@@ -132,10 +132,19 @@ jobs:
       - name: Setup SSH
         env:
           SSH_PRIVATE_KEY: ${{ secrets.OCI_SSH_PRIVATE_KEY }}
-          HOST: ${{ secrets.OCI_HOST || '147.15.90.131' }}
+          HOST: ${{ secrets.OCI_HOST }}
+          USER: ${{ secrets.OCI_USERNAME }}
         run: |
           if [ -z "$SSH_PRIVATE_KEY" ]; then
             echo "::error::Secret OCI_SSH_PRIVATE_KEY not configured!"
+            exit 1
+          fi
+          if [ -z "$HOST" ]; then
+            echo "::error::Secret OCI_HOST not configured!"
+            exit 1
+          fi
+          if [ -z "$USER" ]; then
+            echo "::error::Secret OCI_USERNAME not configured!"
             exit 1
           fi
           mkdir -p ~/.ssh
@@ -146,8 +155,8 @@ jobs:
 
       - name: Transfer files to OCI
         env:
-          HOST: ${{ secrets.OCI_HOST || '147.15.90.131' }}
-          USER: ${{ secrets.OCI_USERNAME || 'ubuntu' }}
+          HOST: ${{ secrets.OCI_HOST }}
+          USER: ${{ secrets.OCI_USERNAME }}
         run: |
           ssh "$USER@$HOST" "mkdir -p /tmp/cvmc-deploy/dist \
             /tmp/cvmc-deploy/deploy/caddy /tmp/cvmc-deploy/deploy/systemd"
@@ -159,8 +168,8 @@ jobs:
 
       - name: Apply updates and restart services on OCI
         env:
-          HOST: ${{ secrets.OCI_HOST || '147.15.90.131' }}
-          USER: ${{ secrets.OCI_USERNAME || 'ubuntu' }}
+          HOST: ${{ secrets.OCI_HOST }}
+          USER: ${{ secrets.OCI_USERNAME }}
           FIPE_API_TOKEN: ${{ secrets.FIPE_API_TOKEN }}
           FIPE_BASE_URL: ${{ secrets.FIPE_BASE_URL || 'https://fipe.parallelum.com.br/api/v2' }}
         run: |
