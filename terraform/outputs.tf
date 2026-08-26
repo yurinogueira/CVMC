@@ -70,8 +70,8 @@ output "backend_api_url" {
 }
 
 output "smtp_host" {
-  value       = "smtp.email.${var.region}.oci.oraclecloud.com"
-  description = "Host do servidor SMTP na Oracle OCI (Secret: SMTP_HOST)"
+  value       = "smtp.resend.com"
+  description = "Host do servidor SMTP do Resend (Secret: SMTP_HOST)"
 }
 
 output "smtp_port" {
@@ -80,27 +80,20 @@ output "smtp_port" {
 }
 
 output "smtp_user" {
-  value       = oci_identity_smtp_credential.cvmc.username
-  description = "Usuário SMTP gerado pela OCI (Secret: SMTP_USER)"
-  sensitive   = true
-}
-
-
-output "smtp_pass" {
-  value       = oci_identity_smtp_credential.cvmc.password
-  description = "Senha SMTP gerada pela OCI (Secret: SMTP_PASS)"
-  sensitive   = true
+  value       = "resend"
+  description = "Usuário fixo do Resend SMTP (Secret: SMTP_USER)"
 }
 
 output "email_from" {
-  value       = oci_email_sender.cvmc.email_address
-  description = "Remetente de e-mail aprovado na OCI (Secret: EMAIL_FROM)"
+  value       = "no-reply@yurinogueira.dev.br"
+  description = "Remetente de e-mail verificado no Resend (Secret: EMAIL_FROM)"
 }
 
 output "app_base_url" {
   value       = "https://${cloudflare_dns_record.frontend.name}.yurinogueira.dev.br"
   description = "URL base da aplicação frontend (Secret: APP_BASE_URL)"
 }
+
 
 
 
