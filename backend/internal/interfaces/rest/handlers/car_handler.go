@@ -303,6 +303,10 @@ func (h *CarHandler) Unshare(w http.ResponseWriter, r *http.Request) {
 
 func handleCarError(w http.ResponseWriter, err error) {
 	switch {
+	case errors.Is(err, carusecase.ErrEmailNotVerified):
+		httpx.Error(w, http.StatusForbidden, "Valide seu e-mail para cadastrar veículos", nil)
+	case errors.Is(err, carusecase.ErrVehicleLimitReached):
+		httpx.Error(w, http.StatusForbidden, "Limite de veículos atingido", nil)
 	case errors.Is(err, carusecase.ErrCarNotFound):
 		httpx.Error(w, http.StatusNotFound, "Car not found", nil)
 	case errors.Is(err, carusecase.ErrForbidden):

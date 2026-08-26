@@ -15,6 +15,21 @@ const RegisterPage = lazy(() =>
     default: m.RegisterPage,
   })),
 );
+const ForgotPasswordPage = lazy(() =>
+  import("../features/auth/pages/ForgotPasswordPage").then((m) => ({
+    default: m.ForgotPasswordPage,
+  })),
+);
+const ResetPasswordPage = lazy(() =>
+  import("../features/auth/pages/ResetPasswordPage").then((m) => ({
+    default: m.ResetPasswordPage,
+  })),
+);
+const VerifyEmailPage = lazy(() =>
+  import("../features/auth/pages/VerifyEmailPage").then((m) => ({
+    default: m.VerifyEmailPage,
+  })),
+);
 const DashboardPage = lazy(() =>
   import("../features/dashboard/pages/DashboardPage").then((m) => ({
     default: m.DashboardPage,
@@ -30,6 +45,11 @@ const MaintenancePage = lazy(() =>
     default: m.MaintenancePage,
   })),
 );
+const ProfilePage = lazy(() =>
+  import("../features/profile/pages/ProfilePage").then((m) => ({
+    default: m.ProfilePage,
+  })),
+);
 
 export function AppRoutes() {
   return (
@@ -38,6 +58,9 @@ export function AppRoutes() {
         {/* Public Authentication Routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
 
         {/* Protected App Routes */}
         <Route element={<ProtectedRoute />}>
@@ -46,6 +69,7 @@ export function AppRoutes() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/vehicles" element={<VehiclesPage />} />
             <Route path="/maintenance" element={<MaintenancePage />} />
+            <Route path="/profile" element={<ProfilePage />} />
           </Route>
         </Route>
 

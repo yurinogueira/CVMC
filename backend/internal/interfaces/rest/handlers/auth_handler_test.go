@@ -16,7 +16,7 @@ func setupTestAuthHandler() *AuthHandler {
 	users := memoryuser.NewRepository()
 	hasher := bcrypt.NewHasher()
 	tokens := jwtauth.NewProvider("test-access-secret", "test-refresh-secret")
-	return NewAuthHandler(users, hasher, tokens, "", false)
+	return NewAuthHandler(users, hasher, tokens, nil, "", false)
 }
 
 func TestAuthHandlerRegisterLoginRefreshLogoutMe(t *testing.T) {
@@ -117,6 +117,30 @@ func TestAuthHandlerRegisterLoginRefreshLogoutMe(t *testing.T) {
 		if (c.Name == "cvmc_access_token" || c.Name == "cvmc_refresh_token") && c.MaxAge != -1 {
 			t.Fatalf("expected cookie %s to have MaxAge -1, got %d", c.Name, c.MaxAge)
 		}
+	}
+}
+
+func TestAuthHandlerForgotPasswordAndVerification(t *testing.T) {
+	handler := setupTestAuthHandler()
+
+	// Forgot password for unknown email (should return 200 OK)
+	fpPayload := []byte(`{"email":"unknown@example.com"}`)
+	fpReq := httptest.NewRequest(http.MethodPost, "/api/v1/auth/forgot-password", bytes.NewReader(fpPayload))
+	fpRec := httptest.NewRecorder()
+	handler.ForgotPassword(fpRec, fpReq)
+
+	if fpRec.Code != http.StatusOK {
+		t.Fatalf("expected 200 OK for forgot-password, got %d", fpRec.Code)
+	}
+
+	// Verify email with invalid token (should return 401)
+	vePayload := []byte(`{"token":"invalid-token"}`)
+	veReq := httptest.NewRequest(http.MethodPost, "/api/v1/auth/verify-email", bytes.NewReader(vePayload))
+	veRec := httptest.NewRecorder()
+	handler.VerifyEmail(veRec, veReq)
+
+	if veRec.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401 Unauthorized for invalid verify token, got %d", veRec.Code)
 	}
 }
 

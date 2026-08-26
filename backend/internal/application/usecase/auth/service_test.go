@@ -3,7 +3,9 @@ package auth
 import (
 	"context"
 	"errors"
+	"sync"
 	"testing"
+	"time"
 
 	portauth "cvmc/internal/application/ports/auth"
 	"cvmc/internal/infrastructure/auth/bcrypt"
@@ -11,11 +13,36 @@ import (
 	memoryuser "cvmc/internal/infrastructure/user/memory"
 )
 
+type mockEmailSender struct {
+	mu                  sync.Mutex
+	verificationEmails  []string
+	verificationTokens  []string
+	passwordResetEmails []string
+	passwordResetTokens []string
+}
+
+func (m *mockEmailSender) SendVerificationEmail(ctx context.Context, toEmail, toName, token string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.verificationEmails = append(m.verificationEmails, toEmail)
+	m.verificationTokens = append(m.verificationTokens, token)
+	return nil
+}
+
+func (m *mockEmailSender) SendPasswordResetEmail(ctx context.Context, toEmail, toName, token string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.passwordResetEmails = append(m.passwordResetEmails, toEmail)
+	m.passwordResetTokens = append(m.passwordResetTokens, token)
+	return nil
+}
+
 func TestServiceRegisterLoginRefreshAndMe(t *testing.T) {
 	users := memoryuser.NewRepository()
 	hasher := bcrypt.NewHasher()
 	tokens := jwtauth.NewProvider("access-secret", "refresh-secret")
-	service := NewService(users, hasher, tokens)
+	mockSender := &mockEmailSender{}
+	service := NewService(users, hasher, tokens, mockSender)
 	ctx := context.Background()
 
 	registered, err := service.Register(ctx, RegisterInput{Name: "Ana", Email: "ana@example.com", Password: "secret123"})
@@ -27,6 +54,9 @@ func TestServiceRegisterLoginRefreshAndMe(t *testing.T) {
 	}
 	if registered.AccessToken == "" || registered.RefreshToken == "" {
 		t.Fatalf("expected tokens to be generated")
+	}
+	if len(mockSender.verificationEmails) != 1 || mockSender.verificationEmails[0] != "ana@example.com" {
+		t.Fatalf("expected verification email to be sent on register")
 	}
 
 	logged, err := service.Login(ctx, LoginInput{Email: "ana@example.com", Password: "secret123"})
@@ -54,11 +84,184 @@ func TestServiceRegisterLoginRefreshAndMe(t *testing.T) {
 	}
 }
 
+func TestServiceEmailVerificationFlow(t *testing.T) {
+	users := memoryuser.NewRepository()
+	hasher := bcrypt.NewHasher()
+	tokens := jwtauth.NewProvider("access-secret", "refresh-secret")
+	mockSender := &mockEmailSender{}
+	service := NewService(users, hasher, tokens, mockSender)
+	ctx := context.Background()
+
+	registered, err := service.Register(ctx, RegisterInput{Name: "Carlos", Email: "carlos@example.com", Password: "password123"})
+	if err != nil {
+		t.Fatalf("register failed: %v", err)
+	}
+	if registered.User.EmailVerified {
+		t.Fatalf("expected user email to be unverified by default")
+	}
+
+	// Invalid token
+	if err := service.VerifyEmail(ctx, "invalid-token"); !errors.Is(err, ErrInvalidToken) {
+		t.Fatalf("expected ErrInvalidToken, got %v", err)
+	}
+
+	// Empty token
+	if err := service.VerifyEmail(ctx, ""); !errors.Is(err, ErrInvalidToken) {
+		t.Fatalf("expected ErrInvalidToken for empty token, got %v", err)
+	}
+
+	// Valid verification token
+	verificationToken := mockSender.verificationTokens[0]
+	if err := service.VerifyEmail(ctx, verificationToken); err != nil {
+		t.Fatalf("verify email failed: %v", err)
+	}
+
+	// User should now be verified
+	verifiedUser, err := users.FindByID(ctx, registered.User.ID)
+	if err != nil {
+		t.Fatalf("user lookup failed: %v", err)
+	}
+	if !verifiedUser.EmailVerified || verifiedUser.EmailVerifiedAt == nil {
+		t.Fatalf("expected email to be verified with timestamp")
+	}
+
+	// Using the token a second time should fail
+	if err := service.VerifyEmail(ctx, verificationToken); !errors.Is(err, ErrInvalidToken) {
+		t.Fatalf("expected ErrInvalidToken when reusing verification token, got %v", err)
+	}
+
+	// Resend when already verified
+	if err := service.ResendVerification(ctx, registered.User.ID); !errors.Is(err, ErrAlreadyVerified) {
+		t.Fatalf("expected ErrAlreadyVerified, got %v", err)
+	}
+}
+
+func TestServiceResendVerification(t *testing.T) {
+	users := memoryuser.NewRepository()
+	hasher := bcrypt.NewHasher()
+	tokens := jwtauth.NewProvider("access-secret", "refresh-secret")
+	mockSender := &mockEmailSender{}
+	service := NewService(users, hasher, tokens, mockSender)
+	ctx := context.Background()
+
+	registered, err := service.Register(ctx, RegisterInput{Name: "Mariana", Email: "mariana@example.com", Password: "password123"})
+	if err != nil {
+		t.Fatalf("register failed: %v", err)
+	}
+
+	if err := service.ResendVerification(ctx, registered.User.ID); err != nil {
+		t.Fatalf("resend verification failed: %v", err)
+	}
+
+	if len(mockSender.verificationTokens) != 2 {
+		t.Fatalf("expected 2 verification tokens, got %d", len(mockSender.verificationTokens))
+	}
+
+	latestToken := mockSender.verificationTokens[1]
+	if err := service.VerifyEmail(ctx, latestToken); err != nil {
+		t.Fatalf("verify with resent token failed: %v", err)
+	}
+}
+
+func TestServiceForgotPasswordAndResetPassword(t *testing.T) {
+	users := memoryuser.NewRepository()
+	hasher := bcrypt.NewHasher()
+	tokens := jwtauth.NewProvider("access-secret", "refresh-secret")
+	mockSender := &mockEmailSender{}
+	service := NewService(users, hasher, tokens, mockSender)
+	ctx := context.Background()
+
+	// Forgot password for non-existing email must return nil (anti-enumeration)
+	if err := service.ForgotPassword(ctx, "nonexistent@example.com"); err != nil {
+		t.Fatalf("expected nil for non-existent email, got %v", err)
+	}
+	if len(mockSender.passwordResetEmails) != 0 {
+		t.Fatalf("expected no reset email for nonexistent user")
+	}
+
+	// Register user
+	_, err := service.Register(ctx, RegisterInput{Name: "Lucas", Email: "lucas@example.com", Password: "initialPassword123"})
+	if err != nil {
+		t.Fatalf("register failed: %v", err)
+	}
+
+	// Request password reset
+	if err := service.ForgotPassword(ctx, "lucas@example.com"); err != nil {
+		t.Fatalf("forgot password failed: %v", err)
+	}
+	if len(mockSender.passwordResetEmails) != 1 || mockSender.passwordResetEmails[0] != "lucas@example.com" {
+		t.Fatalf("expected reset email sent to lucas@example.com")
+	}
+
+	resetToken := mockSender.passwordResetTokens[0]
+
+	// Reset with weak password
+	if err := service.ResetPassword(ctx, resetToken, "short"); !errors.Is(err, ErrWeakPassword) {
+		t.Fatalf("expected ErrWeakPassword, got %v", err)
+	}
+
+	// Reset with invalid token
+	if err := service.ResetPassword(ctx, "invalid-token", "newValidPassword123"); !errors.Is(err, ErrInvalidToken) {
+		t.Fatalf("expected ErrInvalidToken, got %v", err)
+	}
+
+	// Successful reset
+	if err := service.ResetPassword(ctx, resetToken, "newValidPassword123"); err != nil {
+		t.Fatalf("reset password failed: %v", err)
+	}
+
+	// Login with old password should fail
+	_, err = service.Login(ctx, LoginInput{Email: "lucas@example.com", Password: "initialPassword123"})
+	if !errors.Is(err, ErrInvalidCredentials) {
+		t.Fatalf("expected login with old password to fail")
+	}
+
+	// Login with new password should succeed
+	_, err = service.Login(ctx, LoginInput{Email: "lucas@example.com", Password: "newValidPassword123"})
+	if err != nil {
+		t.Fatalf("login with new password failed: %v", err)
+	}
+
+	// Reusing reset token should fail
+	if err := service.ResetPassword(ctx, resetToken, "anotherPassword123"); !errors.Is(err, ErrInvalidToken) {
+		t.Fatalf("expected ErrInvalidToken on reusing reset token")
+	}
+}
+
+func TestServiceExpiredToken(t *testing.T) {
+	users := memoryuser.NewRepository()
+	hasher := bcrypt.NewHasher()
+	tokens := jwtauth.NewProvider("access-secret", "refresh-secret")
+	mockSender := &mockEmailSender{}
+	currentTime := time.Now().UTC()
+	service := &Service{
+		users:       users,
+		hasher:      hasher,
+		tokens:      tokens,
+		emailSender: mockSender,
+		now:         func() time.Time { return currentTime },
+	}
+	ctx := context.Background()
+
+	_, err := service.Register(ctx, RegisterInput{Name: "Expired", Email: "expired@example.com", Password: "password123"})
+	if err != nil {
+		t.Fatalf("register failed: %v", err)
+	}
+
+	token := mockSender.verificationTokens[0]
+
+	// Advance time by 25 hours (verification token expires in 24h)
+	currentTime = currentTime.Add(25 * time.Hour)
+	if err := service.VerifyEmail(ctx, token); !errors.Is(err, ErrTokenExpired) {
+		t.Fatalf("expected ErrTokenExpired for verification, got %v", err)
+	}
+}
+
 func TestServiceRejectsDuplicateEmail(t *testing.T) {
 	users := memoryuser.NewRepository()
 	hasher := bcrypt.NewHasher()
 	tokens := jwtauth.NewProvider("access-secret", "refresh-secret")
-	service := NewService(users, hasher, tokens)
+	service := NewService(users, hasher, tokens, nil)
 	ctx := context.Background()
 
 	_, err := service.Register(ctx, RegisterInput{Name: "Ana", Email: "ana@example.com", Password: "secret123"})
@@ -75,7 +278,7 @@ func TestServiceRejectsWeakPassword(t *testing.T) {
 	users := memoryuser.NewRepository()
 	hasher := bcrypt.NewHasher()
 	tokens := jwtauth.NewProvider("access-secret", "refresh-secret")
-	service := NewService(users, hasher, tokens)
+	service := NewService(users, hasher, tokens, nil)
 	ctx := context.Background()
 
 	// Less than 8 chars
@@ -108,7 +311,7 @@ func TestServiceRejectsInvalidNameAndEmail(t *testing.T) {
 	users := memoryuser.NewRepository()
 	hasher := bcrypt.NewHasher()
 	tokens := jwtauth.NewProvider("access-secret", "refresh-secret")
-	service := NewService(users, hasher, tokens)
+	service := NewService(users, hasher, tokens, nil)
 	ctx := context.Background()
 
 	// Short name (< 2 chars)
@@ -144,7 +347,7 @@ func TestServiceLoginRejectsOversizedInputs(t *testing.T) {
 	users := memoryuser.NewRepository()
 	hasher := bcrypt.NewHasher()
 	tokens := jwtauth.NewProvider("access-secret", "refresh-secret")
-	service := NewService(users, hasher, tokens)
+	service := NewService(users, hasher, tokens, nil)
 	ctx := context.Background()
 
 	// Oversized password on login (> 72 chars)

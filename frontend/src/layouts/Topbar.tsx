@@ -28,6 +28,7 @@ const routeTitles: Record<string, string> = {
   "/dashboard": "Visão Geral",
   "/vehicles": "Meus Veículos",
   "/maintenance": "Histórico de Manutenções",
+  "/profile": "Meu Perfil",
 };
 
 export function Topbar({ onDrawerToggle }: TopbarProps) {
@@ -160,14 +161,14 @@ export function Topbar({ onDrawerToggle }: TopbarProps) {
             <MenuItem
               onClick={() => {
                 handleMenuClose();
-                navigate("/dashboard");
+                navigate("/profile");
               }}
               sx={{ py: 1 }}
             >
               <ListItemIcon>
                 <PersonRoundedIcon fontSize="small" />
               </ListItemIcon>
-              <ListItemText primary="Meu Painel" />
+              <ListItemText primary="Meu Perfil" />
             </MenuItem>
 
             <Divider />

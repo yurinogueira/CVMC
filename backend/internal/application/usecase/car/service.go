@@ -14,11 +14,13 @@ import (
 )
 
 var (
-	ErrCarNotFound    = errors.New("car not found")
-	ErrForbidden      = errors.New("forbidden")
-	ErrInvalidPayload = errors.New("invalid payload")
-	ErrUserNotFound   = errors.New("user not found")
-	ErrShareNotFound  = errors.New("share target not found")
+	ErrCarNotFound         = errors.New("car not found")
+	ErrForbidden           = errors.New("forbidden")
+	ErrInvalidPayload      = errors.New("invalid payload")
+	ErrUserNotFound        = errors.New("user not found")
+	ErrShareNotFound       = errors.New("share target not found")
+	ErrEmailNotVerified    = errors.New("valide seu e-mail para cadastrar veículos")
+	ErrVehicleLimitReached = errors.New("limite de veículos atingido")
 )
 
 type Service struct {
@@ -61,6 +63,37 @@ func (s *Service) Create(ctx context.Context, ownerID string, input CreateInput)
 	if strings.TrimSpace(input.Name) == "" || strings.TrimSpace(input.Manufacturer) == "" || strings.TrimSpace(input.Model) == "" {
 		return domaincar.Car{}, ErrInvalidPayload
 	}
+
+	user, err := s.users.FindByID(ctx, ownerID)
+	if err != nil {
+		return domaincar.Car{}, ErrUserNotFound
+	}
+
+	if !user.EmailVerified {
+		return domaincar.Car{}, ErrEmailNotVerified
+	}
+
+	userCars, err := s.cars.ListByUser(ctx, ownerID)
+	if err != nil {
+		return domaincar.Car{}, err
+	}
+
+	ownedCount := 0
+	for _, c := range userCars {
+		if c.OwnerID == ownerID {
+			ownedCount++
+		}
+	}
+
+	maxVehicles := user.MaxVehicles
+	if maxVehicles <= 0 {
+		maxVehicles = 3
+	}
+
+	if ownedCount >= maxVehicles {
+		return domaincar.Car{}, ErrVehicleLimitReached
+	}
+
 	car := domaincar.Car{
 		OwnerID:         ownerID,
 		Name:            strings.TrimSpace(input.Name),

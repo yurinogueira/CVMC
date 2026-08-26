@@ -2,7 +2,11 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  emailVerified?: boolean;
+  emailVerifiedAt?: string;
+  maxVehicles?: number;
   createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface AuthTokens {
@@ -30,4 +34,17 @@ export interface RegisterPayload {
   name: string;
   email: string;
   password: string;
+}
+
+export interface ForgotPasswordPayload {
+  email: string;
+}
+
+export interface ResetPasswordPayload {
+  token: string;
+  newPassword: string;
+}
+
+export interface VerifyEmailPayload {
+  token: string;
 }

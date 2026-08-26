@@ -213,6 +213,22 @@ export function LoginPage() {
                   }}
                 />
 
+                <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+                  <Link
+                    component={RouterLink}
+                    to="/forgot-password"
+                    variant="caption"
+                    sx={{
+                      color: "primary.main",
+                      fontWeight: 600,
+                      textDecoration: "none",
+                      "&:hover": { textDecoration: "underline" },
+                    }}
+                  >
+                    Esqueceu sua senha?
+                  </Link>
+                </Box>
+
                 <Button
                   type="submit"
                   fullWidth
@@ -221,7 +237,7 @@ export function LoginPage() {
                   disabled={loading}
                   sx={{
                     py: 1.4,
-                    mt: 1,
+                    mt: 0.5,
                     fontSize: "0.95rem",
                     fontWeight: 600,
                   }}

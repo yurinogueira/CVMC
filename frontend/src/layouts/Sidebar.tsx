@@ -17,6 +17,7 @@ import {
 import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
 import DirectionsCarRoundedIcon from "@mui/icons-material/DirectionsCarRounded";
 import BuildRoundedIcon from "@mui/icons-material/BuildRounded";
+import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import { brandColors } from "../styles/theme";
 import { useAuthStore } from "../features/auth/state/auth.store";
@@ -44,6 +45,11 @@ const navItems = [
     label: "Manutenções",
     path: "/maintenance",
     icon: <BuildRoundedIcon fontSize="small" />,
+  },
+  {
+    label: "Meu Perfil",
+    path: "/profile",
+    icon: <PersonRoundedIcon fontSize="small" />,
   },
 ];
 
