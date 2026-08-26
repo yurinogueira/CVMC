@@ -3,7 +3,7 @@ name: cvmc-security
 description: >-
   Auditoria contínua de segurança, prevenção de vulnerabilidades (OWASP Top 10),
   validação de autenticação por cookies HttpOnly, proteção contra enumeração,
-  hashing seguro de tokens, rate limiting e sanitização de infraestrutura para o CVMC.
+  hashing seguro de tokens, mitigação de SMTP injection, rate limiting e sanitização de infraestrutura para o CVMC.
 ---
 
 # Skill: Segurança, Defesa em Profundidade e Prevenção de Vulnerabilidades — CVMC
@@ -14,7 +14,7 @@ Esta skill define o protocolo mandatório de auditoria de segurança, checklist 
 
 ## 🛡️ Protocolo de Segurança Mandatório
 
-Antes de submeter qualquer modificação que envolva autenticação, usuários, rotas, persistência ou infraestrutura, execute e valide cada um dos checklists abaixo:
+Antes de submeter qualquer modificação que envolva autenticação, usuários, rotas, e-mails, persistência ou infraestrutura, execute e valide cada um dos checklists abaixo:
 
 ### 1. Checklist de Autenticação, Tokens & Sessões
 - [ ] **Transporte de Sessão**: Tokens JWT (`accessToken` e `refreshToken`) são trafegados exclusivamente em cookies `HttpOnly`, `Secure`, `SameSite=Lax` com domínio configurado.
@@ -37,7 +37,17 @@ Antes de submeter qualquer modificação que envolva autenticação, usuários, 
   - Usuários não verificados (`emailVerified == false`) têm o cadastro de recursos sensíveis (ex.: veículos) bloqueado (`403 Forbidden`).
   - Verificação atômica de cota máxima de recursos (`maxVehicles`) antes da criação para evitar abusos.
 
-### 3. Checklist de Rede, Middlewares & Rate Limiting
+### 3. Checklist de E-mails & Prevenção de SMTP Header Injection (CWE-93 / CWE-20)
+- [ ] **Sanitização de Cabeçalhos**:
+  - Todos os campos de cabeçalho (`To`, `From`, `Subject`) passam por sanitização estrita removendo qualquer caractere de CRLF (`\r`, `\n`) e caracteres de controle (`\x00` a `\x1F`).
+- [ ] **Validação de Endereço RFC 5322**:
+  - Endereços de e-mail de remetente e destinatário são validados via `mail.ParseAddress()` antes de montar payloads SMTP.
+- [ ] **Codificação MIME para Assuntos**:
+  - Assuntos de e-mails são codificados com `mime.QEncoding.Encode("utf-8", subject)` para suportar UTF-8 com segurança sem quebra de protocolo MIME.
+- [ ] **Sanitização de Conteúdo & Escape de URL**:
+  - Variáveis dinâmicas no corpo (como nomes de usuários) têm quebras de linha substituídas e tokens de link utilizam `url.QueryEscape()`.
+
+### 4. Checklist de Rede, Middlewares & Rate Limiting
 - [ ] **Cadeia Global de Segurança**:
   - Toda rota pública ou protegida passa pela cadeia de segurança:
     ```go
@@ -57,11 +67,11 @@ Antes de submeter qualquer modificação que envolva autenticação, usuários, 
   - Strict (forgot-password, reset-password, resend-verification): 5 req/min.
 - [ ] **Condicionamento de Debug**: A rota `/swagger/` é exposta exclusivamente quando `cfg.LogLevel == "debug"`.
 
-### 4. Checklist de Persistência & Sanitização
+### 5. Checklist de Persistência & Sanitização
 - [ ] **Sanitização NoSQL**: IDs e e-mails passam por sanitização (`SanitizeID`, `SanitizeEmail`) antes de consultas no MongoDB para mitigar injeção de operadores BSON.
 - [ ] **Storage e Path Traversal**: Provedores de armazenamento validam caminhos absolutos e impedem path traversal (`../`) antes de qualquer operação em disco.
 
-### 5. Checklist de Infraestrutura & Terraform
+### 6. Checklist de Infraestrutura & Terraform
 - [ ] O arquivo `docker-compose.yml` de produção não expõe portas de banco de dados (`27017:27017`) diretamente no host.
 - [ ] Nenhum segredo ou chave privada RSA está em texto plano em `.tfvars` ou `.hcl`.
 - [ ] A regra de SSH no OCI utiliza `var.admin_cidr` em vez de `0.0.0.0/0`.
@@ -74,6 +84,7 @@ Antes de submeter qualquer modificação que envolva autenticação, usuários, 
 | :--- | :--- | :--- |
 | `return raw` quando `ParseAccessToken` falha | `return ""` (dispara 401) | Bypass de autenticação |
 | `safeStorage.setItem("cvmc.accessToken", token)` | Cookies `HttpOnly`, `Secure`, `SameSite=Lax` | Roubo de sessão via XSS |
+| Interpolar `\r\n` não sanitizado em cabeçalhos de e-mail | `sanitizeHeader()` + `mail.ParseAddress()` + `mime.QEncoding` | SMTP Header Injection (CWE-93) |
 | Vazar `ErrUserNotFound` em `/forgot-password` | Retornar `200 OK` genérico | Enumeração de usuários |
 | Salvar token de reset em texto claro no banco | Salvar hash SHA-256 do token | Comprometimento por vazamento de banco |
 | Senha sem limite máximo (`len > 72`) | Validar `8 <= len(password) <= 72` | DoS no Bcrypt (CPU Exhaustion) |
