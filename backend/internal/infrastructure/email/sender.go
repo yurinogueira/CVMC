@@ -194,9 +194,12 @@ func (s *Service) send(toEmail, subject, plainBody, htmlBody string) error {
 	cleanSubject := sanitizeHeader(subject)
 	encodedSubject := mime.QEncoding.Encode("utf-8", cleanSubject)
 
+	safePlainBody := sanitizeContent(plainBody)
+	safeHTMLBody := sanitizeContent(htmlBody)
+
 	if s.cfg.SMTPHost == "" {
 		// Log-only mode in local development / CI
-		log.Printf("[EMAIL-SIMULATION] To: %s | From: %s | Subject: %s\n%s", safeToAddress, safeFromAddress, cleanSubject, plainBody)
+		log.Printf("[EMAIL-SIMULATION] To: %s | From: %s | Subject: %s\n%s", safeToAddress, safeFromAddress, cleanSubject, safePlainBody)
 		return nil
 	}
 
@@ -207,8 +210,8 @@ func (s *Service) send(toEmail, subject, plainBody, htmlBody string) error {
 	}
 
 	boundary := generateBoundary()
-	b64Plain := encodeBase64Body(plainBody)
-	b64HTML := encodeBase64Body(htmlBody)
+	b64Plain := encodeBase64Body(safePlainBody)
+	b64HTML := encodeBase64Body(safeHTMLBody)
 
 	msg := []byte(fmt.Sprintf(
 		"From: %s\r\n"+
