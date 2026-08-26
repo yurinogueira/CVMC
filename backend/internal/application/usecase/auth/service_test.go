@@ -21,7 +21,7 @@ type mockEmailSender struct {
 	passwordResetTokens []string
 }
 
-func (m *mockEmailSender) SendVerificationEmail(ctx context.Context, toEmail, token string) error {
+func (m *mockEmailSender) SendVerificationEmail(ctx context.Context, toEmail, toName, token string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.verificationEmails = append(m.verificationEmails, toEmail)
@@ -29,7 +29,7 @@ func (m *mockEmailSender) SendVerificationEmail(ctx context.Context, toEmail, to
 	return nil
 }
 
-func (m *mockEmailSender) SendPasswordResetEmail(ctx context.Context, toEmail, token string) error {
+func (m *mockEmailSender) SendPasswordResetEmail(ctx context.Context, toEmail, toName, token string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.passwordResetEmails = append(m.passwordResetEmails, toEmail)

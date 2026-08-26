@@ -166,7 +166,7 @@ func (s *Service) Register(ctx context.Context, input RegisterInput) (AuthOutput
 	}
 
 	if s.emailSender != nil {
-		if err := s.emailSender.SendVerificationEmail(ctx, created.Email, verificationToken); err != nil {
+		if err := s.emailSender.SendVerificationEmail(ctx, created.Email, created.Name, verificationToken); err != nil {
 			log.Printf("[AUTH] Warning: failed to send verification email to %s: %v", created.Email, err)
 		}
 	}
@@ -281,7 +281,7 @@ func (s *Service) ResendVerification(ctx context.Context, userID string) error {
 	}
 
 	if s.emailSender != nil {
-		return s.emailSender.SendVerificationEmail(ctx, user.Email, verificationToken)
+		return s.emailSender.SendVerificationEmail(ctx, user.Email, user.Name, verificationToken)
 	}
 	return nil
 }
@@ -314,7 +314,7 @@ func (s *Service) ForgotPassword(ctx context.Context, email string) error {
 	}
 
 	if s.emailSender != nil {
-		if err := s.emailSender.SendPasswordResetEmail(ctx, user.Email, resetToken); err != nil {
+		if err := s.emailSender.SendPasswordResetEmail(ctx, user.Email, user.Name, resetToken); err != nil {
 			log.Printf("[AUTH] Warning: failed to send password reset email to %s: %v", user.Email, err)
 		}
 	}
