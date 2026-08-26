@@ -35,7 +35,8 @@ import { useDocumentTitle, PageLoadingFallback } from "../../shared";
 
 export function ProfilePage() {
   useDocumentTitle("Meu Perfil");
-  const { user, setUser } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
+  const setUser = useAuthStore((state) => state.setUser);
 
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -71,8 +72,11 @@ export function ProfilePage() {
         if (isMounted) {
           setProfileData(data);
           setName(data.user.name);
-          if (user) {
-            setUser({ ...user, ...data.user });
+          const currentUser = useAuthStore.getState().user;
+          if (currentUser) {
+            setUser({ ...currentUser, ...data.user });
+          } else {
+            setUser(data.user);
           }
         }
       })
@@ -90,7 +94,7 @@ export function ProfilePage() {
     return () => {
       isMounted = false;
     };
-  }, [user, setUser]);
+  }, [setUser]);
 
   // Cooldown countdown timer
   useEffect(() => {

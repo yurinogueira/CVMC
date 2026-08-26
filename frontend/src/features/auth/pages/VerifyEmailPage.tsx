@@ -44,8 +44,9 @@ export function VerifyEmailPage() {
       .then(() => {
         if (isMounted) {
           setSuccess(true);
-          if (user) {
-            setUser({ ...user, emailVerified: true });
+          const currentUser = useAuthStore.getState().user;
+          if (currentUser) {
+            setUser({ ...currentUser, emailVerified: true });
           }
         }
       })
@@ -69,7 +70,7 @@ export function VerifyEmailPage() {
     return () => {
       isMounted = false;
     };
-  }, [hasToken, token, user, setUser]);
+  }, [hasToken, token, setUser]);
 
   return (
     <Box
