@@ -69,4 +69,37 @@ output "backend_api_url" {
   description = "URL de acesso à API Backend"
 }
 
+output "smtp_host" {
+  value       = "smtp.email.${var.region}.oci.oraclecloud.com"
+  description = "Host do servidor SMTP na Oracle OCI (Secret: SMTP_HOST)"
+}
+
+output "smtp_port" {
+  value       = "587"
+  description = "Porta STARTTLS do servidor SMTP (Secret: SMTP_PORT)"
+}
+
+output "smtp_user" {
+  value       = oci_identity_smtp_credential.cvmc.user_name
+  description = "Usuário SMTP gerado pela OCI (Secret: SMTP_USER)"
+  sensitive   = true
+}
+
+output "smtp_pass" {
+  value       = oci_identity_smtp_credential.cvmc.password
+  description = "Senha SMTP gerada pela OCI (Secret: SMTP_PASS)"
+  sensitive   = true
+}
+
+output "email_from" {
+  value       = oci_email_sender.cvmc.email_address
+  description = "Remetente de e-mail aprovado na OCI (Secret: EMAIL_FROM)"
+}
+
+output "app_base_url" {
+  value       = "https://${cloudflare_dns_record.frontend.name}.yurinogueira.dev.br"
+  description = "URL base da aplicação frontend (Secret: APP_BASE_URL)"
+}
+
+
 

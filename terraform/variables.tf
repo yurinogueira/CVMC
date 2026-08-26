@@ -97,3 +97,16 @@ variable "github_pages_target" {
   default     = "yurinogueira.github.io"
 }
 
+variable "email_domain_name" {
+  description = "Domínio configurado para o OCI Email Delivery"
+  type        = string
+  default     = "yurinogueira.dev.br"
+}
+
+variable "email_sender_address" {
+  description = "Endereço de e-mail aprovado para envio no OCI Email Delivery"
+  type        = string
+  default     = "no-reply@yurinogueira.dev.br"
+}
+
+
