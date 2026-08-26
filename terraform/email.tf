@@ -1,6 +1,6 @@
 # 1. Domínio de envio de e-mail na Oracle OCI
 resource "oci_email_email_domain" "cvmc" {
-  compartment_id = var.compartment_ocid
+  compartment_id = var.tenancy_ocid
   name           = var.email_domain_name
   description    = "Email domain for CVMC notification and auth service"
 }
@@ -14,9 +14,10 @@ resource "oci_email_dkim" "cvmc" {
 
 # 3. Remetente aprovado (Approved Sender) no OCI Email Delivery
 resource "oci_email_sender" "cvmc" {
-  compartment_id = var.compartment_ocid
+  compartment_id = var.tenancy_ocid
   email_address  = var.email_sender_address
 }
+
 
 
 # 4. Credencial SMTP gerada no IAM da OCI para autenticação segura
