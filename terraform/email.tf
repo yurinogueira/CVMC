@@ -14,10 +14,10 @@ resource "oci_email_dkim" "cvmc" {
 
 # 3. Remetente aprovado (Approved Sender) no OCI Email Delivery
 resource "oci_email_sender" "cvmc" {
-  compartment_id  = var.compartment_ocid
-  email_address   = var.email_sender_address
-  email_domain_id = oci_email_email_domain.cvmc.id
+  compartment_id = var.compartment_ocid
+  email_address  = var.email_sender_address
 }
+
 
 # 4. Credencial SMTP gerada no IAM da OCI para autenticação segura
 resource "oci_identity_smtp_credential" "cvmc" {

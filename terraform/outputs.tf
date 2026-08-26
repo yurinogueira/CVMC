@@ -80,10 +80,11 @@ output "smtp_port" {
 }
 
 output "smtp_user" {
-  value       = oci_identity_smtp_credential.cvmc.user_name
+  value       = oci_identity_smtp_credential.cvmc.username
   description = "Usuário SMTP gerado pela OCI (Secret: SMTP_USER)"
   sensitive   = true
 }
+
 
 output "smtp_pass" {
   value       = oci_identity_smtp_credential.cvmc.password
