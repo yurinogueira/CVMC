@@ -56,25 +56,26 @@ func NewService(cfg Config) emailport.Sender {
 
 // sanitizeHeader removes CRLF and control characters to strictly prevent SMTP header injection (CWE-93).
 func sanitizeHeader(input string) string {
+	noCR := strings.ReplaceAll(input, "\r", "")
+	noLF := strings.ReplaceAll(noCR, "\n", "")
 	return strings.Map(func(r rune) rune {
-		if r == '\r' || r == '\n' || unicode.IsControl(r) {
-			return -1
-		}
-		return r
-	}, strings.TrimSpace(input))
-}
-
-// sanitizeContent removes dangerous control characters from body variables.
-func sanitizeContent(input string) string {
-	return strings.Map(func(r rune) rune {
-		if r == '\r' || r == '\n' {
-			return ' '
-		}
 		if unicode.IsControl(r) {
 			return -1
 		}
 		return r
-	}, strings.TrimSpace(input))
+	}, strings.TrimSpace(noLF))
+}
+
+// sanitizeContent removes dangerous control characters from body variables.
+func sanitizeContent(input string) string {
+	noCR := strings.ReplaceAll(input, "\r", " ")
+	noLF := strings.ReplaceAll(noCR, "\n", " ")
+	return strings.Map(func(r rune) rune {
+		if unicode.IsControl(r) {
+			return -1
+		}
+		return r
+	}, strings.TrimSpace(noLF))
 }
 
 // encodeBase64Body formats a payload with standard RFC 2045 line wrapping (76 chars) for safe MIME transport.
@@ -167,24 +168,35 @@ func (s *Service) SendPasswordResetEmail(ctx context.Context, toEmail, toName, t
 }
 
 func (s *Service) send(toEmail, subject, plainBody, htmlBody string) error {
+	if strings.ContainsAny(toEmail, "\r\n") {
+		return fmt.Errorf("%w: recipient contains newline characters", ErrInvalidEmailAddress)
+	}
 	cleanTo := sanitizeHeader(toEmail)
 	parsedTo, err := mail.ParseAddress(cleanTo)
 	if err != nil {
 		return fmt.Errorf("%w: recipient %q", ErrInvalidEmailAddress, toEmail)
 	}
+	safeToAddress := strings.ReplaceAll(strings.ReplaceAll(parsedTo.Address, "\r", ""), "\n", "")
 
+	if strings.ContainsAny(s.cfg.EmailFrom, "\r\n") {
+		return fmt.Errorf("%w: sender contains newline characters", ErrInvalidEmailAddress)
+	}
 	cleanFrom := sanitizeHeader(s.cfg.EmailFrom)
 	parsedFrom, err := mail.ParseAddress(cleanFrom)
 	if err != nil {
 		return fmt.Errorf("%w: sender %q", ErrInvalidEmailAddress, s.cfg.EmailFrom)
 	}
+	safeFromAddress := strings.ReplaceAll(strings.ReplaceAll(parsedFrom.Address, "\r", ""), "\n", "")
 
+	if strings.ContainsAny(subject, "\r\n") {
+		return errors.New("subject contains newline characters")
+	}
 	cleanSubject := sanitizeHeader(subject)
 	encodedSubject := mime.QEncoding.Encode("utf-8", cleanSubject)
 
 	if s.cfg.SMTPHost == "" {
 		// Log-only mode in local development / CI
-		log.Printf("[EMAIL-SIMULATION] To: %s | From: %s | Subject: %s\n%s", parsedTo.Address, parsedFrom.Address, cleanSubject, plainBody)
+		log.Printf("[EMAIL-SIMULATION] To: %s | From: %s | Subject: %s\n%s", safeToAddress, safeFromAddress, cleanSubject, plainBody)
 		return nil
 	}
 
@@ -213,8 +225,8 @@ func (s *Service) send(toEmail, subject, plainBody, htmlBody string) error {
 			"Content-Transfer-Encoding: base64\r\n\r\n"+
 			"%s\r\n\r\n"+
 			"--%s--\r\n",
-		parsedFrom.Address,
-		parsedTo.Address,
+		safeFromAddress,
+		safeToAddress,
 		encodedSubject,
 		boundary,
 		boundary,
@@ -224,8 +236,9 @@ func (s *Service) send(toEmail, subject, plainBody, htmlBody string) error {
 		boundary,
 	))
 
-	if err := smtp.SendMail(addr, auth, parsedFrom.Address, []string{parsedTo.Address}, msg); err != nil {
-		log.Printf("[EMAIL-ERROR] Failed to send email to %s: %v", parsedTo.Address, err)
+	recipients := []string{safeToAddress}
+	if err := smtp.SendMail(addr, auth, safeFromAddress, recipients, msg); err != nil {
+		log.Printf("[EMAIL-ERROR] Failed to send email to %s: %v", safeToAddress, err)
 		return err
 	}
 	return nil
