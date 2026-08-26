@@ -68,6 +68,14 @@ func validateEmail(address string) (string, error) {
 	return clean, nil
 }
 
+func sanitizeHeaderValue(value string) (string, error) {
+	clean := strings.TrimSpace(value)
+	if strings.ContainsAny(clean, "\r\n") {
+		return "", errors.New("invalid header value")
+	}
+	return clean, nil
+}
+
 func (s *Service) SendVerificationEmail(ctx context.Context, toEmail, token string) error {
 	_ = ctx
 
@@ -120,10 +128,23 @@ func (s *Service) sendEmail(toEmail, subject, plainBody, htmlBody string) error 
 		return err
 	}
 
-	encodedSubject := mime.QEncoding.Encode("utf-8", subject)
+	safeTo, err := sanitizeHeaderValue(validTo)
+	if err != nil {
+		return err
+	}
+	safeFrom, err := sanitizeHeaderValue(validFrom)
+	if err != nil {
+		return err
+	}
+	safeSubject, err := sanitizeHeaderValue(subject)
+	if err != nil {
+		return err
+	}
+
+	encodedSubject := mime.QEncoding.Encode("utf-8", safeSubject)
 
 	if s.cfg.SMTPHost == "" {
-		log.Printf("[EMAIL-SIMULATION] To: %s | Subject: %s\n%s", validTo, subject, plainBody)
+		log.Printf("[EMAIL-SIMULATION] To: %s | Subject: %s\n%s", safeTo, safeSubject, plainBody)
 		return nil
 	}
 
@@ -151,10 +172,10 @@ func (s *Service) sendEmail(toEmail, subject, plainBody, htmlBody string) error 
 
 	_ = mpWriter.Close()
 
-	// Assemble RFC 5322 message — only regex-validated addresses enter the headers.
+	// Assemble RFC 5322 message — only sanitized values enter the headers.
 	var msg bytes.Buffer
-	msg.WriteString("From: " + validFrom + "\r\n")
-	msg.WriteString("To: " + validTo + "\r\n")
+	msg.WriteString("From: " + safeFrom + "\r\n")
+	msg.WriteString("To: " + safeTo + "\r\n")
 	msg.WriteString("Subject: " + encodedSubject + "\r\n")
 	msg.WriteString("MIME-Version: 1.0\r\n")
 	msg.WriteString("Content-Type: multipart/alternative; boundary=\"" + mpWriter.Boundary() + "\"\r\n\r\n")
@@ -166,8 +187,8 @@ func (s *Service) sendEmail(toEmail, subject, plainBody, htmlBody string) error 
 		auth = smtp.PlainAuth("", s.cfg.SMTPUser, s.cfg.SMTPPass, s.cfg.SMTPHost)
 	}
 
-	if err := smtp.SendMail(addr, auth, validFrom, []string{validTo}, msg.Bytes()); err != nil {
-		log.Printf("[EMAIL-ERROR] Failed to send email to %s: %v", validTo, err)
+	if err := smtp.SendMail(addr, auth, safeFrom, []string{safeTo}, msg.Bytes()); err != nil {
+		log.Printf("[EMAIL-ERROR] Failed to send email to %s: %v", safeTo, err)
 		return err
 	}
 	return nil
