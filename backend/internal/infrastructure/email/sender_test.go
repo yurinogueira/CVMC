@@ -3,6 +3,7 @@ package email
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"errors"
 	"strings"
 	"testing"
@@ -67,6 +68,21 @@ func TestEmailTemplatesRender(t *testing.T) {
 	}
 	if !strings.Contains(resetOutput, "#0F52BA") {
 		t.Fatalf("password reset template missing brand color")
+	}
+}
+
+func TestBase64BodyEncoding(t *testing.T) {
+	input := "Este é um teste com acentuação e quebras de linha para validar o encoding Base64 RFC 2045."
+	encoded := encodeBase64Body(input)
+
+	// Clean out \r\n to decode
+	cleanEncoded := strings.ReplaceAll(strings.ReplaceAll(encoded, "\r", ""), "\n", "")
+	decodedBytes, err := base64.StdEncoding.DecodeString(cleanEncoded)
+	if err != nil {
+		t.Fatalf("failed to decode base64 body: %v", err)
+	}
+	if string(decodedBytes) != input {
+		t.Fatalf("expected decoded content %q, got %q", input, string(decodedBytes))
 	}
 }
 

@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/rand"
 	"embed"
+	"encoding/base64"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -74,6 +75,19 @@ func sanitizeContent(input string) string {
 		}
 		return r
 	}, strings.TrimSpace(input))
+}
+
+// encodeBase64Body formats a payload with standard RFC 2045 line wrapping (76 chars) for safe MIME transport.
+func encodeBase64Body(content string) string {
+	raw := base64.StdEncoding.EncodeToString([]byte(content))
+	var buf strings.Builder
+	for len(raw) > 76 {
+		buf.WriteString(raw[:76])
+		buf.WriteString("\r\n")
+		raw = raw[76:]
+	}
+	buf.WriteString(raw)
+	return buf.String()
 }
 
 func generateBoundary() string {
@@ -181,6 +195,9 @@ func (s *Service) send(toEmail, subject, plainBody, htmlBody string) error {
 	}
 
 	boundary := generateBoundary()
+	b64Plain := encodeBase64Body(plainBody)
+	b64HTML := encodeBase64Body(htmlBody)
+
 	msg := []byte(fmt.Sprintf(
 		"From: %s\r\n"+
 			"To: %s\r\n"+
@@ -189,11 +206,11 @@ func (s *Service) send(toEmail, subject, plainBody, htmlBody string) error {
 			"Content-Type: multipart/alternative; boundary=\"%s\"\r\n\r\n"+
 			"--%s\r\n"+
 			"Content-Type: text/plain; charset=UTF-8\r\n"+
-			"Content-Transfer-Encoding: 8bit\r\n\r\n"+
+			"Content-Transfer-Encoding: base64\r\n\r\n"+
 			"%s\r\n\r\n"+
 			"--%s\r\n"+
 			"Content-Type: text/html; charset=UTF-8\r\n"+
-			"Content-Transfer-Encoding: 8bit\r\n\r\n"+
+			"Content-Transfer-Encoding: base64\r\n\r\n"+
 			"%s\r\n\r\n"+
 			"--%s--\r\n",
 		parsedFrom.Address,
@@ -201,9 +218,9 @@ func (s *Service) send(toEmail, subject, plainBody, htmlBody string) error {
 		encodedSubject,
 		boundary,
 		boundary,
-		plainBody,
+		b64Plain,
 		boundary,
-		htmlBody,
+		b64HTML,
 		boundary,
 	))
 
