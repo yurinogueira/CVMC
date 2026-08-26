@@ -8,7 +8,7 @@ KEY="${3:-}"
 
 if [ -z "$HOST" ]; then
     echo "Uso: $0 <IP_OU_HOST_OCI> [USUARIO_SSH] [CHAVE_SSH]"
-    echo "Exemplo: $0 147.15.90.131 ubuntu"
+    echo "Exemplo: $0 203.0.113.10 ubuntu"
     exit 1
 fi
 
