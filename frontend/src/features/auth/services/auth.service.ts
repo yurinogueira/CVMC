@@ -2,9 +2,12 @@ import { apiClient } from "../../../services/api/client";
 import {
   ApiEnvelope,
   AuthResponseData,
+  ForgotPasswordPayload,
   LoginPayload,
   RegisterPayload,
+  ResetPasswordPayload,
   User,
+  VerifyEmailPayload,
 } from "../types/auth.types";
 
 export const authService = {
@@ -36,6 +39,41 @@ export const authService = {
   async refresh(): Promise<AuthResponseData> {
     const response =
       await apiClient.post<ApiEnvelope<AuthResponseData>>("/auth/refresh");
+    return response.data.data;
+  },
+
+  async forgotPassword(
+    payload: ForgotPasswordPayload,
+  ): Promise<{ message: string }> {
+    const response = await apiClient.post<ApiEnvelope<{ message: string }>>(
+      "/auth/forgot-password",
+      payload,
+    );
+    return response.data.data;
+  },
+
+  async resetPassword(
+    payload: ResetPasswordPayload,
+  ): Promise<{ message: string }> {
+    const response = await apiClient.post<ApiEnvelope<{ message: string }>>(
+      "/auth/reset-password",
+      payload,
+    );
+    return response.data.data;
+  },
+
+  async verifyEmail(payload: VerifyEmailPayload): Promise<{ message: string }> {
+    const response = await apiClient.post<ApiEnvelope<{ message: string }>>(
+      "/auth/verify-email",
+      payload,
+    );
+    return response.data.data;
+  },
+
+  async resendVerification(): Promise<{ message: string }> {
+    const response = await apiClient.post<ApiEnvelope<{ message: string }>>(
+      "/auth/resend-verification",
+    );
     return response.data.data;
   },
 };

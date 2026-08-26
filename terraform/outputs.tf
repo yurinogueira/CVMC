@@ -69,4 +69,31 @@ output "backend_api_url" {
   description = "URL de acesso à API Backend"
 }
 
+output "smtp_host" {
+  value       = "smtp.resend.com"
+  description = "Host do servidor SMTP do Resend (Secret: SMTP_HOST)"
+}
+
+output "smtp_port" {
+  value       = "587"
+  description = "Porta STARTTLS do servidor SMTP (Secret: SMTP_PORT)"
+}
+
+output "smtp_user" {
+  value       = "resend"
+  description = "Usuário fixo do Resend SMTP (Secret: SMTP_USER)"
+}
+
+output "email_from" {
+  value       = "no-reply@yurinogueira.dev.br"
+  description = "Remetente de e-mail verificado no Resend (Secret: EMAIL_FROM)"
+}
+
+output "app_base_url" {
+  value       = "https://${cloudflare_dns_record.frontend.name}.yurinogueira.dev.br"
+  description = "URL base da aplicação frontend (Secret: APP_BASE_URL)"
+}
+
+
+
 

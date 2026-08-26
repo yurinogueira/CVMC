@@ -6,6 +6,7 @@ import (
 	"log"
 
 	carport "cvmc/internal/application/ports/car"
+	emailport "cvmc/internal/application/ports/email"
 	fipeport "cvmc/internal/application/ports/fipe"
 	maintenanceport "cvmc/internal/application/ports/maintenance"
 	userport "cvmc/internal/application/ports/user"
@@ -16,6 +17,7 @@ import (
 	carMemory "cvmc/internal/infrastructure/car/memory"
 	carMongo "cvmc/internal/infrastructure/car/mongo"
 	mongoinfra "cvmc/internal/infrastructure/database/mongo"
+	emailinfra "cvmc/internal/infrastructure/email"
 	fipeHttp "cvmc/internal/infrastructure/fipe/http"
 	fipeMemory "cvmc/internal/infrastructure/fipe/memory"
 	fipeMongo "cvmc/internal/infrastructure/fipe/mongo"
@@ -40,11 +42,20 @@ func New(ctx context.Context, cfg config.Config) (*App, error) {
 		maintenances maintenanceport.Repository
 		fipes        fipeport.Repository
 		mongoClient  *mongo.Client
+		emailSender  emailport.Sender
 	)
 
 	hasher := bcryptinfra.NewHasher()
 	tokens := jwtauth.NewProvider(cfg.JWTSecret, cfg.JWTRefreshSecret)
 	fipeClient := fipeHttp.NewClient(cfg.FIPEBaseURL, cfg.FIPEToken)
+	emailSender = emailinfra.NewService(emailinfra.Config{
+		SMTPHost:   cfg.SMTPHost,
+		SMTPPort:   cfg.SMTPPort,
+		SMTPUser:   cfg.SMTPUser,
+		SMTPPass:   cfg.SMTPPass,
+		EmailFrom:  cfg.EmailFrom,
+		AppBaseURL: cfg.AppBaseURL,
+	})
 
 	if cfg.MongoURI != "" && cfg.MongoURI != "memory" {
 		log.Printf("Connecting to MongoDB database %q...", cfg.MongoDatabase)
@@ -89,7 +100,7 @@ func New(ctx context.Context, cfg config.Config) (*App, error) {
 	}
 
 	fipeService := fipeusecase.NewService(fipes, fipeClient)
-	handler := rest.NewRouter(cfg, users, hasher, tokens, cars, maintenances, fipeService)
+	handler := rest.NewRouter(cfg, users, hasher, tokens, emailSender, cars, maintenances, fipeService)
 	return &App{
 		handler:     handler,
 		mongoClient: mongoClient,

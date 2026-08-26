@@ -18,12 +18,17 @@ func TestMaintenanceServiceUpdatesMileage(t *testing.T) {
 	users := memoryuser.NewRepository()
 	hasher := bcrypt.NewHasher()
 	tokens := jwtauth.NewProvider("access-secret", "refresh-secret")
-	authService := auth.NewService(users, hasher, tokens)
+	authService := auth.NewService(users, hasher, tokens, nil)
 	ctx := context.Background()
 
 	owner, err := authService.Register(ctx, auth.RegisterInput{Name: "Owner", Email: "owner@example.com", Password: "secret123"})
 	if err != nil {
 		t.Fatalf("owner register failed: %v", err)
+	}
+
+	owner.User.EmailVerified = true
+	if _, err := users.Update(ctx, owner.User); err != nil {
+		t.Fatalf("update user failed: %v", err)
 	}
 
 	cars := carrepo.NewRepository()

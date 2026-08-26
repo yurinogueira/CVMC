@@ -2,6 +2,7 @@ package car
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"cvmc/internal/application/usecase/auth"
@@ -11,17 +12,143 @@ import (
 	memoryuser "cvmc/internal/infrastructure/user/memory"
 )
 
+func TestCarServiceCreateRequiresVerifiedEmail(t *testing.T) {
+	users := memoryuser.NewRepository()
+	hasher := bcrypt.NewHasher()
+	tokens := jwtauth.NewProvider("access-secret", "refresh-secret")
+	authService := auth.NewService(users, hasher, tokens, nil)
+	ctx := context.Background()
+
+	// Register user (unverified by default)
+	unverifiedUser, err := authService.Register(ctx, auth.RegisterInput{Name: "Unverified", Email: "unverified@example.com", Password: "secret123"})
+	if err != nil {
+		t.Fatalf("register failed: %v", err)
+	}
+
+	service := NewService(carrepo.NewRepository(), users)
+
+	// Attempt to create car with unverified email
+	_, err = service.Create(ctx, unverifiedUser.User.ID, CreateInput{
+		Name:            "Carro 1",
+		Manufacturer:    "Fiat",
+		Model:           "Uno",
+		YearManufacture: 2010,
+		YearModel:       2011,
+		LastMileage:     10000,
+	})
+	if !errors.Is(err, ErrEmailNotVerified) {
+		t.Fatalf("expected ErrEmailNotVerified, got: %v", err)
+	}
+
+	// Now mark user as verified
+	unverifiedUser.User.EmailVerified = true
+	_, err = users.Update(ctx, unverifiedUser.User)
+	if err != nil {
+		t.Fatalf("update user failed: %v", err)
+	}
+
+	// Should now succeed
+	created, err := service.Create(ctx, unverifiedUser.User.ID, CreateInput{
+		Name:            "Carro 1",
+		Manufacturer:    "Fiat",
+		Model:           "Uno",
+		YearManufacture: 2010,
+		YearModel:       2011,
+		LastMileage:     10000,
+	})
+	if err != nil {
+		t.Fatalf("expected create to succeed after verification, got: %v", err)
+	}
+	if created.Name != "Carro 1" {
+		t.Fatalf("unexpected car name: %s", created.Name)
+	}
+}
+
+func TestCarServiceVehicleLimit(t *testing.T) {
+	users := memoryuser.NewRepository()
+	hasher := bcrypt.NewHasher()
+	tokens := jwtauth.NewProvider("access-secret", "refresh-secret")
+	authService := auth.NewService(users, hasher, tokens, nil)
+	ctx := context.Background()
+
+	registered, err := authService.Register(ctx, auth.RegisterInput{Name: "Collector", Email: "collector@example.com", Password: "secret123"})
+	if err != nil {
+		t.Fatalf("register failed: %v", err)
+	}
+
+	// Mark verified, default maxVehicles = 3
+	registered.User.EmailVerified = true
+	registered.User.MaxVehicles = 3
+	_, err = users.Update(ctx, registered.User)
+	if err != nil {
+		t.Fatalf("update user failed: %v", err)
+	}
+
+	service := NewService(carrepo.NewRepository(), users)
+
+	// Create 3 cars (should all succeed)
+	for i := 1; i <= 3; i++ {
+		_, err := service.Create(ctx, registered.User.ID, CreateInput{
+			Name:            "Carro",
+			Manufacturer:    "Fiat",
+			Model:           "Uno",
+			YearManufacture: 2010,
+			YearModel:       2011,
+			LastMileage:     10000,
+		})
+		if err != nil {
+			t.Fatalf("failed to create car %d: %v", i, err)
+		}
+	}
+
+	// 4th car should fail with ErrVehicleLimitReached
+	_, err = service.Create(ctx, registered.User.ID, CreateInput{
+		Name:            "Carro 4",
+		Manufacturer:    "Fiat",
+		Model:           "Uno",
+		YearManufacture: 2010,
+		YearModel:       2011,
+		LastMileage:     10000,
+	})
+	if !errors.Is(err, ErrVehicleLimitReached) {
+		t.Fatalf("expected ErrVehicleLimitReached for 4th car, got: %v", err)
+	}
+
+	// Increase user limit to 5
+	registered.User.MaxVehicles = 5
+	_, err = users.Update(ctx, registered.User)
+	if err != nil {
+		t.Fatalf("update user failed: %v", err)
+	}
+
+	// Now 4th car should succeed
+	_, err = service.Create(ctx, registered.User.ID, CreateInput{
+		Name:            "Carro 4",
+		Manufacturer:    "Fiat",
+		Model:           "Uno",
+		YearManufacture: 2010,
+		YearModel:       2011,
+		LastMileage:     10000,
+	})
+	if err != nil {
+		t.Fatalf("expected create 4th car to succeed after limit increase, got: %v", err)
+	}
+}
+
 func TestCarServiceShareAndList(t *testing.T) {
 	users := memoryuser.NewRepository()
 	hasher := bcrypt.NewHasher()
 	tokens := jwtauth.NewProvider("access-secret", "refresh-secret")
-	authService := auth.NewService(users, hasher, tokens)
+	authService := auth.NewService(users, hasher, tokens, nil)
 	ctx := context.Background()
 
 	owner, err := authService.Register(ctx, auth.RegisterInput{Name: "Owner", Email: "owner@example.com", Password: "secret123"})
 	if err != nil {
 		t.Fatalf("owner register failed: %v", err)
 	}
+	owner.User.EmailVerified = true
+	_, _ = users.Update(ctx, owner.User)
+
 	viewer, err := authService.Register(ctx, auth.RegisterInput{Name: "Viewer", Email: "viewer@example.com", Password: "secret123"})
 	if err != nil {
 		t.Fatalf("viewer register failed: %v", err)
@@ -50,13 +177,16 @@ func TestCarServiceUpdate(t *testing.T) {
 	users := memoryuser.NewRepository()
 	hasher := bcrypt.NewHasher()
 	tokens := jwtauth.NewProvider("access-secret", "refresh-secret")
-	authService := auth.NewService(users, hasher, tokens)
+	authService := auth.NewService(users, hasher, tokens, nil)
 	ctx := context.Background()
 
 	owner, err := authService.Register(ctx, auth.RegisterInput{Name: "Owner", Email: "owner@example.com", Password: "secret123"})
 	if err != nil {
 		t.Fatalf("owner register failed: %v", err)
 	}
+	owner.User.EmailVerified = true
+	_, _ = users.Update(ctx, owner.User)
+
 	otherUser, err := authService.Register(ctx, auth.RegisterInput{Name: "Other", Email: "other@example.com", Password: "secret123"})
 	if err != nil {
 		t.Fatalf("other register failed: %v", err)

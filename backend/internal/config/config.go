@@ -25,6 +25,12 @@ type Config struct {
 	CookieSecure        bool
 	FIPEToken           string
 	FIPEBaseURL         string
+	AppBaseURL          string
+	SMTPHost            string
+	SMTPPort            string
+	SMTPUser            string
+	SMTPPass            string
+	EmailFrom           string
 }
 
 func Load() Config {
@@ -47,6 +53,12 @@ func Load() Config {
 		CookieSecure:        getenv("COOKIE_SECURE", "true") == "true",
 		FIPEToken:           getenv("FIPE_API_TOKEN", ""),
 		FIPEBaseURL:         getenv("FIPE_BASE_URL", "https://fipe.parallelum.com.br/api/v2"),
+		AppBaseURL:          getenv("APP_BASE_URL", "http://localhost:5173"),
+		SMTPHost:            getenv("SMTP_HOST", ""),
+		SMTPPort:            getenv("SMTP_PORT", "587"),
+		SMTPUser:            getenv("SMTP_USER", ""),
+		SMTPPass:            getenv("SMTP_PASS", ""),
+		EmailFrom:           getenv("EMAIL_FROM", "no-reply@cvmc.com.br"),
 	}
 
 	// Prevent deploying with insecure JWT secrets in production.

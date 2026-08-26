@@ -48,6 +48,12 @@ definitions:
         example: Troca de Óleo e Filtro
         type: string
     type: object
+  handlers.ForgotPasswordRequest:
+    properties:
+      email:
+        example: yuri@cvmc.com
+        type: string
+    type: object
   handlers.LoginRequest:
     properties:
       email:
@@ -67,6 +73,15 @@ definitions:
         type: string
       password:
         example: senha12345
+        type: string
+    type: object
+  handlers.ResetPasswordRequest:
+    properties:
+      newPassword:
+        example: novaSenha12345
+        type: string
+      token:
+        example: a1b2c3d4e5f6...
         type: string
     type: object
   handlers.ShareCarRequest:
@@ -123,6 +138,27 @@ definitions:
         example: Troca de Óleo e Filtro
         type: string
     type: object
+  handlers.UpdatePasswordRequest:
+    properties:
+      currentPassword:
+        example: senhaAntiga123
+        type: string
+      newPassword:
+        example: senhaNova12345
+        type: string
+    type: object
+  handlers.UpdateProfileRequest:
+    properties:
+      name:
+        example: Yuri Nogueira
+        type: string
+    type: object
+  handlers.VerifyEmailRequest:
+    properties:
+      token:
+        example: a1b2c3d4e5f6...
+        type: string
+    type: object
   httpx.ErrorEnvelope:
     properties:
       errors: {}
@@ -151,6 +187,33 @@ info:
   title: CVMC API
   version: "1.0"
 paths:
+  /api/v1/auth/forgot-password:
+    post:
+      consumes:
+      - application/json
+      description: Envia e-mail com instruções e link para redefinir senha sem enumeração
+        de usuários
+      parameters:
+      - description: E-mail cadastrado
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.ForgotPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      summary: Solicitar recuperação de senha
+      tags:
+      - Auth
   /api/v1/auth/login:
     post:
       consumes:
@@ -235,8 +298,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Cria uma nova conta de usuário, seta cookies httpOnly com tokens
-        e retorna dados do usuário
+      description: Cria uma nova conta de usuário, envia e-mail de confirmação, seta
+        cookies httpOnly com tokens e retorna dados do usuário
       parameters:
       - description: Dados de cadastro
         in: body
@@ -260,6 +323,89 @@ paths:
           schema:
             $ref: '#/definitions/httpx.ErrorEnvelope'
       summary: Cadastro de novo usuário
+      tags:
+      - Auth
+  /api/v1/auth/resend-verification:
+    post:
+      description: Reenvia o e-mail de confirmação para o usuário autenticado
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Reenviar e-mail de confirmação
+      tags:
+      - Auth
+  /api/v1/auth/reset-password:
+    post:
+      consumes:
+      - application/json
+      description: Redefine a senha do usuário utilizando o token recebido por e-mail
+      parameters:
+      - description: Token e nova senha
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.ResetPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      summary: Redefinir senha
+      tags:
+      - Auth
+  /api/v1/auth/verify-email:
+    post:
+      consumes:
+      - application/json
+      description: Valida o e-mail do usuário utilizando o token de uso único recebido
+      parameters:
+      - description: Token de validação
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.VerifyEmailRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      summary: Validar endereço de e-mail
       tags:
       - Auth
   /api/v1/cars:
@@ -799,6 +945,93 @@ paths:
       summary: Atualizar manutenção
       tags:
       - Maintenances
+  /api/v1/user/password:
+    put:
+      consumes:
+      - application/json
+      description: Altera a senha do usuário autenticado exigindo a senha atual
+      parameters:
+      - description: Senha atual e nova senha
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdatePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Alterar senha do usuário
+      tags:
+      - User
+  /api/v1/user/profile:
+    get:
+      description: Retorna os dados completos do usuário, incluindo status de verificação
+        de e-mail e consumo de cota de veículos
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Perfil do usuário autenticado
+      tags:
+      - User
+    put:
+      consumes:
+      - application/json
+      description: Atualiza informações do perfil do usuário autenticado (como o nome)
+      parameters:
+      - description: Dados para atualização
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Atualizar perfil do usuário
+      tags:
+      - User
   /health:
     get:
       description: Retorna o status geral de saúde da aplicação

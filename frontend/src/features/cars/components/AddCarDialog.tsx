@@ -26,6 +26,8 @@ import MonetizationOnRoundedIcon from "@mui/icons-material/MonetizationOnRounded
 import LocalGasStationRoundedIcon from "@mui/icons-material/LocalGasStationRounded";
 import TagRoundedIcon from "@mui/icons-material/TagRounded";
 
+import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "../../auth/state/auth.store";
 import { carService } from "../services/car.service";
 import { fipeService } from "../services/fipe.service";
 import { Car } from "../types/car.types";
@@ -49,6 +51,8 @@ export function AddCarDialog({
   onCarCreated,
 }: AddCarDialogProps) {
   const currentYear = new Date().getFullYear();
+  const { user } = useAuthStore();
+  const navigate = useNavigate();
 
   // Vehicle type
   const [vehicleType, setVehicleType] = useState<VehicleType>("cars");
@@ -347,6 +351,28 @@ export function AddCarDialog({
       </DialogTitle>
 
       <DialogContent dividers sx={{ borderColor: "#F1F5F9" }}>
+        {user?.emailVerified === false && (
+          <Alert
+            severity="warning"
+            action={
+              <Button
+                color="inherit"
+                size="small"
+                onClick={() => {
+                  handleClose();
+                  navigate("/profile");
+                }}
+              >
+                Ver Perfil
+              </Button>
+            }
+            sx={{ mb: 2.5, borderRadius: 1.5 }}
+          >
+            Para cadastrar veículos, é obrigatório validar seu endereço de
+            e-mail. Acesse seu perfil para confirmar.
+          </Alert>
+        )}
+
         {errorMsg && (
           <Alert
             severity="error"
@@ -758,7 +784,12 @@ export function AddCarDialog({
         <Button
           onClick={() => handleSubmit()}
           variant="contained"
-          disabled={loading || !selectedYear || !name.trim()}
+          disabled={
+            loading ||
+            user?.emailVerified === false ||
+            !selectedYear ||
+            !name.trim()
+          }
         >
           {loading ? (
             <CircularProgress size={22} sx={{ color: "#FFFFFF" }} />

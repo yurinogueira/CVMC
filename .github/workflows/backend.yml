@@ -172,8 +172,14 @@ jobs:
           USER: ${{ secrets.OCI_USERNAME }}
           FIPE_API_TOKEN: ${{ secrets.FIPE_API_TOKEN }}
           FIPE_BASE_URL: ${{ secrets.FIPE_BASE_URL || 'https://fipe.parallelum.com.br/api/v2' }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT || '587' }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          APP_BASE_URL: ${{ secrets.APP_BASE_URL || 'https://cvmc.yurinogueira.dev.br' }}
         run: |
-          ssh "$USER@$HOST" "FIPE_API_TOKEN=\"$FIPE_API_TOKEN\" FIPE_BASE_URL=\"$FIPE_BASE_URL\" bash -s" << 'EOF'
+          ssh "$USER@$HOST" "FIPE_API_TOKEN=\"$FIPE_API_TOKEN\" FIPE_BASE_URL=\"$FIPE_BASE_URL\" SMTP_HOST=\"$SMTP_HOST\" SMTP_PORT=\"$SMTP_PORT\" SMTP_USER=\"$SMTP_USER\" SMTP_PASS=\"$SMTP_PASS\" EMAIL_FROM=\"$EMAIL_FROM\" APP_BASE_URL=\"$APP_BASE_URL\" bash -s" << 'EOF'
             set -euo pipefail
 
             # Instalar binário
@@ -199,23 +205,17 @@ jobs:
             sudo chown root:cvmc /etc/cvmc/backend.env
             sudo chmod 640 /etc/cvmc/backend.env
 
-            # Injetar ou atualizar FIPE_API_TOKEN se fornecido nas secrets
-            if [ -n "$FIPE_API_TOKEN" ]; then
-              if sudo grep -q "^FIPE_API_TOKEN=" /etc/cvmc/backend.env; then
-                sudo sed -i "s|^FIPE_API_TOKEN=.*|FIPE_API_TOKEN=${FIPE_API_TOKEN}|" /etc/cvmc/backend.env
-              else
-                echo "FIPE_API_TOKEN=${FIPE_API_TOKEN}" | sudo tee -a /etc/cvmc/backend.env > /dev/null
+            # Injetar ou atualizar FIPE e configurações de e-mail / SMTP
+            for VAR in FIPE_API_TOKEN FIPE_BASE_URL SMTP_HOST SMTP_PORT SMTP_USER SMTP_PASS EMAIL_FROM APP_BASE_URL; do
+              VAL="${!VAR:-}"
+              if [ -n "$VAL" ]; then
+                if sudo grep -q "^${VAR}=" /etc/cvmc/backend.env; then
+                  sudo sed -i "s|^${VAR}=.*|${VAR}=${VAL}|" /etc/cvmc/backend.env
+                else
+                  echo "${VAR}=${VAL}" | sudo tee -a /etc/cvmc/backend.env > /dev/null
+                fi
               fi
-            fi
-
-            # Injetar ou atualizar FIPE_BASE_URL
-            if [ -n "$FIPE_BASE_URL" ]; then
-              if sudo grep -q "^FIPE_BASE_URL=" /etc/cvmc/backend.env; then
-                sudo sed -i "s|^FIPE_BASE_URL=.*|FIPE_BASE_URL=${FIPE_BASE_URL}|" /etc/cvmc/backend.env
-              else
-                echo "FIPE_BASE_URL=${FIPE_BASE_URL}" | sudo tee -a /etc/cvmc/backend.env > /dev/null
-              fi
-            fi
+            done
 
             # Reiniciar aplicação Go
             sudo systemctl restart cvmc-backend
