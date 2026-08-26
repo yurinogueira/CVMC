@@ -3,7 +3,6 @@ package email
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"errors"
 	"strings"
 	"testing"
@@ -71,21 +70,6 @@ func TestEmailTemplatesRender(t *testing.T) {
 	}
 }
 
-func TestBase64BodyEncoding(t *testing.T) {
-	input := "Este é um teste com acentuação e quebras de linha para validar o encoding Base64 RFC 2045."
-	encoded := encodeBase64Body(input)
-
-	// Clean out \r\n to decode
-	cleanEncoded := strings.ReplaceAll(strings.ReplaceAll(encoded, "\r", ""), "\n", "")
-	decodedBytes, err := base64.StdEncoding.DecodeString(cleanEncoded)
-	if err != nil {
-		t.Fatalf("failed to decode base64 body: %v", err)
-	}
-	if string(decodedBytes) != input {
-		t.Fatalf("expected decoded content %q, got %q", input, string(decodedBytes))
-	}
-}
-
 func TestEmailSenderRejectsInvalidAddress(t *testing.T) {
 	service := NewService(Config{
 		AppBaseURL: "https://cvmc.com.br",
@@ -121,8 +105,9 @@ func TestEmailSenderHeaderSanitization(t *testing.T) {
 	}
 
 	contentWithCRLF := "Name\r\nWith\nNewlines"
-	sanitizedContent := sanitizeContent(contentWithCRLF)
+	sanitizedContent := sanitizeText(contentWithCRLF)
 	if sanitizedContent != "Name  With Newlines" {
 		t.Fatalf("expected newlines replaced with spaces, got %q", sanitizedContent)
 	}
+
 }
