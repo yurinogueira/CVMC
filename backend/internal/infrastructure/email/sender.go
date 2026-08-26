@@ -54,7 +54,7 @@ func NewService(cfg Config) emailport.Sender {
 	return &Service{cfg: cfg}
 }
 
-// sanitizeHeader cleans header values by strictly stripping CRLF and control characters (CWE-93).
+// sanitizeHeader strictly removes CRLF and control characters to prevent header injection (CWE-93).
 func sanitizeHeader(input string) string {
 	s := strings.ReplaceAll(input, "\r", "")
 	s = strings.ReplaceAll(s, "\n", "")
@@ -66,24 +66,8 @@ func sanitizeHeader(input string) string {
 	}, strings.TrimSpace(s))
 }
 
-// sanitizeText removes CRLF and dangerous control characters from user-provided text.
-func sanitizeText(input string) string {
-	s := strings.ReplaceAll(input, "\r", " ")
-	s = strings.ReplaceAll(s, "\n", " ")
-	return strings.Map(func(r rune) rune {
-		if unicode.IsControl(r) {
-			return -1
-		}
-		return r
-	}, strings.TrimSpace(s))
-}
-
-func (s *Service) SendVerificationEmail(ctx context.Context, toEmail, toName, token string) error {
+func (s *Service) SendVerificationEmail(ctx context.Context, toEmail, token string) error {
 	_ = ctx
-	cleanName := sanitizeText(toName)
-	if cleanName == "" {
-		cleanName = "Usuário"
-	}
 	cleanToken := sanitizeHeader(token)
 	verifyURL := fmt.Sprintf(
 		"%s/verify-email?token=%s",
@@ -94,10 +78,8 @@ func (s *Service) SendVerificationEmail(ctx context.Context, toEmail, toName, to
 
 	var htmlBuf bytes.Buffer
 	data := struct {
-		Name      string
 		VerifyURL string
 	}{
-		Name:      cleanName,
 		VerifyURL: verifyURL,
 	}
 	if err := verificationTmpl.Execute(&htmlBuf, data); err != nil {
@@ -105,20 +87,15 @@ func (s *Service) SendVerificationEmail(ctx context.Context, toEmail, toName, to
 	}
 
 	plainBody := fmt.Sprintf(
-		"Olá, %s!\n\nObrigado por se cadastrar no CVMC (Como Vai Meu Carro).\n\nPara validar seu e-mail e liberar o cadastro de veículos, acesse o link abaixo:\n%s\n\nEste link é válido por 24 horas.\n\nSe você não criou uma conta no CVMC, ignore este e-mail.",
-		cleanName,
+		"Olá!\n\nObrigado por se cadastrar no CVMC (Como Vai Meu Carro).\n\nPara validar seu e-mail e liberar o cadastro de veículos, acesse o link abaixo:\n%s\n\nEste link é válido por 24 horas.\n\nSe você não criou uma conta no CVMC, ignore este e-mail.",
 		verifyURL,
 	)
 
 	return s.send(toEmail, subject, plainBody, htmlBuf.String())
 }
 
-func (s *Service) SendPasswordResetEmail(ctx context.Context, toEmail, toName, token string) error {
+func (s *Service) SendPasswordResetEmail(ctx context.Context, toEmail, token string) error {
 	_ = ctx
-	cleanName := sanitizeText(toName)
-	if cleanName == "" {
-		cleanName = "Usuário"
-	}
 	cleanToken := sanitizeHeader(token)
 	resetURL := fmt.Sprintf(
 		"%s/reset-password?token=%s",
@@ -129,10 +106,8 @@ func (s *Service) SendPasswordResetEmail(ctx context.Context, toEmail, toName, t
 
 	var htmlBuf bytes.Buffer
 	data := struct {
-		Name     string
 		ResetURL string
 	}{
-		Name:     cleanName,
 		ResetURL: resetURL,
 	}
 	if err := passwordResetTmpl.Execute(&htmlBuf, data); err != nil {
@@ -140,8 +115,7 @@ func (s *Service) SendPasswordResetEmail(ctx context.Context, toEmail, toName, t
 	}
 
 	plainBody := fmt.Sprintf(
-		"Olá, %s!\n\nRecebemos uma solicitação para redefinir a senha da sua conta no CVMC.\n\nPara criar uma nova senha, acesse o link abaixo:\n%s\n\nEste link é válido por 30 minutos.\n\nSe você não solicitou a redefinição de senha, ignore este e-mail com segurança.",
-		cleanName,
+		"Olá!\n\nRecebemos uma solicitação para redefinir a senha da sua conta no CVMC.\n\nPara criar uma nova senha, acesse o link abaixo:\n%s\n\nEste link é válido por 30 minutos.\n\nSe você não solicitou a redefinição de senha, ignore este e-mail com segurança.",
 		resetURL,
 	)
 

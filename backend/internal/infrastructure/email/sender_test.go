@@ -16,13 +16,13 @@ func TestEmailSenderSimulation(t *testing.T) {
 	ctx := context.Background()
 
 	// 1. Send verification email
-	err := service.SendVerificationEmail(ctx, "motorista@cvmc.com.br", "Yuri Nogueira", "abc123token")
+	err := service.SendVerificationEmail(ctx, "motorista@cvmc.com.br", "abc123token")
 	if err != nil {
 		t.Fatalf("expected SendVerificationEmail to succeed in simulation mode, got %v", err)
 	}
 
 	// 2. Send password reset email
-	err = service.SendPasswordResetEmail(ctx, "motorista@cvmc.com.br", "Yuri Nogueira", "reset-token-xyz")
+	err = service.SendPasswordResetEmail(ctx, "motorista@cvmc.com.br", "reset-token-xyz")
 	if err != nil {
 		t.Fatalf("expected SendPasswordResetEmail to succeed in simulation mode, got %v", err)
 	}
@@ -32,17 +32,15 @@ func TestEmailTemplatesRender(t *testing.T) {
 	// 1. Verification template
 	var bufVerif bytes.Buffer
 	err := verificationTmpl.Execute(&bufVerif, struct {
-		Name      string
 		VerifyURL string
 	}{
-		Name:      "Carlos Silva",
 		VerifyURL: "https://cvmc.com.br/verify-email?token=xyz",
 	})
 	if err != nil {
 		t.Fatalf("failed to render verification template: %v", err)
 	}
 	verifOutput := bufVerif.String()
-	if !strings.Contains(verifOutput, "Carlos Silva") || !strings.Contains(verifOutput, "https://cvmc.com.br/verify-email?token=xyz") {
+	if !strings.Contains(verifOutput, "https://cvmc.com.br/verify-email?token=xyz") {
 		t.Fatalf("verification template missing expected fields")
 	}
 	if !strings.Contains(verifOutput, "#0F52BA") {
@@ -52,17 +50,15 @@ func TestEmailTemplatesRender(t *testing.T) {
 	// 2. Password reset template
 	var bufReset bytes.Buffer
 	err = passwordResetTmpl.Execute(&bufReset, struct {
-		Name     string
 		ResetURL string
 	}{
-		Name:     "Carlos Silva",
 		ResetURL: "https://cvmc.com.br/reset-password?token=xyz",
 	})
 	if err != nil {
 		t.Fatalf("failed to render password reset template: %v", err)
 	}
 	resetOutput := bufReset.String()
-	if !strings.Contains(resetOutput, "Carlos Silva") || !strings.Contains(resetOutput, "https://cvmc.com.br/reset-password?token=xyz") {
+	if !strings.Contains(resetOutput, "https://cvmc.com.br/reset-password?token=xyz") {
 		t.Fatalf("password reset template missing expected fields")
 	}
 	if !strings.Contains(resetOutput, "#0F52BA") {
@@ -77,7 +73,7 @@ func TestEmailSenderRejectsInvalidAddress(t *testing.T) {
 	})
 	ctx := context.Background()
 
-	err := service.SendVerificationEmail(ctx, "invalid-email-format", "User", "token123")
+	err := service.SendVerificationEmail(ctx, "invalid-email-format", "token123")
 	if !errors.Is(err, ErrInvalidEmailAddress) {
 		t.Fatalf("expected ErrInvalidEmailAddress for invalid recipient, got %v", err)
 	}
@@ -92,7 +88,7 @@ func TestEmailSenderHeaderSanitization(t *testing.T) {
 
 	// CRLF injection attempt in recipient
 	injectedRecipient := "clean@example.com\r\nBcc: attacker@evil.com"
-	err := service.SendVerificationEmail(ctx, injectedRecipient, "Attacker\r\nInjected", "token\r\n123")
+	err := service.SendVerificationEmail(ctx, injectedRecipient, "token\r\n123")
 	if err != nil {
 		t.Logf("injected recipient handled safely: %v", err)
 	}
@@ -102,12 +98,6 @@ func TestEmailSenderHeaderSanitization(t *testing.T) {
 	sanitizedHeader := sanitizeHeader(headerWithCRLF)
 	if sanitizedHeader != "Subject withCRLF and null bytes" {
 		t.Fatalf("expected CRLF stripped from header, got %q", sanitizedHeader)
-	}
-
-	contentWithCRLF := "Name\r\nWith\nNewlines"
-	sanitizedContent := sanitizeText(contentWithCRLF)
-	if sanitizedContent != "Name  With Newlines" {
-		t.Fatalf("expected newlines replaced with spaces, got %q", sanitizedContent)
 	}
 
 }
