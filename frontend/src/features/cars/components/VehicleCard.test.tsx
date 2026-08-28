@@ -61,6 +61,8 @@ describe("VehicleCard", () => {
 
   it("renders fallback vector when no imageUrl is provided", () => {
     render(<VehicleCard car={mockCar} />);
-    expect(screen.getByLabelText("Honda Civic Touring")).toBeInTheDocument();
+    expect(
+      screen.getByRole("img", { name: "Honda Civic Touring" }),
+    ).toBeInTheDocument();
   });
 });
