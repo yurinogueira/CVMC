@@ -20,6 +20,7 @@ import DirectionsCarFilledRoundedIcon from "@mui/icons-material/DirectionsCarFil
 import MonetizationOnRoundedIcon from "@mui/icons-material/MonetizationOnRounded";
 import LocalGasStationRoundedIcon from "@mui/icons-material/LocalGasStationRounded";
 import TagRoundedIcon from "@mui/icons-material/TagRounded";
+import { ImageUploadField } from "./ImageUploadField";
 
 import { carService } from "../services/car.service";
 import { Car } from "../types/car.types";
@@ -48,6 +49,7 @@ function EditCarForm({ car, onClose, onCarUpdated }: EditCarFormProps) {
   const [yearModel, setYearModel] = useState<number>(
     car.yearModel || currentYear,
   );
+  const [imageUrl, setImageUrl] = useState(car.imageUrl || "");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -85,6 +87,7 @@ function EditCarForm({ car, onClose, onCarUpdated }: EditCarFormProps) {
         yearModel: Number(yearModel),
         lastMileage: Number(lastMileage) || 0,
         vehicleType: car.vehicleType,
+        imageUrl: imageUrl.trim() || undefined,
         fipeCode: car.fipeCode,
         fipePrice: car.fipePrice,
         fuel: car.fuel,
@@ -319,6 +322,14 @@ function EditCarForm({ car, onClose, onCarUpdated }: EditCarFormProps) {
               </Grid>
             </Grid>
           </Box>
+
+          {/* Upload de Foto do Veículo */}
+          <ImageUploadField
+            value={imageUrl}
+            onChange={setImageUrl}
+            vehicleType={car.vehicleType}
+            disabled={loading}
+          />
         </Stack>
       </DialogContent>
 

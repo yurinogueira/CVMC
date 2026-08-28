@@ -7,6 +7,7 @@ export interface Car {
   yearModel: number;
   lastMileage: number;
   vehicleType?: string;
+  imageUrl?: string;
   fipeCode?: string;
   fipePrice?: string;
   fuel?: string;
@@ -24,6 +25,7 @@ export interface CreateCarPayload {
   yearModel: number;
   lastMileage: number;
   vehicleType?: string;
+  imageUrl?: string;
   fipeCode?: string;
   fipePrice?: string;
   fuel?: string;
@@ -37,6 +39,7 @@ export interface UpdateCarPayload {
   yearModel: number;
   lastMileage: number;
   vehicleType?: string;
+  imageUrl?: string;
   fipeCode?: string;
   fipePrice?: string;
   fuel?: string;

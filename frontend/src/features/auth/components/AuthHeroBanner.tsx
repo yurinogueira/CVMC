@@ -1,9 +1,9 @@
 import { Box, Typography, Stack } from "@mui/material";
-import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
 import BuildCircleIcon from "@mui/icons-material/BuildCircle";
 import ShieldCheckIcon from "@mui/icons-material/VerifiedUser";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import { brandColors } from "../../../styles/theme";
+import { BrandLogo } from "../../../components/brand/BrandLogo";
 
 export function AuthHeroBanner() {
   return (
@@ -46,41 +46,22 @@ export function AuthHeroBanner() {
     >
       {/* Brand Header */}
       <Box sx={{ position: "relative", zIndex: 1 }}>
-        <Stack
-          direction="row"
-          spacing={1.5}
-          sx={{ alignItems: "center", mb: 2 }}
-        >
-          <Box
-            sx={{
-              bgcolor: "rgba(255, 255, 255, 0.2)",
-              borderRadius: 2,
-              p: 1,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              backdropFilter: "blur(8px)",
-            }}
-          >
-            <DirectionsCarIcon sx={{ fontSize: 32, color: "#FFFFFF" }} />
-          </Box>
-          <Typography
-            component="div"
-            variant="h5"
-            sx={{ fontWeight: 800, letterSpacing: -0.5, color: "#FFFFFF" }}
-          >
-            CVMC
-          </Typography>
-        </Stack>
+        <BrandLogo
+          variant="full"
+          size="large"
+          colorMode="light"
+          sx={{ mb: 1 }}
+        />
         <Typography
           variant="body2"
           sx={{
             opacity: 0.9,
             fontWeight: 500,
             color: "rgba(255, 255, 255, 0.9)",
+            mt: 0.5,
           }}
         >
-          Como Vai Meu Carro • Gestão Inteligente de Veículos
+          Gestão Inteligente de Veículos e Manutenções Preventivas
         </Typography>
       </Box>
 

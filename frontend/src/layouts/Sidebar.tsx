@@ -19,9 +19,9 @@ import DirectionsCarRoundedIcon from "@mui/icons-material/DirectionsCarRounded";
 import BuildRoundedIcon from "@mui/icons-material/BuildRounded";
 import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
-import { brandColors } from "../styles/theme";
 import { useAuthStore } from "../features/auth/state/auth.store";
 import { authService } from "../features/auth/services/auth.service";
+import { BrandLogo } from "../components/brand/BrandLogo";
 
 export const DRAWER_WIDTH = 260;
 
@@ -86,38 +86,10 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
           px: 2.5,
           display: "flex",
           alignItems: "center",
-          gap: 1.5,
           boxSizing: "border-box",
         }}
       >
-        <Box
-          sx={{
-            width: 40,
-            height: 40,
-            borderRadius: 2,
-            background: brandColors.gradient,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            boxShadow: "0 4px 12px rgba(2, 132, 199, 0.25)",
-          }}
-        >
-          <DirectionsCarRoundedIcon sx={{ color: "#FFFFFF", fontSize: 24 }} />
-        </Box>
-        <Box>
-          <Typography
-            variant="h6"
-            sx={{ fontWeight: 800, lineHeight: 1.2, color: "text.primary" }}
-          >
-            CVMC
-          </Typography>
-          <Typography
-            variant="caption"
-            sx={{ color: "text.secondary", fontWeight: 500 }}
-          >
-            Gestão de Veículos
-          </Typography>
-        </Box>
+        <BrandLogo variant="full" size="small" />
       </Box>
 
       <Divider sx={{ borderColor: "#E2E8F0" }} />

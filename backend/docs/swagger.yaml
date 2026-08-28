@@ -11,6 +11,9 @@ definitions:
       fuel:
         example: Gasolina
         type: string
+      imageUrl:
+        example: https://images.unsplash.com/photo-1590362891988-39cb01f6ec08
+        type: string
       lastMileage:
         example: 32000
         type: integer
@@ -100,6 +103,9 @@ definitions:
         type: string
       fuel:
         example: Gasolina
+        type: string
+      imageUrl:
+        example: https://images.unsplash.com/photo-1590362891988-39cb01f6ec08
         type: string
       lastMileage:
         example: 35000

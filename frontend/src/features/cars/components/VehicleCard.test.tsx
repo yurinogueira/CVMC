@@ -47,4 +47,20 @@ describe("VehicleCard", () => {
 
     expect(handleDelete).toHaveBeenCalledWith("car-123");
   });
+
+  it("renders custom imageUrl when provided", () => {
+    const carWithImg: Car = {
+      ...mockCar,
+      imageUrl: "https://example.com/civic.jpg",
+    };
+    render(<VehicleCard car={carWithImg} />);
+    const img = screen.getByRole("img", { name: "Honda Civic Touring" });
+    expect(img).toBeInTheDocument();
+    expect(img).toHaveAttribute("src", "https://example.com/civic.jpg");
+  });
+
+  it("renders fallback vector when no imageUrl is provided", () => {
+    render(<VehicleCard car={mockCar} />);
+    expect(screen.getByLabelText("Honda Civic Touring")).toBeInTheDocument();
+  });
 });

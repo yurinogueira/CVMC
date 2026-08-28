@@ -32,6 +32,7 @@ type CreateCarRequest struct {
 	YearModel       int    `json:"yearModel" example:"2024"`
 	LastMileage     int    `json:"lastMileage" example:"32000"`
 	VehicleType     string `json:"vehicleType,omitempty" example:"cars"`
+	ImageUrl        string `json:"imageUrl,omitempty" example:"https://images.unsplash.com/photo-1590362891988-39cb01f6ec08"`
 	FIPECode        string `json:"fipeCode,omitempty" example:"005487-9"`
 	FIPEPrice       string `json:"fipePrice,omitempty" example:"R$ 150.000,00"`
 	Fuel            string `json:"fuel,omitempty" example:"Gasolina"`
@@ -45,6 +46,7 @@ type UpdateCarRequest struct {
 	YearModel       int    `json:"yearModel" example:"2024"`
 	LastMileage     int    `json:"lastMileage" example:"35000"`
 	VehicleType     string `json:"vehicleType,omitempty" example:"cars"`
+	ImageUrl        string `json:"imageUrl,omitempty" example:"https://images.unsplash.com/photo-1590362891988-39cb01f6ec08"`
 	FIPECode        string `json:"fipeCode,omitempty" example:"005487-9"`
 	FIPEPrice       string `json:"fipePrice,omitempty" example:"R$ 150.000,00"`
 	Fuel            string `json:"fuel,omitempty" example:"Gasolina"`
@@ -109,6 +111,7 @@ func (h *CarHandler) Create(w http.ResponseWriter, r *http.Request) {
 		YearModel:       input.YearModel,
 		LastMileage:     input.LastMileage,
 		VehicleType:     input.VehicleType,
+		ImageUrl:        input.ImageUrl,
 		FIPECode:        input.FIPECode,
 		FIPEPrice:       input.FIPEPrice,
 		Fuel:            input.Fuel,
@@ -203,6 +206,7 @@ func (h *CarHandler) Update(w http.ResponseWriter, r *http.Request) {
 		YearModel:       input.YearModel,
 		LastMileage:     input.LastMileage,
 		VehicleType:     input.VehicleType,
+		ImageUrl:        input.ImageUrl,
 		FIPECode:        input.FIPECode,
 		FIPEPrice:       input.FIPEPrice,
 		Fuel:            input.Fuel,
