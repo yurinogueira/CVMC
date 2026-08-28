@@ -37,6 +37,7 @@ type CreateInput struct {
 	YearModel       int
 	LastMileage     int
 	VehicleType     string
+	ImageUrl        string
 	FIPECode        string
 	FIPEPrice       string
 	Fuel            string
@@ -50,6 +51,7 @@ type UpdateInput struct {
 	YearModel       int
 	LastMileage     int
 	VehicleType     string
+	ImageUrl        string
 	FIPECode        string
 	FIPEPrice       string
 	Fuel            string
@@ -103,6 +105,7 @@ func (s *Service) Create(ctx context.Context, ownerID string, input CreateInput)
 		YearModel:       input.YearModel,
 		LastMileage:     input.LastMileage,
 		VehicleType:     strings.TrimSpace(input.VehicleType),
+		ImageUrl:        strings.TrimSpace(input.ImageUrl),
 		FIPECode:        strings.TrimSpace(input.FIPECode),
 		FIPEPrice:       strings.TrimSpace(input.FIPEPrice),
 		Fuel:            strings.TrimSpace(input.Fuel),
@@ -164,6 +167,9 @@ func (s *Service) Update(ctx context.Context, actorID, carID string, input Updat
 	}
 	if input.VehicleType != "" {
 		car.VehicleType = strings.TrimSpace(input.VehicleType)
+	}
+	if input.ImageUrl != "" {
+		car.ImageUrl = strings.TrimSpace(input.ImageUrl)
 	}
 	if input.FIPECode != "" {
 		car.FIPECode = strings.TrimSpace(input.FIPECode)

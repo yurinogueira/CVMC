@@ -25,6 +25,7 @@ import CheckCircleOutlineRoundedIcon from "@mui/icons-material/CheckCircleOutlin
 import MonetizationOnRoundedIcon from "@mui/icons-material/MonetizationOnRounded";
 import LocalGasStationRoundedIcon from "@mui/icons-material/LocalGasStationRounded";
 import TagRoundedIcon from "@mui/icons-material/TagRounded";
+import { ImageUploadField } from "./ImageUploadField";
 
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../auth/state/auth.store";
@@ -82,6 +83,7 @@ export function AddCarDialog({
   const [yearManufacture, setYearManufacture] = useState<number>(currentYear);
   const [yearModel, setYearModel] = useState<number>(currentYear);
   const [lastMileage, setLastMileage] = useState<number>(0);
+  const [imageUrl, setImageUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -100,6 +102,7 @@ export function AddCarDialog({
     setYearManufacture(currentYear);
     setYearModel(currentYear);
     setLastMileage(0);
+    setImageUrl("");
     setErrorMsg(null);
   };
 
@@ -311,6 +314,7 @@ export function AddCarDialog({
         yearModel: Number(yearModel),
         lastMileage: Number(lastMileage) || 0,
         vehicleType,
+        imageUrl: imageUrl.trim() || undefined,
         fipeCode: fipeDetail?.codeFipe,
         fipePrice: fipeDetail?.price,
         fuel: fipeDetail?.fuel,
@@ -769,6 +773,14 @@ export function AddCarDialog({
               </Grid>
             </Grid>
           </Box>
+
+          {/* Upload de Foto do Veículo */}
+          <ImageUploadField
+            value={imageUrl}
+            onChange={setImageUrl}
+            vehicleType={vehicleType}
+            disabled={loading}
+          />
         </Stack>
       </DialogContent>
 

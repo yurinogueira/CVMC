@@ -1402,6 +1402,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "Gasolina"
                 },
+                "imageUrl": {
+                    "type": "string",
+                    "example": "https://images.unsplash.com/photo-1590362891988-39cb01f6ec08"
+                },
                 "lastMileage": {
                     "type": "integer",
                     "example": 32000
@@ -1528,6 +1532,10 @@ const docTemplate = `{
                 "fuel": {
                     "type": "string",
                     "example": "Gasolina"
+                },
+                "imageUrl": {
+                    "type": "string",
+                    "example": "https://images.unsplash.com/photo-1590362891988-39cb01f6ec08"
                 },
                 "lastMileage": {
                     "type": "integer",

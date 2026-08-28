@@ -200,9 +200,13 @@ func TestCarServiceUpdate(t *testing.T) {
 		YearManufacture: 2020,
 		YearModel:       2021,
 		LastMileage:     30000,
+		ImageUrl:        "https://example.com/car.jpg",
 	})
 	if err != nil {
 		t.Fatalf("create failed: %v", err)
+	}
+	if created.ImageUrl != "https://example.com/car.jpg" {
+		t.Fatalf("expected ImageUrl to be set, got %s", created.ImageUrl)
 	}
 
 	// Successful update
@@ -211,11 +215,12 @@ func TestCarServiceUpdate(t *testing.T) {
 		LastMileage:     35000,
 		YearManufacture: 2020,
 		YearModel:       2021,
+		ImageUrl:        "https://example.com/car-updated.jpg",
 	})
 	if err != nil {
 		t.Fatalf("update failed: %v", err)
 	}
-	if updated.Name != "Civic Novo" || updated.LastMileage != 35000 || updated.Manufacturer != "Honda" {
+	if updated.Name != "Civic Novo" || updated.LastMileage != 35000 || updated.Manufacturer != "Honda" || updated.ImageUrl != "https://example.com/car-updated.jpg" {
 		t.Fatalf("unexpected updated car values: %+v", updated)
 	}
 

@@ -104,6 +104,7 @@ describe("EditCarDialog", () => {
         yearModel: 2021,
         lastMileage: 55000,
         vehicleType: undefined,
+        imageUrl: undefined,
         fipeCode: "005487-9",
         fipePrice: "R$ 130.000,00",
         fuel: "Gasolina",
