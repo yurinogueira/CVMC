@@ -39,17 +39,17 @@ export function VehicleImage({
       case "motorcycles":
       case "motos":
       case "moto":
-        return <MotorcycleVector aria-label={alt} />;
+        return <MotorcycleVector alt={alt} />;
       case "trucks":
       case "caminhoes":
       case "caminhao":
       case "picape":
-        return <TruckVector aria-label={alt} />;
+        return <TruckVector alt={alt} />;
       case "cars":
       case "carros":
       case "carro":
       default:
-        return <CarSedanVector aria-label={alt} />;
+        return <CarSedanVector alt={alt} />;
     }
   };
 
