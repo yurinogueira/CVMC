@@ -13,8 +13,8 @@ services:
       - mongo
     environment:
       PORT: ${PORT:-8080}
-      JWT_SECRET: ${JWT_SECRET:-change-me}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-me-too}
+      JWT_SECRET: ${JWT_SECRET:-cvmc_dev_jwt_access_secret_key_at_least_32_chars!}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-cvmc_dev_jwt_refresh_secret_key_at_least_32_chars!}
       MONGO_URI: mongodb://mongo:27017
       MONGO_DATABASE: ${MONGO_DATABASE:-cvmc}
       UPLOAD_PATH: ${UPLOAD_PATH:-/app/uploads}

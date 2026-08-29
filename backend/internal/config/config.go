@@ -1,10 +1,38 @@
 package config
 
 import (
+	"errors"
+	"fmt"
 	"log"
 	"os"
 	"strings"
 )
+
+const (
+	MinJWTSecretLength = 32
+)
+
+var defaultInsecureSecrets = map[string]struct{}{
+	"change-me":     {},
+	"change-me-too": {},
+}
+
+// ValidateJWTSecrets ensures JWT secrets meet minimum entropy requirements and are not known insecure defaults.
+func ValidateJWTSecrets(secret, refreshSecret string) error {
+	if _, insecure := defaultInsecureSecrets[secret]; insecure {
+		return errors.New("JWT_SECRET cannot use insecure default placeholder value ('change-me')")
+	}
+	if _, insecure := defaultInsecureSecrets[refreshSecret]; insecure {
+		return errors.New("JWT_REFRESH_SECRET cannot use insecure default placeholder value ('change-me-too')")
+	}
+	if len(secret) < MinJWTSecretLength {
+		return fmt.Errorf("JWT_SECRET must be at least %d characters long (got %d)", MinJWTSecretLength, len(secret))
+	}
+	if len(refreshSecret) < MinJWTSecretLength {
+		return fmt.Errorf("JWT_REFRESH_SECRET must be at least %d characters long (got %d)", MinJWTSecretLength, len(refreshSecret))
+	}
+	return nil
+}
 
 type Config struct {
 	Port                string
@@ -61,11 +89,9 @@ func Load() Config {
 		EmailFrom:           getenv("EMAIL_FROM", "no-reply@cvmc.com.br"),
 	}
 
-	// Prevent deploying with insecure JWT secrets in production.
-	if cfg.LogLevel != "debug" {
-		if cfg.JWTSecret == "change-me" || cfg.JWTRefreshSecret == "change-me-too" {
-			log.Fatal("FATAL: JWT_SECRET and JWT_REFRESH_SECRET must be set to secure values in production (LOG_LEVEL != debug)")
-		}
+	// Unconditionally reject default and low-entropy JWT secrets in all environments.
+	if err := ValidateJWTSecrets(cfg.JWTSecret, cfg.JWTRefreshSecret); err != nil {
+		log.Fatalf("FATAL: invalid JWT configuration: %v", err)
 	}
 
 	return cfg

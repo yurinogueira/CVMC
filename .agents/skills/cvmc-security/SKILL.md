@@ -23,6 +23,7 @@ Antes de submeter qualquer modificação que envolva autenticação, usuários, 
 - [ ] **Limites de Senha (Prevenção a DoS no Bcrypt)**:
   - Senhas no cadastro, redefinição e alteração validam estritamente o tamanho: `8 <= len(password) <= 72`.
   - O limite superior de 72 caracteres é obrigatório para evitar ataques de DoS por exaustão de CPU no algoritmo bcrypt.
+- [ ] **Segredos JWT no Startup**: A inicialização valida incondicionalmente se `JWT_SECRET` e `JWT_REFRESH_SECRET` possuem no mínimo 32 caracteres e rejeita chaves default (`"change-me"` / `"change-me-too"`).
 
 ### 2. Checklist de Validação de E-mail & Recuperação de Senha (OWASP Defense)
 - [ ] **Prevenção de Enumeração de Usuários**:
@@ -93,6 +94,7 @@ Antes de submeter qualquer modificação que envolva autenticação, usuários, 
 | `filepath.Join(base, path)` sem checagem de prefixo | `filepath.Abs()` + checagem de prefixo base | Arbitrary File Read / Path Traversal |
 | `ports: - "27017:27017"` no MongoDB em produção | Rede interna Docker (`mongodb://mongo:27017`) | Exposição pública do banco de dados |
 | Fallback de IP hardcoded no CI/CD | `OCI_HOST` via secrets com validação de presença | Exposição de infraestrutura e bypass |
+| Iniciar com JWT secret padrão ou < 32 chars | Abortar startup incondicionalmente (`ValidateJWTSecrets`) | Forjamento de tokens de autenticação |
 
 ---
 
