@@ -16,19 +16,20 @@ Esta skill define as diretrizes de arquitetura, fluxos de edição, documentaç�
 > [!IMPORTANT]
 > **Nunca** execute comandos brutos e verbosos como `go test ./...` ou `npm run lint` diretamente, pois eles poluem o contexto com dezenas de linhas irrelevantes (`? [no test files]`, logs de build, etc.).
 > **Sempre utilize os scripts auxiliares compactos em `scripts/`**:
-> - `./scripts/check.sh all` ou `./scripts/check.sh backend|frontend`
+> - `./scripts/check.sh all` ou `./scripts/check.sh backend|frontend|terraform`
 > - `./scripts/fix.sh`
 > - `./scripts/swagger.sh` (obrigatório ao alterar rotas/handlers do backend)
-> - `./scripts/dev.sh start|stop|status|logs`
+> - `./scripts/dev.sh start|stop|status|logs|restart`
 
 ### Comparativo de Comandos
 
 | Tarefa | Comando Verboso (Evitar) | Comando Compacto (Usar) | Redução de Tokens |
 | :--- | :--- | :--- | :--- |
-| **Checagem Geral** | `go vet + go test + tsc + eslint + prettier + vitest` | `./scripts/check.sh all` | **~85% menos tokens** |
+| **Checagem Geral** | `go vet + go test + tsc + eslint + prettier + vitest + terraform fmt` | `./scripts/check.sh all` | **~85% menos tokens** |
 | **Checar Backend** | `cd backend && go vet ./... && go test ./...` | `./scripts/check.sh backend` | Retorna 1 linha em sucesso |
 | **Checar Frontend** | `cd frontend && npx tsc -b && npm run lint && ...` | `./scripts/check.sh frontend` | Retorna 1 linha em sucesso |
-| **Auto-Formatar** | `go fmt + prettier --write + eslint --fix` | `./scripts/fix.sh` | Retorno limpo e direto |
+| **Checar Terraform**| `cd terraform && terraform fmt -check` | `./scripts/check.sh terraform` | Retorna 1 linha em sucesso |
+| **Auto-Formatar** | `go fmt + prettier --write + eslint --fix + terraform fmt` | `./scripts/fix.sh` | Retorno limpo e direto |
 | **Regenerar Swagger**| `cd backend && swag init ...` | `./scripts/swagger.sh` | Retorno direto e limpo |
 | **Subir Stack** | `docker compose up -d` | `./scripts/dev.sh start` | Formata tabela limpa |
 | **Status Containers** | `docker compose ps` | `./scripts/dev.sh status` | Resumo de portas e status |
@@ -41,28 +42,34 @@ Esta skill define as diretrizes de arquitetura, fluxos de edição, documentaç�
 - **Linguagem**: Go 1.25.
 - **Padrão**: Clean Architecture + DDD.
 - **Estrutura de Pastas**:
-  - `internal/domain/`: Entidades puras, regras de negócio, permissões/roles. Todos os structs de domínio expostos na API devem conter tags `json:"camelCase"`.
-  - `internal/application/ports/`: Interfaces/contratos de repositórios, serviços de autenticação (`TokenService`, `PasswordHasher`), storage.
-  - `internal/application/usecase/`: Casos de uso (orquestração da lógica de negócio).
-  - `internal/infrastructure/`: Implementações concretas (MongoDB, JWT, bcrypt, Local Storage com sanitização de path).
+  - `internal/domain/`: Entidades puras (`car`, `user`, `maintenance`, `auth`), regras de negócio e validações de domínio. Todos os structs expostos na API contêm tags `json:"camelCase"`.
+  - `internal/application/ports/`: Interfaces/contratos de repositórios, serviços de autenticação (`TokenService`, `PasswordHasher`), envio de e-mails (`EmailSender`) e storage (`StorageService`).
+  - `internal/application/usecase/`:
+    - `auth/`: Login, registro, validação de e-mail, reenvio de confirmação, esqueci minha senha e redefinição de senha com defesa anti-enumeração OWASP.
+    - `car/`: Criação com validação de cota (`maxVehicles`), listagem, busca por ID, atualização (`UpdateCar`) e exclusão.
+    - `user/`: Consulta de perfil público/privado, atualização de dados cadastrais e alteração segura de senha.
+    - `maintenance/`: Histórico de manutenções e revisões preventivas.
+    - `fipe/`: Integração resiliente com a API FIPE e cache multinível.
+  - `internal/infrastructure/`: Implementações concretas (MongoDB com queries seguras, JWT, bcrypt com limite de 72 chars, Resend SMTP com codificação RFC 2045/MIME e Local Storage sanitizado).
   - `internal/interfaces/rest/`:
-    - `handlers/`: Handlers HTTP que recebem DTOs, extraem a identidade via cookies `HttpOnly` (`cvmc_access_token`) ou Bearer token (sempre retornando `""` em caso de erro, forçando 401) e possuem anotações declarativas do Swagger.
-    - `router.go`: Registro de rotas HTTP, montagem da cadeia de middlewares de segurança (`SecurityHeaders`, `CORS` com whitelist, `RateLimiter`, `BodyLimit`) e rota condicional `GET /swagger/` (apenas em `LOG_LEVEL=debug`).
+    - `handlers/`: Handlers HTTP que recebem DTOs, extraem a identidade via cookies `HttpOnly` (`cvmc_access_token`) ou Bearer token (sempre retornando `""` em caso de erro, forçando 401) e possuem anotações declarativas do Swaggo.
+    - `router.go`: Registro de rotas HTTP, montagem da cadeia de middlewares de segurança (`SecurityHeaders`, `CORS` com whitelist, `RateLimiter` multicamada, `BodyLimit` de 1MB) e rota condicional `GET /swagger/` (apenas em `LOG_LEVEL=debug`).
   - `internal/shared/`: Middlewares (CORS, RateLimit, BodyLimit, SecurityHeaders, RequestID, Logging) e envelope HTTP padronizado (`httpx.Success`, `httpx.Created`, `httpx.Error`).
   - `docs/`: Documentação gerada automaticamente pelo Swaggo (`docs.go`, `swagger.json`, `swagger.yaml`).
-  - `cmd/api/main.go`: Ponto de entrada do servidor HTTP com timeouts defensivos e anotações gerais da API Swagger.
+  - `cmd/api/main.go`: Ponto de entrada do servidor HTTP com timeouts defensivos e graceful shutdown.
 
 ### 2. Frontend (`frontend/`)
 - **Stack**: React 19, TypeScript, Vite, Material UI (MUI v6), `@mui/icons-material`, Zustand, React Router v7, Axios, Vitest.
 - **Estrutura de Pastas**:
-  - `src/features/auth/`: Módulo de autenticação com layout Split-Screen (`LoginPage.tsx`, `RegisterPage.tsx`, `AuthHeroBanner.tsx`), store Zustand (`auth.store.ts` gerenciando apenas perfil público, sem tokens), `auth.service.ts` e tipos.
-  - `src/features/cars/`: Gestão de veículos (`VehiclesPage.tsx`, `VehicleCard.tsx`, `AddCarDialog.tsx`, `car.service.ts`).
-  - `src/features/dashboard/`: Painel geral com KPIs, CTA em gradiente e Empty State inteligente (`DashboardPage.tsx`).
+  - `src/features/auth/`: Módulo de autenticação com layout Split-Screen (`LoginPage.tsx`, `RegisterPage.tsx`, `ForgotPasswordPage.tsx`, `ResetPasswordPage.tsx`, `VerifyEmailPage.tsx`, `AuthHeroBanner.tsx`), store Zustand (`auth.store.ts` gerenciando apenas perfil público, sem tokens) e `auth.service.ts`.
+  - `src/features/cars/`: Gestão completa de veículos (`VehiclesPage.tsx`, `VehicleCard.tsx`, `AddCarDialog.tsx`, `EditCarDialog.tsx`, `ImageUploadField.tsx`, `VehicleImage.tsx`, `car.service.ts`).
+  - `src/features/profile/`: Gestão de conta e perfil (`ProfilePage.tsx`, `ProfileCard.tsx`, `ChangePasswordDialog.tsx`, `user.service.ts`).
+  - `src/features/dashboard/`: Painel geral com KPIs, CTA em gradiente, resumo de manutenções e Empty State inteligente (`DashboardPage.tsx`).
   - `src/features/maintenance/`: Histórico e revisões de veículos (`MaintenancePage.tsx`).
-  - `src/layouts/`: Shell SaaS persistente (`Sidebar.tsx`, `Topbar.tsx`, `AppLayout.tsx`).
-  - `src/routes/`: Definição de rotas públicas (`/login`, `/register`) e privadas via `ProtectedRoute.tsx`.
+  - `src/layouts/`: Shell SaaS persistente (`Sidebar.tsx`, `Topbar.tsx`, `AppLayout.tsx`, `BrandLogo.tsx`).
+  - `src/routes/`: Definição de rotas públicas (`/login`, `/register`, `/forgot-password`, `/reset-password`, `/verify-email`) e privadas via `ProtectedRoute.tsx`.
   - `src/services/api/`: Cliente Axios (`client.ts`) configurado para `/api/v1` com `withCredentials: true` para transporte transparente e seguro de cookies `HttpOnly`.
-  - `src/services/storage/`: Wrapper de acesso seguro ao `localStorage` (`storage.ts`) para suporte a testes e SSR (apenas para dados de UI, nunca tokens).
+  - `src/services/storage/`: Wrapper de acesso seguro ao `localStorage` (`storage.ts`) para suporte a testes e SSR (apenas para preferências de UI, nunca tokens).
   - `src/styles/`: Configuração de tema Material UI com harmonia análoga (`theme.ts`).
 
 ---
@@ -87,13 +94,14 @@ Esta skill define as diretrizes de arquitetura, fluxos de edição, documentaç�
 ### 2. Editando o Frontend
 1. Crie ou modifique componentes/telas em `src/features/<feature>/`.
 2. Utilize ícones semânticos de `@mui/icons-material` e componentes padronizados do Design System.
-3. Para acesso ao armazenamento local, use sempre o utilitário seguro `safeStorage` de `src/services/storage/storage.ts`.
+3. Para acesso ao armazenamento local de preferências, use sempre o utilitário seguro `safeStorage` de `src/services/storage/storage.ts`.
 4. Gerencie estado global via stores Zustand em `src/features/<feature>/state/`.
-5. Valide tipos, lint, formatação e testes unitários com:
+5. Desacople objetos reativos de dependências de `useEffect` (usando `useAuthStore.getState()` ou seletores estáveis) para prevenir loops de requisição.
+6. Valide tipos, lint, formatação e testes unitários com:
    ```bash
    ./scripts/check.sh frontend
    ```
-6. Se houver divergências de formatação ou lint simples:
+7. Se houver divergências de formatação ou lint simples:
    ```bash
    ./scripts/fix.sh
    ```
