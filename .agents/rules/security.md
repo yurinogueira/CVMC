@@ -69,8 +69,8 @@ Estas diretrizes são **inegociáveis** e devem ser seguidas em qualquer altera�
 
 ## 🔑 4. Gestão de Segredos & Configuração
 
-- **Segredos Obrigatórios em Produção**:
-  - Em ambientes onde `LOG_LEVEL != "debug"`, a aplicação **deve abortar a inicialização** (`log.Fatal`) se `JWT_SECRET` ou `JWT_REFRESH_SECRET` contiverem valores default como `"change-me"`.
+- **Rejeição Incondicional de Segredos JWT Padrão/Fracos**:
+  - Em qualquer ambiente (independentemente de `LOG_LEVEL`), a aplicação **deve abortar a inicialização** (`log.Fatalf`) se `JWT_SECRET` ou `JWT_REFRESH_SECRET` contiverem valores default como `"change-me"`, `"change-me-too"` ou possuírem comprimento inferior a **32 caracteres** (`len < 32`).
 - **Documentação de API Segura**:
   - O endpoint de Swagger UI (`/swagger/`) só pode ser registrado e acessível quando `LOG_LEVEL == "debug"`. Em produção, o endpoint não deve existir.
 
