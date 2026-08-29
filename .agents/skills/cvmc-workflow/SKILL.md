@@ -52,12 +52,15 @@ flowchart LR
   ```
 - **Padrão de Nomenclatura das Branches**:
   - **Com Issue vinculada**: `<tipo>/<id_da_issue>-<descricao-curta>`
-    - `feat/20-workflow-standardization`: Novas funcionalidades ou melhorias vinculadas à issue #20.
-    - `fix/21-auth-session-timeout`: Correções de bugs vinculadas à issue #21.
-    - `feat/22-fipe-cache-integration`: Features vinculadas à issue #22.
-  - **Sem Issue vinculada (manutenções internas/skills)**: `<tipo>/<descricao-curta>`
+    - `feat/24-user-profile-and-auth-limits`: Validação de e-mail e limites vinculados à issue #24.
+    - `feat/25-visual-identity-and-vehicle-images`: Upload de fotos e renders vinculados à issue #25.
+    - `fix/28-remove-hardcoded-deploy-ip`: Correções de segurança em CI/CD vinculadas à issue #28.
+    - `feat/42-edit-vehicle-and-year`: Edição de veículos e campos de ano vinculados à issue #42.
+    - `fix/47-profile-infinite-loop`: Correção de loop de requisições vinculada à issue #47.
+  - **Sem Issue vinculada (manutenções internas/skills/dependências)**: `<tipo>/<descricao-curta>`
     - `chore/skills-enhancement`: Ajustes de documentação interna e skills.
     - `docs/readme-update`: Atualizações de documentação.
+    - `feat/dependency-updates`: Atualizações de bibliotecas e drivers.
 
 ### 2. Desenvolvimento & Validação Mandatória
 - Execute as modificações necessárias seguindo as diretrizes da arquitetura (`cvmc-dev`) e segurança (`cvmc-security`).
@@ -73,15 +76,21 @@ flowchart LR
 ### 3. Commits Semânticos (Conventional Commits)
 - Organize os commits de forma atômica seguindo o padrão Conventional Commits:
   - **Com Issue**: `<tipo>(<escopo>): <descrição clara no imperativo> (#<id_da_issue>)`
-    - `feat(workflows): unificar e padronizar pipelines de ci e deploy (#20)`
-    - `fix(auth): implementar silent refresh e sessao de 24h (#21)`
-    - `feat(cars): integrar fipe api com cache multinivel no mongodb (#22)`
+    - `feat(user): validacao de e-mail, pagina de perfil e limites de veiculos (#24)`
+    - `feat(design): identidade visual, upload de foto e renders svg por categoria (#25)`
+    - `fix(ci): remover fallback hardcoded de IP no deploy (#28)`
+    - `feat(cars): permitir edicao de veiculo e incluir campo de ano (#42)`
+    - `fix(profile): desacoplar user do useEffect para prevenir loop infinito (#47)`
   - **Sem Issue**: `<tipo>(<escopo>): <descrição clara no imperativo>`
-    - `chore(skills): enhance cvmc-issues and cvmc-workflow guidelines`
+    - `chore(skills): sincronizar diretrizes de workflow com a main remota`
+    - `feat(deps): bump frontend npm dependencies and backend mongodb driver`
 
 ### 4. Criação do Pull Request para `main` (GitHub MCP)
 - Antes de submeter o PR, garanta que a branch está perfeitamente sincronizada com a última versão da `origin/main` (`git fetch origin main && git rebase origin/main`).
-- Faça o push da branch para o repositório remoto.
+- Faça o push da branch para o repositório remoto:
+  ```bash
+  git push -u origin <nome-da-sua-branch>
+  ```
 - Abra o Pull Request apontando para a base `main` utilizando a ferramenta MCP do GitHub (`create_pull_request`):
   - **Title**: `<tipo>(<escopo>): <título semântico claro>` (com `(#<id_da_issue>)` se houver).
   - **Head**: `<nome-da-sua-branch>`

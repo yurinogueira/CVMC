@@ -18,7 +18,7 @@ Antes de submeter qualquer modificação que envolva autenticação, usuários, 
 
 ### 1. Checklist de Autenticação, Tokens & Sessões
 - [ ] **Transporte de Sessão**: Tokens JWT (`accessToken` e `refreshToken`) são trafegados exclusivamente em cookies `HttpOnly`, `Secure`, `SameSite=Lax` com domínio configurado.
-- [ ] **Isolamento no Frontend**: O frontend **nunca** armazena tokens em `localStorage` ou `sessionStorage` (apenas dados públicos de perfil não sensíveis).
+- [ ] **Isolamento no Frontend**: O frontend **nunca** armazena tokens em `localStorage` ou `sessionStorage` (apenas dados públicos de perfil e preferências de UI não sensíveis via `safeStorage`).
 - [ ] **Falha Segura de Identidade**: Ao extrair o usuário via `claims.UserID`, em caso de falha de parse ou token expirado, a função retorna estritamente `""` (forçando `401 Unauthorized`), **sem nunca fazer fallback para o token bruto**.
 - [ ] **Limites de Senha (Prevenção a DoS no Bcrypt)**:
   - Senhas no cadastro, redefinição e alteração validam estritamente o tamanho: `8 <= len(password) <= 72`.
@@ -69,12 +69,12 @@ Antes de submeter qualquer modificação que envolva autenticação, usuários, 
 
 ### 5. Checklist de Persistência & Sanitização
 - [ ] **Sanitização NoSQL**: IDs e e-mails passam por sanitização (`SanitizeID`, `SanitizeEmail`) antes de consultas no MongoDB para mitigar injeção de operadores BSON.
-- [ ] **Storage e Path Traversal**: Provedores de armazenamento validam caminhos absolutos e impedem path traversal (`../`) antes de qualquer operação em disco.
+- [ ] **Storage e Path Traversal**: Provedores de armazenamento e upload de imagens validam caminhos absolutos e impedem path traversal (`../`) antes de qualquer operação em disco.
 
-### 6. Checklist de Infraestrutura & Terraform
+### 6. Checklist de Infraestrutura, CI/CD & Terraform
 - [ ] O arquivo `docker-compose.yml` de produção não expõe portas de banco de dados (`27017:27017`) diretamente no host.
-- [ ] Nenhum segredo ou chave privada RSA está em texto plano em `.tfvars` ou `.hcl`.
-- [ ] A regra de SSH no OCI utiliza `var.admin_cidr` em vez de `0.0.0.0/0`.
+- [ ] Nenhum segredo, IP de servidor ou chave privada RSA está em texto plano em `.tfvars`, `.hcl` ou workflows de CI (`.github/workflows/`).
+- [ ] Steps de deploy em GitHub Actions utilizam variáveis de secrets (`${{ secrets.OCI_HOST }}`) com validação estrita de presença.
 
 ---
 
@@ -92,6 +92,7 @@ Antes de submeter qualquer modificação que envolva autenticação, usuários, 
 | `w.Header().Set("Access-Control-Allow-Origin", "*")` com credenciais | Whitelist de origens via `ALLOWED_ORIGINS` | Vazamento de dados cross-origin |
 | `filepath.Join(base, path)` sem checagem de prefixo | `filepath.Abs()` + checagem de prefixo base | Arbitrary File Read / Path Traversal |
 | `ports: - "27017:27017"` no MongoDB em produção | Rede interna Docker (`mongodb://mongo:27017`) | Exposição pública do banco de dados |
+| Fallback de IP hardcoded no CI/CD | `OCI_HOST` via secrets com validação de presença | Exposição de infraestrutura e bypass |
 
 ---
 

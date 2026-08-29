@@ -19,9 +19,9 @@ Issues bem escritas garantem que agentes de IA e desenvolvedores possam implemen
 2. **Investigação Prévia Obrigatória**: Antes de redigir a issue, explore a base de código para mapear os arquivos, rotas, contratos, workflows ou componentes envolvidos.
 3. **Precisão de Localização**: Toda issue deve conter caminhos de arquivo exatos (`backend/...`, `frontend/...`, `.github/workflows/...`, `terraform/...`), nomes de structs, funções, endpoints REST (`/api/v1/...`) ou jobs de pipeline.
 4. **Título Semântico**: Use a convenção do Conventional Commits para títulos de issue:
-   - Bugs: `fix(<modulo>): <descrição sucinta em minúsculas>` (ex: `fix(auth): cookie de sessão não enviado na rota de perfil`)
-   - Features/Melhorias: `feat(<modulo>): <descrição sucinta em minúsculas>` (ex: `feat(workflows): unificar e padronizar pipelines de ci e deploy`)
-   - Manutenções/Infra: `chore(<modulo>): <descrição sucinta>` ou `ci(<modulo>): <descrição sucinta>`
+   - Bugs: `fix(<modulo>): <descrição sucinta em minúsculas>` (ex: `fix(profile): desacoplar user do useEffect para prevenir loop infinito`)
+   - Features/Melhorias: `feat(<modulo>): <descrição sucinta em minúsculas>` (ex: `feat(cars): permitir edicao de veiculo e incluir campo de ano no cadastro`)
+   - Manutenções/CI: `chore(<modulo>): <descrição sucinta>` ou `fix(ci): <descrição sucinta>` (ex: `fix(ci): remover fallback hardcoded de IP no workflow de deploy`)
 5. **Alinhamento Arquitetural**: Respeite os padrões documentados em `cvmc-dev`, `cvmc-security` e as diretrizes de CI/CD do repositório.
 
 ---
@@ -60,12 +60,12 @@ Ao relatar um defeito, siga rigorosamente a seguinte estrutura:
 3. [Passo 3]
 
 ### Evidências e Contexto Técnico
-\`\`\`json
+```json
 {
   "status": 500,
   "message": "exemplo de erro retornado"
 }
-\`\`\`
+```
 
 ### Gravidade / Severidade
 [🔴 Bloqueante | 🟠 Alta | 🟡 Média | 🟢 Baixa]
@@ -137,20 +137,20 @@ Utilize a ferramenta `call_mcp_tool` chamando o servidor `github` e a tool `crea
   "Arguments": {
     "owner": "yurinogueira",
     "repo": "CVMC",
-    "title": "feat(workflows): unificar e padronizar pipelines de ci e deploy",
+    "title": "feat(cars): permitir edicao de veiculo e incluir campo de ano no cadastro",
     "body": "### Visão Geral...\n...",
-    "labels": ["enhancement", "ci/cd"]
+    "labels": ["enhancement", "frontend", "backend"]
   }
 }
 ```
 
 ### Opção 2: Via GitHub CLI (`gh issue create`)
-Execute o comando via terminal (sandboxed):
+Execute o comando via terminal:
 
 ```bash
 gh issue create \
   --repo yurinogueira/CVMC \
-  --title "feat(cars): adicionar exportação do histórico de manutenção em PDF" \
+  --title "feat(cars): permitir edicao de veiculo e incluir campo de ano no cadastro" \
   --body-file /caminho/para/issue_body.md \
   --label "enhancement,feature"
 ```
