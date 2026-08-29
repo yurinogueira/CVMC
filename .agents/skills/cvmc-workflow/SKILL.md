@@ -2,8 +2,8 @@
 name: cvmc-workflow
 description: >-
   Fluxo padronizado de ciclo de vida de desenvolvimento e entrega de tarefas no CVMC:
-  preparação de branch, commits semânticos (Conventional Commits), validação via scripts,
-  abertura de Pull Request para a branch 'main' e fechamento de issue com comentários vinculados
+  sincronização obrigatória com a main remota, preparação de branch, commits semânticos (Conventional Commits),
+  validação via scripts, abertura de Pull Request para a branch 'main' e fechamento de issue com comentários vinculados
   utilizando o GitHub MCP.
 ---
 
@@ -17,7 +17,7 @@ Esta skill estabelece o fluxo de trabalho obrigatório de ponta a ponta para qua
 
 ```mermaid
 flowchart LR
-    A[1. Ler/Mapear Issue] --> B[2. Preparar Branch]
+    A[1. Ler/Mapear Contexto ou Issue] --> B[2. Sincronizar Main & Criar Branch]
     B --> C[3. Desenvolver & Validar]
     C --> D[4. Commit Semântico]
     D --> E[5. Subir PR para Main]
@@ -28,9 +28,29 @@ flowchart LR
 
 ## 📋 Protocolo de Execução Passo a Passo
 
-### 1. Início da Tarefa & Preparação da Branch
+### 1. Sincronização Obrigatória com a `main` Remota & Preparação da Branch
 - Analise a issue utilizando o GitHub MCP (`get_issue`) ou o contexto da tarefa solicitada.
-- Garanta que está trabalhando em uma branch dedicada a partir da `main` atualizada:
+- **Sincronização Obrigatória com a `main`**:
+  Antes de criar uma nova branch ou iniciar alterações, **sempre sincronize as referências com `origin/main`** para garantir que você está partindo do estado mais atualizado do código:
+  ```bash
+  # 1. Buscar as referências mais recentes do repositório remoto
+  git fetch origin main
+
+  # 2. Criar e alternar para a branch de trabalho baseada diretamente no origin/main atualizado
+  git checkout -b <tipo>/<nome-da-branch> origin/main
+  ```
+  - Se preferir atualizar a branch local `main` antes de criar a branch de trabalho:
+  ```bash
+  git checkout main
+  git pull --ff-only origin main
+  git checkout -b <tipo>/<nome-da-branch>
+  ```
+  - Caso já esteja trabalhando em uma branch existente e novas alterações tenham entrado na `main`:
+  ```bash
+  git fetch origin main
+  git rebase origin/main
+  ```
+- **Padrão de Nomenclatura das Branches**:
   - **Com Issue vinculada**: `<tipo>/<id_da_issue>-<descricao-curta>`
     - `feat/20-workflow-standardization`: Novas funcionalidades ou melhorias vinculadas à issue #20.
     - `fix/21-auth-session-timeout`: Correções de bugs vinculadas à issue #21.
@@ -60,6 +80,7 @@ flowchart LR
     - `chore(skills): enhance cvmc-issues and cvmc-workflow guidelines`
 
 ### 4. Criação do Pull Request para `main` (GitHub MCP)
+- Antes de submeter o PR, garanta que a branch está perfeitamente sincronizada com a última versão da `origin/main` (`git fetch origin main && git rebase origin/main`).
 - Faça o push da branch para o repositório remoto.
 - Abra o Pull Request apontando para a base `main` utilizando a ferramenta MCP do GitHub (`create_pull_request`):
   - **Title**: `<tipo>(<escopo>): <título semântico claro>` (com `(#<id_da_issue>)` se houver).
