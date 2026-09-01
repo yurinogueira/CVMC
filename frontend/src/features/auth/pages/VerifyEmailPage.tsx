@@ -25,7 +25,7 @@ export function VerifyEmailPage() {
   const token = searchParams.get("token") || "";
   const hasToken = Boolean(token.trim());
 
-  const { user, setUser, isAuthenticated } = useAuthStore();
+  const { setUser, isAuthenticated } = useAuthStore();
 
   const [loading, setLoading] = useState(hasToken);
   const [success, setSuccess] = useState(false);

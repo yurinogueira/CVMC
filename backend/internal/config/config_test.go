@@ -7,8 +7,8 @@ import (
 )
 
 func TestValidateJWTSecrets(t *testing.T) {
-	validSecret := "12345678901234567890123456789012"        // 32 chars
-	validRefresh := "abcdefghijklmnopqrstuvwxyz1234567890"    // 36 chars
+	validSecret := "12345678901234567890123456789012"      // 32 chars
+	validRefresh := "abcdefghijklmnopqrstuvwxyz1234567890" // 36 chars
 
 	tests := []struct {
 		name          string
