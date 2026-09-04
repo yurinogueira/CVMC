@@ -1,0 +1,1 @@
+import{o as e}from"./index-DR92K3Ve.js";var t={async listByCar(t){return(await e.get(`/cars/${t}/maintenances`)).data.data||[]},async create(t,n){return(await e.post(`/cars/${t}/maintenances`,n)).data.data},async update(t,n){return(await e.put(`/maintenances/${t}`,n)).data.data},async delete(t){await e.delete(`/maintenances/${t}`)}};export{t};
