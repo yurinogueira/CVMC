@@ -1,4 +1,4 @@
-import { useEffect, useState, lazy, Suspense } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Box,
@@ -35,12 +35,6 @@ import { MaintenanceCard } from "../../maintenance/components/MaintenanceCard";
 import { useDocumentTitle } from "../../shared";
 import { brandColors } from "../../../styles/theme";
 
-const AddMaintenanceDialog = lazy(() =>
-  import("../../maintenance/components/AddMaintenanceDialog").then((m) => ({
-    default: m.AddMaintenanceDialog,
-  })),
-);
-
 export function VehicleDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -50,7 +44,6 @@ export function VehicleDetailsPage() {
   const [loadingCar, setLoadingCar] = useState(true);
   const [loadingMaintenances, setLoadingMaintenances] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [openAddDialog, setOpenAddDialog] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useDocumentTitle(car ? `${car.name} - Detalhes` : "Detalhes do Veículo");
@@ -106,15 +99,6 @@ export function VehicleDetailsPage() {
       isMounted = false;
     };
   }, [id]);
-
-  const handleMaintenanceCreated = (newMaint: Maintenance) => {
-    setMaintenances((prev) => [newMaint, ...prev]);
-    setToastMessage("Manutenção registrada com sucesso!");
-    // Update car's last mileage if new maintenance has a higher mileage
-    if (car && newMaint.mileage > (car.lastMileage || 0)) {
-      setCar({ ...car, lastMileage: newMaint.mileage });
-    }
-  };
 
   const getVehicleTypeIcon = (type?: string) => {
     switch (type) {
@@ -217,7 +201,7 @@ export function VehicleDetailsPage() {
         <Button
           variant="contained"
           startIcon={<AddRoundedIcon />}
-          onClick={() => setOpenAddDialog(true)}
+          onClick={() => navigate(`/vehicles/${car?.id || id}/maintenance/new`)}
           disabled={loadingCar || !car}
           sx={{ px: 2.5, py: 1.1 }}
         >
@@ -561,7 +545,9 @@ export function VehicleDetailsPage() {
           <Button
             variant="contained"
             startIcon={<AddRoundedIcon />}
-            onClick={() => setOpenAddDialog(true)}
+            onClick={() =>
+              navigate(`/vehicles/${car?.id || id}/maintenance/new`)
+            }
             disabled={!car}
           >
             Registrar Primeira Manutenção
@@ -573,20 +559,6 @@ export function VehicleDetailsPage() {
             <MaintenanceCard key={maint.id} maintenance={maint} />
           ))}
         </Stack>
-      )}
-
-      {/* Add Maintenance Modal (Lazy Loaded) */}
-      {openAddDialog && car && (
-        <Suspense fallback={null}>
-          <AddMaintenanceDialog
-            open={openAddDialog}
-            carId={car.id}
-            carName={car.name}
-            lastMileage={car.lastMileage}
-            onClose={() => setOpenAddDialog(false)}
-            onMaintenanceCreated={handleMaintenanceCreated}
-          />
-        </Suspense>
       )}
 
       {/* Success Toast */}
