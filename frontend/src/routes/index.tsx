@@ -40,6 +40,11 @@ const VehiclesPage = lazy(() =>
     default: m.VehiclesPage,
   })),
 );
+const VehicleDetailsPage = lazy(() =>
+  import("../features/cars/pages/VehicleDetailsPage").then((m) => ({
+    default: m.VehicleDetailsPage,
+  })),
+);
 const MaintenancePage = lazy(() =>
   import("../features/maintenance/pages/MaintenancePage").then((m) => ({
     default: m.MaintenancePage,
@@ -68,6 +73,7 @@ export function AppRoutes() {
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/vehicles" element={<VehiclesPage />} />
+            <Route path="/vehicles/:id" element={<VehicleDetailsPage />} />
             <Route path="/maintenance" element={<MaintenancePage />} />
             <Route path="/profile" element={<ProfilePage />} />
           </Route>

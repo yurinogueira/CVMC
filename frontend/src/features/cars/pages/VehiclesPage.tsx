@@ -1,4 +1,5 @@
 import { useEffect, useState, lazy, Suspense } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -33,6 +34,7 @@ const EditCarDialog = lazy(() =>
 
 export function VehiclesPage() {
   useDocumentTitle("Meus Veículos");
+  const navigate = useNavigate();
   const [cars, setCars] = useState<Car[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -266,6 +268,7 @@ export function VehiclesPage() {
                 car={car}
                 onEdit={handleEditCar}
                 onDelete={handleDeleteCar}
+                onClick={(c) => navigate(`/vehicles/${c.id}`)}
               />
             </Grid>
           ))}
