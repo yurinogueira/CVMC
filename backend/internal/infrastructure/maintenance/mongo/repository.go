@@ -15,14 +15,17 @@ import (
 )
 
 type maintenanceDoc struct {
-	ID          string    `bson:"_id"`
-	CarID       string    `bson:"carId"`
-	Title       string    `bson:"title"`
-	Description string    `bson:"description"`
-	Date        time.Time `bson:"date"`
-	Mileage     int       `bson:"mileage"`
-	CreatedAt   time.Time `bson:"createdAt"`
-	UpdatedAt   time.Time `bson:"updatedAt"`
+	ID          string                         `bson:"_id"`
+	CarID       string                         `bson:"carId"`
+	Title       string                         `bson:"title"`
+	Description string                         `bson:"description"`
+	Date        time.Time                      `bson:"date"`
+	Mileage     int                            `bson:"mileage"`
+	Types       []string                       `bson:"types,omitempty"`
+	Cost        *float64                       `bson:"cost,omitempty"`
+	Attachments []domainmaintenance.Attachment `bson:"attachments,omitempty"`
+	CreatedAt   time.Time                      `bson:"createdAt"`
+	UpdatedAt   time.Time                      `bson:"updatedAt"`
 }
 
 type Repository struct {
@@ -173,6 +176,9 @@ func toMaintenanceDoc(m domainmaintenance.Maintenance) maintenanceDoc {
 		Description: strings.TrimSpace(m.Description),
 		Date:        m.Date,
 		Mileage:     m.Mileage,
+		Types:       m.Types,
+		Cost:        m.Cost,
+		Attachments: m.Attachments,
 		CreatedAt:   m.CreatedAt,
 		UpdatedAt:   m.UpdatedAt,
 	}
@@ -186,6 +192,9 @@ func toDomainMaintenance(d maintenanceDoc) domainmaintenance.Maintenance {
 		Description: d.Description,
 		Date:        d.Date,
 		Mileage:     d.Mileage,
+		Types:       d.Types,
+		Cost:        d.Cost,
+		Attachments: d.Attachments,
 		CreatedAt:   d.CreatedAt,
 		UpdatedAt:   d.UpdatedAt,
 	}
