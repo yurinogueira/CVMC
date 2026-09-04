@@ -192,7 +192,38 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
           <Stack
             direction="row"
             spacing={1.5}
-            sx={{ alignItems: "center", minWidth: 0, flex: 1 }}
+            onClick={() => {
+              navigate("/profile");
+              onMobileClose();
+            }}
+            role="button"
+            tabIndex={0}
+            aria-label="Ver perfil"
+            data-testid="sidebar-user-shortcut"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                navigate("/profile");
+                onMobileClose();
+              }
+            }}
+            sx={{
+              alignItems: "center",
+              minWidth: 0,
+              flex: 1,
+              cursor: "pointer",
+              borderRadius: 1.5,
+              p: 0.5,
+              mr: 1,
+              transition: "background-color 0.2s ease, opacity 0.2s ease",
+              "&:hover": {
+                bgcolor: "rgba(0, 0, 0, 0.04)",
+              },
+              "&:focus-visible": {
+                outline: "2px solid",
+                outlineColor: "primary.main",
+              },
+            }}
           >
             <Avatar
               sx={{

@@ -215,7 +215,7 @@ export function ProfilePage() {
   );
 
   return (
-    <Box sx={{ p: { xs: 2, sm: 3, md: 4 }, maxWidth: 1000, mx: "auto" }}>
+    <Box>
       {/* Page Title */}
       <Box sx={{ mb: 4 }}>
         <Typography
