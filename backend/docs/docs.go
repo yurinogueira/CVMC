@@ -1387,6 +1387,35 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "handlers.AttachmentRequest": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string",
+                    "example": "2026-09-04T12:00:00Z"
+                },
+                "dataUrl": {
+                    "type": "string",
+                    "example": "data:application/pdf;base64,..."
+                },
+                "id": {
+                    "type": "string",
+                    "example": "att-1"
+                },
+                "mimeType": {
+                    "type": "string",
+                    "example": "application/pdf"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "recibo_oleo.pdf"
+                },
+                "size": {
+                    "type": "integer",
+                    "example": 1048576
+                }
+            }
+        },
         "handlers.CreateCarRequest": {
             "type": "object",
             "properties": {
@@ -1439,6 +1468,16 @@ const docTemplate = `{
         "handlers.CreateMaintenanceRequest": {
             "type": "object",
             "properties": {
+                "attachments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.AttachmentRequest"
+                    }
+                },
+                "cost": {
+                    "type": "number",
+                    "example": 350.5
+                },
                 "date": {
                     "type": "string",
                     "example": "2026-08-23T00:00:00Z"
@@ -1454,6 +1493,16 @@ const docTemplate = `{
                 "title": {
                     "type": "string",
                     "example": "Troca de Óleo e Filtro"
+                },
+                "types": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "[\"Óleo de Motor\"",
+                        "\"Filtro do Óleo de Motor\"]"
+                    ]
                 }
             }
         },
@@ -1570,6 +1619,16 @@ const docTemplate = `{
         "handlers.UpdateMaintenanceRequest": {
             "type": "object",
             "properties": {
+                "attachments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.AttachmentRequest"
+                    }
+                },
+                "cost": {
+                    "type": "number",
+                    "example": 350.5
+                },
                 "date": {
                     "type": "string",
                     "example": "2026-08-23T00:00:00Z"
@@ -1585,6 +1644,16 @@ const docTemplate = `{
                 "title": {
                     "type": "string",
                     "example": "Troca de Óleo e Filtro"
+                },
+                "types": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "[\"Óleo de Motor\"",
+                        "\"Filtro do Óleo de Motor\"]"
+                    ]
                 }
             }
         },

@@ -9,6 +9,7 @@ import (
 
 	portauth "cvmc/internal/application/ports/auth"
 	maintenusecase "cvmc/internal/application/usecase/maintenance"
+	domainmaintenance "cvmc/internal/domain/maintenance"
 	"cvmc/internal/shared/httpx"
 )
 
@@ -25,18 +26,33 @@ func NewMaintenanceHandler(service *maintenusecase.Service, tokens ...portauth.T
 	return &MaintenanceHandler{service: service, tokens: tokenService}
 }
 
+type AttachmentRequest struct {
+	ID        string    `json:"id" example:"att-1"`
+	Name      string    `json:"name" example:"recibo_oleo.pdf"`
+	Size      int64     `json:"size" example:"1048576"`
+	MimeType  string    `json:"mimeType" example:"application/pdf"`
+	DataUrl   string    `json:"dataUrl" example:"data:application/pdf;base64,..."`
+	CreatedAt time.Time `json:"createdAt" example:"2026-09-04T12:00:00Z"`
+}
+
 type CreateMaintenanceRequest struct {
-	Title       string    `json:"title" example:"Troca de Óleo e Filtro"`
-	Description string    `json:"description" example:"Óleo 0W20 Sintético + Filtro original"`
-	Date        time.Time `json:"date" example:"2026-08-23T00:00:00Z"`
-	Mileage     int       `json:"mileage" example:"32000"`
+	Title       string              `json:"title" example:"Troca de Óleo e Filtro"`
+	Description string              `json:"description" example:"Óleo 0W20 Sintético + Filtro original"`
+	Date        time.Time           `json:"date" example:"2026-08-23T00:00:00Z"`
+	Mileage     int                 `json:"mileage" example:"32000"`
+	Types       []string            `json:"types,omitempty" example:"[\"Óleo de Motor\",\"Filtro do Óleo de Motor\"]"`
+	Cost        *float64            `json:"cost,omitempty" example:"350.50"`
+	Attachments []AttachmentRequest `json:"attachments,omitempty"`
 }
 
 type UpdateMaintenanceRequest struct {
-	Title       string    `json:"title" example:"Troca de Óleo e Filtro"`
-	Description string    `json:"description" example:"Óleo 0W20 Sintético + Filtro original"`
-	Date        time.Time `json:"date" example:"2026-08-23T00:00:00Z"`
-	Mileage     int       `json:"mileage" example:"32000"`
+	Title       string              `json:"title" example:"Troca de Óleo e Filtro"`
+	Description string              `json:"description" example:"Óleo 0W20 Sintético + Filtro original"`
+	Date        time.Time           `json:"date" example:"2026-08-23T00:00:00Z"`
+	Mileage     int                 `json:"mileage" example:"32000"`
+	Types       []string            `json:"types,omitempty" example:"[\"Óleo de Motor\",\"Filtro do Óleo de Motor\"]"`
+	Cost        *float64            `json:"cost,omitempty" example:"350.50"`
+	Attachments []AttachmentRequest `json:"attachments,omitempty"`
 }
 
 func (h *MaintenanceHandler) extractUserID(r *http.Request) string {
@@ -89,11 +105,25 @@ func (h *MaintenanceHandler) Create(w http.ResponseWriter, r *http.Request) {
 		handleMaintenanceError(w, err)
 		return
 	}
+	attachments := make([]domainmaintenance.Attachment, 0, len(input.Attachments))
+	for _, att := range input.Attachments {
+		attachments = append(attachments, domainmaintenance.Attachment{
+			ID:        att.ID,
+			Name:      att.Name,
+			Size:      att.Size,
+			MimeType:  att.MimeType,
+			DataUrl:   att.DataUrl,
+			CreatedAt: att.CreatedAt,
+		})
+	}
 	maintenance, err := h.service.Create(r.Context(), actorID, carID, maintenusecase.CreateInput{
 		Title:       input.Title,
 		Description: input.Description,
 		Date:        input.Date,
 		Mileage:     input.Mileage,
+		Types:       input.Types,
+		Cost:        input.Cost,
+		Attachments: attachments,
 	})
 	if err != nil {
 		handleMaintenanceError(w, err)
@@ -155,11 +185,25 @@ func (h *MaintenanceHandler) Update(w http.ResponseWriter, r *http.Request) {
 		handleMaintenanceError(w, err)
 		return
 	}
+	attachments := make([]domainmaintenance.Attachment, 0, len(input.Attachments))
+	for _, att := range input.Attachments {
+		attachments = append(attachments, domainmaintenance.Attachment{
+			ID:        att.ID,
+			Name:      att.Name,
+			Size:      att.Size,
+			MimeType:  att.MimeType,
+			DataUrl:   att.DataUrl,
+			CreatedAt: att.CreatedAt,
+		})
+	}
 	maintenance, err := h.service.Update(r.Context(), actorID, maintID, maintenusecase.UpdateInput{
 		Title:       input.Title,
 		Description: input.Description,
 		Date:        input.Date,
 		Mileage:     input.Mileage,
+		Types:       input.Types,
+		Cost:        input.Cost,
+		Attachments: attachments,
 	})
 	if err != nil {
 		handleMaintenanceError(w, err)

@@ -31,6 +31,9 @@ type CreateInput struct {
 	Description string
 	Date        time.Time
 	Mileage     int
+	Types       []string
+	Cost        *float64
+	Attachments []domainmaintenance.Attachment
 }
 
 type UpdateInput struct {
@@ -38,6 +41,9 @@ type UpdateInput struct {
 	Description string
 	Date        time.Time
 	Mileage     int
+	Types       []string
+	Cost        *float64
+	Attachments []domainmaintenance.Attachment
 }
 
 func NewService(maintenances maintenanceport.Repository, cars carport.Repository) *Service {
@@ -65,6 +71,9 @@ func (s *Service) Create(ctx context.Context, actorID, carID string, input Creat
 		Description: strings.TrimSpace(input.Description),
 		Date:        when,
 		Mileage:     input.Mileage,
+		Types:       input.Types,
+		Cost:        input.Cost,
+		Attachments: input.Attachments,
 		CreatedAt:   s.now().UTC(),
 		UpdatedAt:   s.now().UTC(),
 	}
@@ -117,6 +126,9 @@ func (s *Service) Update(ctx context.Context, actorID, maintenanceID string, inp
 		item.Date = input.Date
 	}
 	item.Mileage = input.Mileage
+	item.Types = input.Types
+	item.Cost = input.Cost
+	item.Attachments = input.Attachments
 	item.UpdatedAt = s.now().UTC()
 	updated, err := s.maintenances.Update(ctx, item)
 	if err != nil {

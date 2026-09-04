@@ -1,5 +1,26 @@
 basePath: /
 definitions:
+  handlers.AttachmentRequest:
+    properties:
+      createdAt:
+        example: "2026-09-04T12:00:00Z"
+        type: string
+      dataUrl:
+        example: data:application/pdf;base64,...
+        type: string
+      id:
+        example: att-1
+        type: string
+      mimeType:
+        example: application/pdf
+        type: string
+      name:
+        example: recibo_oleo.pdf
+        type: string
+      size:
+        example: 1048576
+        type: integer
+    type: object
   handlers.CreateCarRequest:
     properties:
       fipeCode:
@@ -38,6 +59,13 @@ definitions:
     type: object
   handlers.CreateMaintenanceRequest:
     properties:
+      attachments:
+        items:
+          $ref: '#/definitions/handlers.AttachmentRequest'
+        type: array
+      cost:
+        example: 350.5
+        type: number
       date:
         example: "2026-08-23T00:00:00Z"
         type: string
@@ -50,6 +78,13 @@ definitions:
       title:
         example: Troca de Óleo e Filtro
         type: string
+      types:
+        example:
+        - '["Óleo de Motor"'
+        - '"Filtro do Óleo de Motor"]'
+        items:
+          type: string
+        type: array
     type: object
   handlers.ForgotPasswordRequest:
     properties:
@@ -131,6 +166,13 @@ definitions:
     type: object
   handlers.UpdateMaintenanceRequest:
     properties:
+      attachments:
+        items:
+          $ref: '#/definitions/handlers.AttachmentRequest'
+        type: array
+      cost:
+        example: 350.5
+        type: number
       date:
         example: "2026-08-23T00:00:00Z"
         type: string
@@ -143,6 +185,13 @@ definitions:
       title:
         example: Troca de Óleo e Filtro
         type: string
+      types:
+        example:
+        - '["Óleo de Motor"'
+        - '"Filtro do Óleo de Motor"]'
+        items:
+          type: string
+        type: array
     type: object
   handlers.UpdatePasswordRequest:
     properties:
