@@ -20,12 +20,31 @@ interface VehicleCardProps {
   car: Car;
   onEdit?: (car: Car) => void;
   onDelete?: (id: string) => void;
+  onClick?: (car: Car) => void;
 }
 
-export function VehicleCard({ car, onEdit, onDelete }: VehicleCardProps) {
+export function VehicleCard({
+  car,
+  onEdit,
+  onDelete,
+  onClick,
+}: VehicleCardProps) {
+  const isClickable = Boolean(onClick);
+
   return (
     <Card
       elevation={0}
+      role={isClickable ? "button" : undefined}
+      tabIndex={isClickable ? 0 : undefined}
+      onClick={() => {
+        if (onClick) onClick(car);
+      }}
+      onKeyDown={(e) => {
+        if (onClick && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          onClick(car);
+        }
+      }}
       sx={{
         height: "100%",
         display: "flex",
@@ -35,11 +54,18 @@ export function VehicleCard({ car, onEdit, onDelete }: VehicleCardProps) {
         border: "1px solid #E2E8F0",
         overflow: "hidden",
         bgcolor: "background.paper",
+        cursor: isClickable ? "pointer" : "default",
         transition: "transform 0.2s ease, box-shadow 0.2s ease",
         "&:hover": {
           transform: "translateY(-4px)",
           boxShadow: "0 12px 28px -4px rgba(2, 132, 199, 0.12)",
         },
+        "&:focus-visible": isClickable
+          ? {
+              outline: "2px solid #0284C7",
+              outlineOffset: "2px",
+            }
+          : undefined,
       }}
     >
       {/* Vehicle Media Header */}
@@ -54,6 +80,8 @@ export function VehicleCard({ car, onEdit, onDelete }: VehicleCardProps) {
 
         {/* Floating Action Buttons */}
         <Box
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
           sx={{
             position: "absolute",
             top: 10,
@@ -70,7 +98,10 @@ export function VehicleCard({ car, onEdit, onDelete }: VehicleCardProps) {
             <Tooltip title="Editar veículo">
               <IconButton
                 size="small"
-                onClick={() => onEdit(car)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(car);
+                }}
                 sx={{
                   color: "#FFFFFF",
                   "&:hover": {
@@ -89,7 +120,10 @@ export function VehicleCard({ car, onEdit, onDelete }: VehicleCardProps) {
             <Tooltip title="Remover veículo">
               <IconButton
                 size="small"
-                onClick={() => onDelete(car.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(car.id);
+                }}
                 sx={{
                   color: "#FFFFFF",
                   "&:hover": {

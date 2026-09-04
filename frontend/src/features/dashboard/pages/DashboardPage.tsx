@@ -1,5 +1,5 @@
 import { useEffect, useState, lazy, Suspense } from "react";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -31,6 +31,7 @@ const AddCarDialog = lazy(() =>
 
 export function DashboardPage() {
   useDocumentTitle("Dashboard");
+  const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const [cars, setCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
@@ -531,7 +532,11 @@ export function DashboardPage() {
         <Grid container spacing={3}>
           {cars.map((car) => (
             <Grid size={{ xs: 12, sm: 6, md: 4 }} key={car.id}>
-              <VehicleCard car={car} onDelete={handleDeleteCar} />
+              <VehicleCard
+                car={car}
+                onDelete={handleDeleteCar}
+                onClick={(c) => navigate(`/vehicles/${c.id}`)}
+              />
             </Grid>
           ))}
         </Grid>

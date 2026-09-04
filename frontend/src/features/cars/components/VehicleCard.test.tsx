@@ -65,4 +65,57 @@ describe("VehicleCard", () => {
       screen.getByRole("img", { name: "Honda Civic Touring" }),
     ).toBeInTheDocument();
   });
+
+  it("calls onClick when card body is clicked", () => {
+    const handleClick = vi.fn();
+    render(<VehicleCard car={mockCar} onClick={handleClick} />);
+
+    const cardButton = screen.getByRole("button", { name: /Meu Civic/i });
+    expect(cardButton).toBeInTheDocument();
+    fireEvent.click(cardButton);
+
+    expect(handleClick).toHaveBeenCalledWith(mockCar);
+  });
+
+  it("calls onClick when Enter key is pressed on focused card", () => {
+    const handleClick = vi.fn();
+    render(<VehicleCard car={mockCar} onClick={handleClick} />);
+
+    const cardButton = screen.getByRole("button", { name: /Meu Civic/i });
+    fireEvent.keyDown(cardButton, { key: "Enter", code: "Enter" });
+
+    expect(handleClick).toHaveBeenCalledWith(mockCar);
+  });
+
+  it("does not call onClick when edit button is clicked (stopPropagation)", () => {
+    const handleClick = vi.fn();
+    const handleEdit = vi.fn();
+    render(
+      <VehicleCard car={mockCar} onClick={handleClick} onEdit={handleEdit} />,
+    );
+
+    const editBtn = screen.getByRole("button", { name: /Editar veículo/i });
+    fireEvent.click(editBtn);
+
+    expect(handleEdit).toHaveBeenCalledWith(mockCar);
+    expect(handleClick).not.toHaveBeenCalled();
+  });
+
+  it("does not call onClick when delete button is clicked (stopPropagation)", () => {
+    const handleClick = vi.fn();
+    const handleDelete = vi.fn();
+    render(
+      <VehicleCard
+        car={mockCar}
+        onClick={handleClick}
+        onDelete={handleDelete}
+      />,
+    );
+
+    const deleteBtn = screen.getByRole("button", { name: /Remover veículo/i });
+    fireEvent.click(deleteBtn);
+
+    expect(handleDelete).toHaveBeenCalledWith("car-123");
+    expect(handleClick).not.toHaveBeenCalled();
+  });
 });
