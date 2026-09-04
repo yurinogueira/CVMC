@@ -176,7 +176,7 @@ describe("VehicleDetailsPage", () => {
     expect(mockNavigate).toHaveBeenCalledWith("/vehicles");
   });
 
-  it("opens add maintenance dialog when 'Registrar Manutenção' button is clicked", async () => {
+  it("navigates to maintenance registration page when 'Registrar Manutenção' button is clicked", async () => {
     vi.mocked(carService.get).mockResolvedValue(mockCar);
     vi.mocked(maintenanceService.listByCar).mockResolvedValue([]);
 
@@ -196,12 +196,8 @@ describe("VehicleDetailsPage", () => {
       screen.getByRole("button", { name: /^Registrar Manutenção$/i }),
     );
 
-    await waitFor(() => {
-      expect(screen.getByLabelText(/Título do Serviço/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/Data da Realização/i)).toBeInTheDocument();
-      expect(
-        screen.getByLabelText(/Quilometragem no Momento do Serviço/i),
-      ).toBeInTheDocument();
-    });
+    expect(mockNavigate).toHaveBeenCalledWith(
+      "/vehicles/car-123/maintenance/new",
+    );
   });
 });
