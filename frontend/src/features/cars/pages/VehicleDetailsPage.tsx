@@ -19,6 +19,8 @@ import {
   DialogContentText,
   DialogActions,
   CircularProgress,
+  Tabs,
+  Tab,
 } from "@mui/material";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
@@ -39,6 +41,10 @@ import { VehicleImage } from "../components/VehicleImage";
 import { maintenanceService } from "../../maintenance/services/maintenance.service";
 import { Maintenance } from "../../maintenance/types/maintenance.types";
 import { MaintenanceCard } from "../../maintenance/components/MaintenanceCard";
+import { fuelService } from "../../fuel/services/fuel.service";
+import { Fueling } from "../../fuel/types/fuel.types";
+import { FuelCard } from "../../fuel/components/FuelCard";
+import { AddFuelingDialog } from "../../fuel/components/AddFuelingDialog";
 import { useDocumentTitle } from "../../shared";
 import { brandColors } from "../../../styles/theme";
 
@@ -48,12 +54,24 @@ export function VehicleDetailsPage() {
 
   const [car, setCar] = useState<Car | null>(null);
   const [maintenances, setMaintenances] = useState<Maintenance[]>([]);
+  const [fuelings, setFuelings] = useState<Fueling[]>([]);
   const [loadingCar, setLoadingCar] = useState(true);
   const [loadingMaintenances, setLoadingMaintenances] = useState(true);
+  const [loadingFuelings, setLoadingFuelings] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const location = useLocation();
   const [toastMessage, setToastMessage] = useState<string | null>(
     () => (location.state as { message?: string } | null)?.message || null,
+  );
+
+  const [activeTab, setActiveTab] = useState<number>(0);
+  const [fuelDialogOpen, setFuelDialogOpen] = useState<boolean>(false);
+  const [selectedFueling, setSelectedFueling] = useState<Fueling | null>(null);
+
+  const [fuelingToDelete, setFuelingToDelete] = useState<Fueling | null>(null);
+  const [deletingFueling, setDeletingFueling] = useState(false);
+  const [deleteFuelingError, setDeleteFuelingError] = useState<string | null>(
+    null,
   );
 
   const [maintenanceToDelete, setMaintenanceToDelete] =
@@ -116,10 +134,47 @@ export function VehicleDetailsPage() {
         if (isMounted) setLoadingMaintenances(false);
       });
 
+    // Fetch Fuelings
+    fuelService
+      .listByCar(id)
+      .then((data) => {
+        if (isMounted) {
+          const sorted = [...data].sort(
+            (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+          );
+          setFuelings(sorted);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setFuelings([]);
+        }
+      })
+      .finally(() => {
+        if (isMounted) setLoadingFuelings(false);
+      });
+
     return () => {
       isMounted = false;
     };
   }, [id]);
+
+  const formatBRL = (val: number): string => {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(val);
+  };
+
+  const totalFuelCost = fuelings.reduce(
+    (sum, f) => sum + (f.totalCost || 0),
+    0,
+  );
+  const totalMaintenanceCost = maintenances.reduce(
+    (sum, m) => sum + (m.cost || 0),
+    0,
+  );
+  const totalOperationalCost = totalFuelCost + totalMaintenanceCost;
 
   const getVehicleTypeIcon = (type?: string) => {
     switch (type) {
@@ -176,6 +231,26 @@ export function VehicleDetailsPage() {
       );
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleConfirmDeleteFueling = async () => {
+    if (!fuelingToDelete) return;
+    try {
+      setDeletingFueling(true);
+      setDeleteFuelingError(null);
+      await fuelService.delete(fuelingToDelete.id);
+      setFuelings((prev) => prev.filter((f) => f.id !== fuelingToDelete.id));
+      setFuelingToDelete(null);
+      setToastMessage("Abastecimento removido com sucesso");
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { message?: string } } };
+      setDeleteFuelingError(
+        errorObj.response?.data?.message ||
+          "Não foi possível excluir o abastecimento. Tente novamente.",
+      );
+    } finally {
+      setDeletingFueling(false);
     }
   };
 
@@ -255,15 +330,32 @@ export function VehicleDetailsPage() {
           )}
         </Stack>
 
-        <Button
-          variant="contained"
-          startIcon={<AddRoundedIcon />}
-          onClick={() => navigate(`/vehicles/${car?.id || id}/maintenance/new`)}
-          disabled={loadingCar || !car}
-          sx={{ px: 2.5, py: 1.1 }}
-        >
-          Registrar Manutenção
-        </Button>
+        {activeTab === 0 ? (
+          <Button
+            variant="contained"
+            startIcon={<AddRoundedIcon />}
+            onClick={() => {
+              setSelectedFueling(null);
+              setFuelDialogOpen(true);
+            }}
+            disabled={loadingCar || !car}
+            sx={{ px: 2.5, py: 1.1 }}
+          >
+            Registrar Abastecimento
+          </Button>
+        ) : (
+          <Button
+            variant="contained"
+            startIcon={<AddRoundedIcon />}
+            onClick={() =>
+              navigate(`/vehicles/${car?.id || id}/maintenance/new`)
+            }
+            disabled={loadingCar || !car}
+            sx={{ px: 2.5, py: 1.1 }}
+          >
+            Registrar Manutenção
+          </Button>
+        )}
       </Stack>
 
       {/* Vehicle Overview Card */}
@@ -506,132 +598,600 @@ export function VehicleDetailsPage() {
         </Card>
       ) : null}
 
-      {/* Maintenances Section Header */}
-      <Stack
-        direction="row"
-        sx={{
-          alignItems: "center",
-          justifyContent: "space-between",
-          mb: 2.5,
-        }}
-      >
-        <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-          <Typography
-            component="h2"
-            variant="h6"
-            sx={{ fontWeight: 800, color: "text.primary" }}
-          >
-            Histórico de Manutenções
-          </Typography>
-          {!loadingMaintenances && (
-            <Chip
-              label={maintenances.length}
-              size="small"
-              sx={{
-                bgcolor: "primary.main",
-                color: "#FFFFFF",
-                fontWeight: 700,
-                borderRadius: 1,
-              }}
-            />
-          )}
-        </Stack>
-      </Stack>
-
-      {/* Maintenances List or Empty State */}
-      {loadingMaintenances ? (
-        <Stack spacing={2}>
-          {[1, 2].map((i) => (
-            <Card
-              key={i}
-              elevation={0}
-              sx={{
-                p: 2.5,
-                border: "1px solid #E2E8F0",
-                borderRadius: 2.5,
-                bgcolor: "background.paper",
-              }}
-            >
-              <Skeleton width="40%" height={28} sx={{ mb: 1 }} />
-              <Skeleton width="20%" height={20} />
-            </Card>
-          ))}
-        </Stack>
-      ) : maintenances.length === 0 ? (
-        <Card
-          elevation={0}
-          sx={{
-            py: 7,
-            px: 3,
-            textAlign: "center",
-            border: "1px dashed #CBD5E1",
-            bgcolor: "background.paper",
-            borderRadius: 2.5,
-          }}
-        >
-          <Box
+      {/* Financial KPIs Summary Grid */}
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        {/* Card 1: Gastos com Combustível */}
+        <Grid size={{ xs: 12, md: 4 }}>
+          <Card
+            elevation={0}
             sx={{
-              width: 56,
-              height: 56,
-              borderRadius: "50%",
-              bgcolor: "rgba(2, 132, 199, 0.1)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              mx: "auto",
-              mb: 2,
-              color: "primary.main",
+              border: "1px solid #E2E8F0",
+              borderRadius: 2.5,
+              p: 2.5,
+              bgcolor: "background.paper",
             }}
           >
-            <BuildCircleRoundedIcon sx={{ fontSize: 32 }} />
-          </Box>
-          <Typography
-            component="h3"
-            variant="h6"
-            sx={{ fontWeight: 700, mb: 0.5 }}
+            <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
+              <Box
+                sx={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 2,
+                  bgcolor: "rgba(2, 132, 199, 0.1)",
+                  color: "primary.main",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <LocalGasStationRoundedIcon sx={{ fontSize: 28 }} />
+              </Box>
+              <Box>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: "text.secondary",
+                    fontWeight: 600,
+                    textTransform: "uppercase",
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  Gastos com Combustível
+                </Typography>
+                <Typography
+                  variant="h6"
+                  sx={{ fontWeight: 800, color: "text.primary" }}
+                >
+                  {formatBRL(totalFuelCost)}
+                </Typography>
+                <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                  {fuelings.length}{" "}
+                  {fuelings.length === 1 ? "abastecimento" : "abastecimentos"}
+                </Typography>
+              </Box>
+            </Stack>
+          </Card>
+        </Grid>
+
+        {/* Card 2: Gastos com Manutenção */}
+        <Grid size={{ xs: 12, md: 4 }}>
+          <Card
+            elevation={0}
+            sx={{
+              border: "1px solid #E2E8F0",
+              borderRadius: 2.5,
+              p: 2.5,
+              bgcolor: "background.paper",
+            }}
           >
-            Nenhuma manutenção registrada para este veículo
-          </Typography>
-          <Typography
-            variant="body2"
-            sx={{ color: "text.secondary", maxWidth: 460, mx: "auto", mb: 3 }}
+            <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
+              <Box
+                sx={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 2,
+                  bgcolor: "rgba(16, 185, 129, 0.1)",
+                  color: "#059669",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <BuildCircleRoundedIcon sx={{ fontSize: 28 }} />
+              </Box>
+              <Box>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: "text.secondary",
+                    fontWeight: 600,
+                    textTransform: "uppercase",
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  Gastos com Manutenção
+                </Typography>
+                <Typography
+                  variant="h6"
+                  sx={{ fontWeight: 800, color: "text.primary" }}
+                >
+                  {formatBRL(totalMaintenanceCost)}
+                </Typography>
+                <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                  {maintenances.length}{" "}
+                  {maintenances.length === 1 ? "serviço" : "serviços"}
+                </Typography>
+              </Box>
+            </Stack>
+          </Card>
+        </Grid>
+
+        {/* Card 3: Custo Operacional Total */}
+        <Grid size={{ xs: 12, md: 4 }}>
+          <Card
+            elevation={0}
+            sx={{
+              border: "1px solid #0284C7",
+              borderRadius: 2.5,
+              p: 2.5,
+              bgcolor: "rgba(2, 132, 199, 0.04)",
+            }}
           >
-            Registre revisões, trocas de óleo, pastilhas de freio ou
-            substituição de pneus para manter o histórico do seu veículo em dia.
-          </Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddRoundedIcon />}
-            onClick={() =>
-              navigate(`/vehicles/${car?.id || id}/maintenance/new`)
+            <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
+              <Box
+                sx={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 2,
+                  bgcolor: "primary.main",
+                  color: "#FFFFFF",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <MonetizationOnRoundedIcon sx={{ fontSize: 28 }} />
+              </Box>
+              <Box>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: "primary.main",
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  Custo Operacional Total
+                </Typography>
+                <Typography
+                  variant="h6"
+                  sx={{ fontWeight: 800, color: "primary.main" }}
+                >
+                  {formatBRL(totalOperationalCost)}
+                </Typography>
+                <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                  Combustível + Manutenções
+                </Typography>
+              </Box>
+            </Stack>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* Navigation Tabs */}
+      <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 3 }}>
+        <Tabs
+          value={activeTab}
+          onChange={(_, val) => setActiveTab(val)}
+          textColor="primary"
+          indicatorColor="primary"
+        >
+          <Tab
+            icon={<LocalGasStationRoundedIcon sx={{ fontSize: 20 }} />}
+            iconPosition="start"
+            label={
+              <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+                <span>Abastecimentos & Combustível</span>
+                {!loadingFuelings && (
+                  <Chip
+                    label={fuelings.length}
+                    size="small"
+                    sx={{
+                      height: 20,
+                      fontSize: "0.75rem",
+                      fontWeight: 700,
+                      bgcolor: activeTab === 0 ? "primary.main" : "#E2E8F0",
+                      color: activeTab === 0 ? "#FFFFFF" : "text.secondary",
+                    }}
+                  />
+                )}
+              </Stack>
             }
-            disabled={!car}
+            sx={{ fontWeight: 700, textTransform: "none" }}
+          />
+          <Tab
+            icon={<BuildCircleRoundedIcon sx={{ fontSize: 20 }} />}
+            iconPosition="start"
+            label={
+              <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+                <span>Manutenções & Revisões</span>
+                {!loadingMaintenances && (
+                  <Chip
+                    label={maintenances.length}
+                    size="small"
+                    sx={{
+                      height: 20,
+                      fontSize: "0.75rem",
+                      fontWeight: 700,
+                      bgcolor: activeTab === 1 ? "primary.main" : "#E2E8F0",
+                      color: activeTab === 1 ? "#FFFFFF" : "text.secondary",
+                    }}
+                  />
+                )}
+              </Stack>
+            }
+            sx={{ fontWeight: 700, textTransform: "none" }}
+          />
+        </Tabs>
+      </Box>
+
+      {/* Tab 0: Abastecimentos & Combustível */}
+      {activeTab === 0 && (
+        <Box>
+          <Stack
+            direction="row"
+            sx={{
+              alignItems: "center",
+              justifyContent: "space-between",
+              mb: 2.5,
+            }}
           >
-            Registrar Primeira Manutenção
-          </Button>
-        </Card>
-      ) : (
-        <Stack spacing={2}>
-          {maintenances.map((maint) => (
-            <MaintenanceCard
-              key={maint.id}
-              maintenance={maint}
-              onEdit={(m) =>
-                navigate(`/vehicles/${car?.id || id}/maintenance/${m.id}/edit`)
-              }
-              onDelete={(maintId) => {
-                const target = maintenances.find((m) => m.id === maintId);
-                if (target) {
-                  setMaintenanceToDelete(target);
-                  setDeleteError(null);
-                }
+            <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+              <Typography
+                component="h2"
+                variant="h6"
+                sx={{ fontWeight: 800, color: "text.primary" }}
+              >
+                Histórico de Abastecimentos
+              </Typography>
+              {!loadingFuelings && (
+                <Chip
+                  label={fuelings.length}
+                  size="small"
+                  sx={{
+                    bgcolor: "primary.main",
+                    color: "#FFFFFF",
+                    fontWeight: 700,
+                    borderRadius: 1,
+                  }}
+                />
+              )}
+            </Stack>
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<AddRoundedIcon />}
+              onClick={() => {
+                setSelectedFueling(null);
+                setFuelDialogOpen(true);
               }}
-            />
-          ))}
-        </Stack>
+              disabled={!car}
+              sx={{ borderRadius: 2 }}
+            >
+              Registrar Abastecimento
+            </Button>
+          </Stack>
+
+          {loadingFuelings ? (
+            <Stack spacing={2}>
+              {[1, 2].map((i) => (
+                <Card
+                  key={i}
+                  elevation={0}
+                  sx={{
+                    p: 2.5,
+                    border: "1px solid #E2E8F0",
+                    borderRadius: 2.5,
+                    bgcolor: "background.paper",
+                  }}
+                >
+                  <Skeleton width="40%" height={28} sx={{ mb: 1 }} />
+                  <Skeleton width="20%" height={20} />
+                </Card>
+              ))}
+            </Stack>
+          ) : fuelings.length === 0 ? (
+            <Card
+              elevation={0}
+              sx={{
+                py: 7,
+                px: 3,
+                textAlign: "center",
+                border: "1px dashed #CBD5E1",
+                bgcolor: "background.paper",
+                borderRadius: 2.5,
+              }}
+            >
+              <Box
+                sx={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: "50%",
+                  bgcolor: "rgba(2, 132, 199, 0.1)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  mx: "auto",
+                  mb: 2,
+                  color: "primary.main",
+                }}
+              >
+                <LocalGasStationRoundedIcon sx={{ fontSize: 32 }} />
+              </Box>
+              <Typography
+                component="h3"
+                variant="h6"
+                sx={{ fontWeight: 700, mb: 0.5 }}
+              >
+                Nenhum abastecimento registrado para este veículo
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: "text.secondary",
+                  maxWidth: 460,
+                  mx: "auto",
+                  mb: 3,
+                }}
+              >
+                Registre abastecimentos de combustível para acompanhar o
+                consumo, valor pago e controlar seus custos operacionais.
+              </Typography>
+              <Button
+                variant="contained"
+                startIcon={<AddRoundedIcon />}
+                onClick={() => {
+                  setSelectedFueling(null);
+                  setFuelDialogOpen(true);
+                }}
+                disabled={!car}
+              >
+                Registrar Primeiro Abastecimento
+              </Button>
+            </Card>
+          ) : (
+            <Stack spacing={2}>
+              {fuelings.map((f) => (
+                <FuelCard
+                  key={f.id}
+                  fueling={f}
+                  onEdit={(fuel) => {
+                    setSelectedFueling(fuel);
+                    setFuelDialogOpen(true);
+                  }}
+                  onDelete={(fuelId) => {
+                    const target = fuelings.find((item) => item.id === fuelId);
+                    if (target) {
+                      setFuelingToDelete(target);
+                      setDeleteFuelingError(null);
+                    }
+                  }}
+                />
+              ))}
+            </Stack>
+          )}
+        </Box>
       )}
 
-      {/* Delete Confirmation Dialog */}
+      {/* Tab 1: Manutenções & Revisões */}
+      {activeTab === 1 && (
+        <Box>
+          <Stack
+            direction="row"
+            sx={{
+              alignItems: "center",
+              justifyContent: "space-between",
+              mb: 2.5,
+            }}
+          >
+            <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+              <Typography
+                component="h2"
+                variant="h6"
+                sx={{ fontWeight: 800, color: "text.primary" }}
+              >
+                Histórico de Manutenções
+              </Typography>
+              {!loadingMaintenances && (
+                <Chip
+                  label={maintenances.length}
+                  size="small"
+                  sx={{
+                    bgcolor: "primary.main",
+                    color: "#FFFFFF",
+                    fontWeight: 700,
+                    borderRadius: 1,
+                  }}
+                />
+              )}
+            </Stack>
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<AddRoundedIcon />}
+              onClick={() =>
+                navigate(`/vehicles/${car?.id || id}/maintenance/new`)
+              }
+              disabled={!car}
+              sx={{ borderRadius: 2 }}
+            >
+              Registrar Manutenção
+            </Button>
+          </Stack>
+
+          {loadingMaintenances ? (
+            <Stack spacing={2}>
+              {[1, 2].map((i) => (
+                <Card
+                  key={i}
+                  elevation={0}
+                  sx={{
+                    p: 2.5,
+                    border: "1px solid #E2E8F0",
+                    borderRadius: 2.5,
+                    bgcolor: "background.paper",
+                  }}
+                >
+                  <Skeleton width="40%" height={28} sx={{ mb: 1 }} />
+                  <Skeleton width="20%" height={20} />
+                </Card>
+              ))}
+            </Stack>
+          ) : maintenances.length === 0 ? (
+            <Card
+              elevation={0}
+              sx={{
+                py: 7,
+                px: 3,
+                textAlign: "center",
+                border: "1px dashed #CBD5E1",
+                bgcolor: "background.paper",
+                borderRadius: 2.5,
+              }}
+            >
+              <Box
+                sx={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: "50%",
+                  bgcolor: "rgba(2, 132, 199, 0.1)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  mx: "auto",
+                  mb: 2,
+                  color: "primary.main",
+                }}
+              >
+                <BuildCircleRoundedIcon sx={{ fontSize: 32 }} />
+              </Box>
+              <Typography
+                component="h3"
+                variant="h6"
+                sx={{ fontWeight: 700, mb: 0.5 }}
+              >
+                Nenhuma manutenção registrada para este veículo
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: "text.secondary",
+                  maxWidth: 460,
+                  mx: "auto",
+                  mb: 3,
+                }}
+              >
+                Registre revisões, trocas de óleo, pastilhas de freio ou
+                substituição de pneus para manter o histórico do seu veículo em
+                dia.
+              </Typography>
+              <Button
+                variant="contained"
+                startIcon={<AddRoundedIcon />}
+                onClick={() =>
+                  navigate(`/vehicles/${car?.id || id}/maintenance/new`)
+                }
+                disabled={!car}
+              >
+                Registrar Primeira Manutenção
+              </Button>
+            </Card>
+          ) : (
+            <Stack spacing={2}>
+              {maintenances.map((maint) => (
+                <MaintenanceCard
+                  key={maint.id}
+                  maintenance={maint}
+                  onEdit={(m) =>
+                    navigate(
+                      `/vehicles/${car?.id || id}/maintenance/${m.id}/edit`,
+                    )
+                  }
+                  onDelete={(maintId) => {
+                    const target = maintenances.find((m) => m.id === maintId);
+                    if (target) {
+                      setMaintenanceToDelete(target);
+                      setDeleteError(null);
+                    }
+                  }}
+                />
+              ))}
+            </Stack>
+          )}
+        </Box>
+      )}
+
+      {/* Add / Edit Fueling Dialog */}
+      <AddFuelingDialog
+        open={fuelDialogOpen}
+        onClose={() => {
+          setFuelDialogOpen(false);
+          setSelectedFueling(null);
+        }}
+        initialData={selectedFueling}
+        carId={car?.id || id || ""}
+        onSuccess={(fueling, isEdit) => {
+          if (isEdit) {
+            setFuelings((prev) =>
+              prev.map((f) => (f.id === fueling.id ? fueling : f)),
+            );
+            setToastMessage("Abastecimento atualizado com sucesso");
+          } else {
+            setFuelings((prev) => [fueling, ...prev]);
+            setToastMessage("Abastecimento registrado com sucesso");
+          }
+        }}
+      />
+
+      {/* Delete Fueling Confirmation Dialog */}
+      <Dialog
+        open={Boolean(fuelingToDelete)}
+        onClose={() => !deletingFueling && setFuelingToDelete(null)}
+        maxWidth="xs"
+        fullWidth
+        slotProps={{
+          paper: {
+            sx: { borderRadius: 3, p: 1 },
+          },
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, pb: 1 }}>
+          Excluir Abastecimento
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ color: "text.primary", mb: 2 }}>
+            Tem certeza que deseja excluir o abastecimento de{" "}
+            <strong>"{fuelingToDelete?.fuelType}"</strong> no valor de{" "}
+            <strong>{formatBRL(fuelingToDelete?.totalCost || 0)}</strong>? Esta
+            ação é irreversível e removerá o registro do histórico do veículo.
+          </DialogContentText>
+          {deleteFuelingError && (
+            <Alert severity="error" sx={{ borderRadius: 2 }}>
+              {deleteFuelingError}
+            </Alert>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button
+            variant="outlined"
+            color="inherit"
+            onClick={() => setFuelingToDelete(null)}
+            disabled={deletingFueling}
+            sx={{ borderRadius: 2 }}
+          >
+            Cancelar
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleConfirmDeleteFueling}
+            disabled={deletingFueling}
+            startIcon={
+              deletingFueling ? (
+                <CircularProgress size={18} color="inherit" />
+              ) : (
+                <DeleteOutlineRoundedIcon />
+              )
+            }
+            sx={{ borderRadius: 2 }}
+          >
+            Excluir
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Maintenance Confirmation Dialog */}
       <Dialog
         open={Boolean(maintenanceToDelete)}
         onClose={() => !deleting && setMaintenanceToDelete(null)}
