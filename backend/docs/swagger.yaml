@@ -57,6 +57,33 @@ definitions:
         example: 2024
         type: integer
     type: object
+  handlers.CreateFuelingRequest:
+    properties:
+      date:
+        example: "2026-09-08T15:04:05Z"
+        type: string
+      fuelType:
+        example: Gasolina Comum
+        type: string
+      gasStation:
+        example: Posto Shell Central
+        type: string
+      isFullTank:
+        example: true
+        type: boolean
+      liters:
+        example: 45.5
+        type: number
+      notes:
+        example: Tanque cheio após viagem
+        type: string
+      pricePerLiter:
+        example: 5.89
+        type: number
+      totalCost:
+        example: 267.995
+        type: number
+    type: object
   handlers.CreateMaintenanceRequest:
     properties:
       attachments:
@@ -163,6 +190,33 @@ definitions:
       yearModel:
         example: 2024
         type: integer
+    type: object
+  handlers.UpdateFuelingRequest:
+    properties:
+      date:
+        example: "2026-09-08T15:04:05Z"
+        type: string
+      fuelType:
+        example: Gasolina Comum
+        type: string
+      gasStation:
+        example: Posto Shell Central
+        type: string
+      isFullTank:
+        example: true
+        type: boolean
+      liters:
+        example: 45.5
+        type: number
+      notes:
+        example: Tanque cheio após viagem
+        type: string
+      pricePerLiter:
+        example: 5.89
+        type: number
+      totalCost:
+        example: 267.995
+        type: number
     type: object
   handlers.UpdateMaintenanceRequest:
     properties:
@@ -615,6 +669,84 @@ paths:
       summary: Atualizar veículo
       tags:
       - Cars
+  /api/v1/cars/{id}/fuelings:
+    get:
+      description: Retorna o histórico cronológico de abastecimentos de combustível
+        de um veículo
+      parameters:
+      - description: ID do veículo
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Listar abastecimentos do veículo
+      tags:
+      - Fuelings
+    post:
+      consumes:
+      - application/json
+      description: Registra um novo abastecimento de combustível para o veículo especificado
+      parameters:
+      - description: ID do veículo
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Dados do abastecimento
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateFuelingRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Cadastrar abastecimento
+      tags:
+      - Fuelings
   /api/v1/cars/{id}/maintenances:
     get:
       description: Retorna o histórico cronológico de manutenções de um veículo
@@ -923,6 +1055,115 @@ paths:
       summary: Obter detalhes e preço Fipe de um veículo
       tags:
       - Fipe
+  /api/v1/fuelings/{fuelingID}:
+    delete:
+      description: Remove o registro de abastecimento
+      parameters:
+      - description: ID do abastecimento
+        in: path
+        name: fuelingID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Excluir abastecimento
+      tags:
+      - Fuelings
+    get:
+      description: Retorna os detalhes de um registro específico de abastecimento
+      parameters:
+      - description: ID do abastecimento
+        in: path
+        name: fuelingID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Obter detalhes de um abastecimento
+      tags:
+      - Fuelings
+    put:
+      consumes:
+      - application/json
+      description: Atualiza os dados de um abastecimento existente
+      parameters:
+      - description: ID do abastecimento
+        in: path
+        name: fuelingID
+        required: true
+        type: string
+      - description: Dados atualizados do abastecimento
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateFuelingRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Atualizar abastecimento
+      tags:
+      - Fuelings
   /api/v1/maintenances/{maintenanceID}:
     delete:
       description: Remove o registro de manutenção

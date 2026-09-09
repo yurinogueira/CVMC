@@ -30,20 +30,24 @@ flowchart LR
 
 ### 1. Sincronização Obrigatória com a `main` Remota & Preparação da Branch
 - Analise a issue utilizando o GitHub MCP (`get_issue`) ou o contexto da tarefa solicitada.
-- **Sincronização Obrigatória com a `main`**:
-  Antes de criar uma nova branch ou iniciar alterações, **sempre sincronize as referências com `origin/main`** para garantir que você está partindo do estado mais atualizado do código:
+- **Sincronização Obrigatória com a `main` antes de Criar Branch ou Git Worktree**:
+  Antes de criar uma nova branch de trabalho ou inicializar uma `git worktree`, **sempre sincronize as referências com `origin/main`** para garantir que você está partindo do estado mais atualizado do código:
   ```bash
-  # 1. Buscar as referências mais recentes do repositório remoto
+  # 1. Buscar todas as referências remotas
   git fetch origin main
 
-  # 2. Criar e alternar para a branch de trabalho baseada diretamente no origin/main atualizado
+  # 2. Se for criar a branch no workspace atual:
   git checkout -b <tipo>/<nome-da-branch> origin/main
-  ```
-  - Se preferir atualizar a branch local `main` antes de criar a branch de trabalho:
-  ```bash
-  git checkout main
-  git pull --ff-only origin main
-  git checkout -b <tipo>/<nome-da-branch>
+
+  # 3. Se for criar uma Git Worktree isolada para a tarefa:
+  # Garanta que a main local esteja atualizada antes de criar a worktree:
+  git checkout main && git pull --ff-only origin main
+  git worktree add <caminho-da-worktree> origin/main -b <tipo>/<nome-da-branch>
+
+  # 4. Se a worktree já tiver sido criada automaticamente a partir de uma base desatualizada:
+  # Alinhe imediatamente a branch de trabalho com a origin/main mais recente:
+  git fetch origin main
+  git reset --hard origin/main
   ```
   - Caso já esteja trabalhando em uma branch existente e novas alterações tenham entrado na `main`:
   ```bash

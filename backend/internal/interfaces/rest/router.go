@@ -7,10 +7,12 @@ import (
 	portauth "cvmc/internal/application/ports/auth"
 	carport "cvmc/internal/application/ports/car"
 	emailport "cvmc/internal/application/ports/email"
+	fuelport "cvmc/internal/application/ports/fuel"
 	maintport "cvmc/internal/application/ports/maintenance"
 	userport "cvmc/internal/application/ports/user"
 	carusecase "cvmc/internal/application/usecase/car"
 	fipeusecase "cvmc/internal/application/usecase/fipe"
+	fuelusecase "cvmc/internal/application/usecase/fuel"
 	maintusecase "cvmc/internal/application/usecase/maintenance"
 	"cvmc/internal/config"
 	"cvmc/internal/interfaces/rest/handlers"
@@ -24,13 +26,14 @@ type Router struct {
 	handler http.Handler
 }
 
-func NewRouter(cfg config.Config, users userport.Repository, hasher portauth.PasswordHasher, tokens portauth.TokenService, emailSender emailport.Sender, cars carport.Repository, maintenances maintport.Repository, fipeService *fipeusecase.Service) *Router {
+func NewRouter(cfg config.Config, users userport.Repository, hasher portauth.PasswordHasher, tokens portauth.TokenService, emailSender emailport.Sender, cars carport.Repository, maintenances maintport.Repository, fuelings fuelport.Repository, fipeService *fipeusecase.Service) *Router {
 	mux := http.NewServeMux()
 	healthHandler := handlers.NewHealthHandler()
 	authHandler := handlers.NewAuthHandler(users, hasher, tokens, emailSender, cfg.CookieDomain, cfg.CookieSecure)
 	userHandler := handlers.NewUserHandler(users, cars, hasher, tokens)
 	carHandler := handlers.NewCarHandler(carusecase.NewService(cars, users), tokens)
 	maintenanceHandler := handlers.NewMaintenanceHandler(maintusecase.NewService(maintenances, cars), tokens)
+	fuelHandler := handlers.NewFuelHandler(fuelusecase.NewService(fuelings, cars), tokens)
 	fipeHandler := handlers.NewFipeHandler(fipeService, tokens)
 
 	// Rate limiters
@@ -89,6 +92,13 @@ func NewRouter(cfg config.Config, users userport.Repository, hasher portauth.Pas
 	mux.Handle("GET /api/v1/maintenances/{maintenanceID}", middleware.Chain(http.HandlerFunc(maintenanceHandler.Get), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
 	mux.Handle("PUT /api/v1/maintenances/{maintenanceID}", middleware.Chain(http.HandlerFunc(maintenanceHandler.Update), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
 	mux.Handle("DELETE /api/v1/maintenances/{maintenanceID}", middleware.Chain(http.HandlerFunc(maintenanceHandler.Delete), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
+
+	// Fueling endpoints
+	mux.Handle("GET /api/v1/cars/{id}/fuelings", middleware.Chain(http.HandlerFunc(fuelHandler.List), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
+	mux.Handle("POST /api/v1/cars/{id}/fuelings", middleware.Chain(http.HandlerFunc(fuelHandler.Create), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
+	mux.Handle("GET /api/v1/fuelings/{fuelingID}", middleware.Chain(http.HandlerFunc(fuelHandler.Get), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
+	mux.Handle("PUT /api/v1/fuelings/{fuelingID}", middleware.Chain(http.HandlerFunc(fuelHandler.Update), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
+	mux.Handle("DELETE /api/v1/fuelings/{fuelingID}", middleware.Chain(http.HandlerFunc(fuelHandler.Delete), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
 
 	// Fipe endpoints
 	mux.Handle("GET /api/v1/fipe/{vehicleType}/brands", middleware.Chain(http.HandlerFunc(fipeHandler.ListBrands), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))

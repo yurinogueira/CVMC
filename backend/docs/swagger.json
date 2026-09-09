@@ -593,6 +593,126 @@
                 }
             }
         },
+        "/api/v1/cars/{id}/fuelings": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna o histórico cronológico de abastecimentos de combustível de um veículo",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Fuelings"
+                ],
+                "summary": "Listar abastecimentos do veículo",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID do veículo",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.SuccessEnvelope"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorEnvelope"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorEnvelope"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorEnvelope"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Registra um novo abastecimento de combustível para o veículo especificado",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Fuelings"
+                ],
+                "summary": "Cadastrar abastecimento",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID do veículo",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Dados do abastecimento",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CreateFuelingRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.SuccessEnvelope"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorEnvelope"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorEnvelope"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorEnvelope"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorEnvelope"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/cars/{id}/maintenances": {
             "get": {
                 "security": [
@@ -1062,6 +1182,176 @@
                 }
             }
         },
+        "/api/v1/fuelings/{fuelingID}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna os detalhes de um registro específico de abastecimento",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Fuelings"
+                ],
+                "summary": "Obter detalhes de um abastecimento",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID do abastecimento",
+                        "name": "fuelingID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.SuccessEnvelope"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorEnvelope"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorEnvelope"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorEnvelope"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Atualiza os dados de um abastecimento existente",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Fuelings"
+                ],
+                "summary": "Atualizar abastecimento",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID do abastecimento",
+                        "name": "fuelingID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Dados atualizados do abastecimento",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.UpdateFuelingRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.SuccessEnvelope"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorEnvelope"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorEnvelope"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorEnvelope"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorEnvelope"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Remove o registro de abastecimento",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Fuelings"
+                ],
+                "summary": "Excluir abastecimento",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID do abastecimento",
+                        "name": "fuelingID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.SuccessEnvelope"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorEnvelope"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorEnvelope"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorEnvelope"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/maintenances/{maintenanceID}": {
             "get": {
                 "security": [
@@ -1509,6 +1799,43 @@
                 }
             }
         },
+        "handlers.CreateFuelingRequest": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "type": "string",
+                    "example": "2026-09-08T15:04:05Z"
+                },
+                "fuelType": {
+                    "type": "string",
+                    "example": "Gasolina Comum"
+                },
+                "gasStation": {
+                    "type": "string",
+                    "example": "Posto Shell Central"
+                },
+                "isFullTank": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "liters": {
+                    "type": "number",
+                    "example": 45.5
+                },
+                "notes": {
+                    "type": "string",
+                    "example": "Tanque cheio após viagem"
+                },
+                "pricePerLiter": {
+                    "type": "number",
+                    "example": 5.89
+                },
+                "totalCost": {
+                    "type": "number",
+                    "example": 267.995
+                }
+            }
+        },
         "handlers.CreateMaintenanceRequest": {
             "type": "object",
             "properties": {
@@ -1657,6 +1984,43 @@
                 "yearModel": {
                     "type": "integer",
                     "example": 2024
+                }
+            }
+        },
+        "handlers.UpdateFuelingRequest": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "type": "string",
+                    "example": "2026-09-08T15:04:05Z"
+                },
+                "fuelType": {
+                    "type": "string",
+                    "example": "Gasolina Comum"
+                },
+                "gasStation": {
+                    "type": "string",
+                    "example": "Posto Shell Central"
+                },
+                "isFullTank": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "liters": {
+                    "type": "number",
+                    "example": 45.5
+                },
+                "notes": {
+                    "type": "string",
+                    "example": "Tanque cheio após viagem"
+                },
+                "pricePerLiter": {
+                    "type": "number",
+                    "example": 5.89
+                },
+                "totalCost": {
+                    "type": "number",
+                    "example": 267.995
                 }
             }
         },

@@ -8,6 +8,7 @@ import (
 	carport "cvmc/internal/application/ports/car"
 	emailport "cvmc/internal/application/ports/email"
 	fipeport "cvmc/internal/application/ports/fipe"
+	fuelport "cvmc/internal/application/ports/fuel"
 	maintenanceport "cvmc/internal/application/ports/maintenance"
 	userport "cvmc/internal/application/ports/user"
 	fipeusecase "cvmc/internal/application/usecase/fipe"
@@ -21,6 +22,8 @@ import (
 	fipeHttp "cvmc/internal/infrastructure/fipe/http"
 	fipeMemory "cvmc/internal/infrastructure/fipe/memory"
 	fipeMongo "cvmc/internal/infrastructure/fipe/mongo"
+	fuelMemory "cvmc/internal/infrastructure/fuel/memory"
+	fuelMongo "cvmc/internal/infrastructure/fuel/mongo"
 	maintMemory "cvmc/internal/infrastructure/maintenance/memory"
 	maintMongo "cvmc/internal/infrastructure/maintenance/mongo"
 	userMemory "cvmc/internal/infrastructure/user/memory"
@@ -40,6 +43,7 @@ func New(ctx context.Context, cfg config.Config) (*App, error) {
 		users        userport.Repository
 		cars         carport.Repository
 		maintenances maintenanceport.Repository
+		fuelings     fuelport.Repository
 		fipes        fipeport.Repository
 		mongoClient  *mongo.Client
 		emailSender  emailport.Sender
@@ -69,14 +73,16 @@ func New(ctx context.Context, cfg config.Config) (*App, error) {
 		uMongo := userMongo.NewRepository(db)
 		cMongo := carMongo.NewRepository(db)
 		mMongo := maintMongo.NewRepository(db)
+		fuelMongoRepo := fuelMongo.NewRepository(db)
 		fMongo := fipeMongo.NewRepository(db)
 
 		bootstrapper := mongoinfra.NewBootstrapper(
 			db,
-			[]string{"users", "cars", "maintenances", "brands"},
+			[]string{"users", "cars", "maintenances", "fuelings", "brands"},
 			uMongo,
 			cMongo,
 			mMongo,
+			fuelMongoRepo,
 			fMongo,
 		)
 
@@ -85,22 +91,24 @@ func New(ctx context.Context, cfg config.Config) (*App, error) {
 			return nil, fmt.Errorf("failed to bootstrap mongodb collections and indexes: %w", err)
 		}
 
-		log.Printf("Successfully bootstrapped MongoDB collections (users, cars, maintenances, brands) and indexes on %q", cfg.MongoDatabase)
+		log.Printf("Successfully bootstrapped MongoDB collections (users, cars, maintenances, fuelings, brands) and indexes on %q", cfg.MongoDatabase)
 
 		users = uMongo
 		cars = cMongo
 		maintenances = mMongo
+		fuelings = fuelMongoRepo
 		fipes = fMongo
 	} else {
 		log.Println("Initializing application with in-memory repositories (MONGO_URI=memory)")
 		users = userMemory.NewRepository()
 		cars = carMemory.NewRepository()
 		maintenances = maintMemory.NewRepository()
+		fuelings = fuelMemory.NewRepository()
 		fipes = fipeMemory.NewRepository()
 	}
 
 	fipeService := fipeusecase.NewService(fipes, fipeClient)
-	handler := rest.NewRouter(cfg, users, hasher, tokens, emailSender, cars, maintenances, fipeService)
+	handler := rest.NewRouter(cfg, users, hasher, tokens, emailSender, cars, maintenances, fuelings, fipeService)
 	return &App{
 		handler:     handler,
 		mongoClient: mongoClient,
