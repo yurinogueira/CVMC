@@ -7,6 +7,11 @@ import { maintenanceService } from "../services/maintenance.service";
 
 const mockNavigate = vi.fn();
 
+let mockParams: { id?: string; maintenanceId?: string } = {
+  id: "car-123",
+  maintenanceId: undefined,
+};
+
 vi.mock("react-router-dom", async () => {
   const actual =
     await vi.importActual<typeof import("react-router-dom")>(
@@ -14,7 +19,7 @@ vi.mock("react-router-dom", async () => {
     );
   return {
     ...actual,
-    useParams: () => ({ id: "car-123" }),
+    useParams: () => mockParams,
     useNavigate: () => mockNavigate,
   };
 });
@@ -28,6 +33,9 @@ vi.mock("../../cars/services/car.service", () => ({
 vi.mock("../services/maintenance.service", () => ({
   maintenanceService: {
     create: vi.fn(),
+    update: vi.fn(),
+    get: vi.fn(),
+    listByCar: vi.fn(),
   },
 }));
 
@@ -46,6 +54,7 @@ const mockCar = {
 describe("RegisterMaintenancePage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockParams = { id: "car-123", maintenanceId: undefined };
   });
 
   it("renders page title, vehicle info and all category groups with chips", async () => {
@@ -174,7 +183,9 @@ describe("RegisterMaintenancePage", () => {
           types: ["Revisão Geral / Preventiva"],
         }),
       );
-      expect(mockNavigate).toHaveBeenCalledWith("/vehicles/car-123");
+      expect(mockNavigate).toHaveBeenCalledWith("/vehicles/car-123", {
+        state: { message: "Manutenção registrada com sucesso" },
+      });
     });
   });
 
@@ -207,5 +218,137 @@ describe("RegisterMaintenancePage", () => {
         screen.getByText(/excede o limite máximo de 2MB/i),
       ).toBeInTheDocument();
     });
+  });
+
+  it("loads maintenance details in edit mode and submits update", async () => {
+    mockParams = { id: "car-123", maintenanceId: "maint-456" };
+    vi.mocked(carService.get).mockResolvedValue(mockCar);
+    vi.mocked(maintenanceService.get).mockResolvedValue({
+      id: "maint-456",
+      carId: "car-123",
+      title: "Troca de Óleo e Junta",
+      description: "Junta de vedação trocada",
+      date: "2026-08-15T12:00:00Z",
+      mileage: 118000,
+      cost: 620,
+      types: ["Óleo de Motor", "Troca da junta do cárter"],
+      attachments: [
+        {
+          id: "att-old",
+          name: "recibo.pdf",
+          size: 1024 * 100,
+          mimeType: "application/pdf",
+          dataUrl: "data:application/pdf;base64,JVBERi0xLjQK",
+          createdAt: "2026-08-15T12:00:00Z",
+        },
+      ],
+    });
+    vi.mocked(maintenanceService.update).mockResolvedValue({
+      id: "maint-456",
+      carId: "car-123",
+      title: "Troca de Óleo e Junta Atualizada",
+      description: "Junta de vedação trocada",
+      date: "2026-08-15T12:00:00Z",
+      mileage: 118000,
+      cost: 650,
+      types: ["Óleo de Motor", "Troca da junta do cárter"],
+    });
+
+    render(
+      <BrowserRouter>
+        <RegisterMaintenancePage />
+      </BrowserRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Editar Manutenção")).toBeInTheDocument();
+      expect(
+        (screen.getByLabelText(/Título do Serviço/i) as HTMLInputElement).value,
+      ).toBe("Troca de Óleo e Junta");
+      expect(
+        (
+          screen.getByLabelText(
+            /Quilometragem no Momento do Serviço/i,
+          ) as HTMLInputElement
+        ).value,
+      ).toBe("118000");
+      expect(
+        (screen.getByLabelText(/Valor Total/i) as HTMLInputElement).value,
+      ).toBe("620");
+      expect(
+        (
+          screen.getByLabelText(
+            /Especifique o outro tipo de manutenção/i,
+          ) as HTMLInputElement
+        ).value,
+      ).toBe("Troca da junta do cárter");
+      expect(screen.getByText("recibo.pdf")).toBeInTheDocument();
+    });
+
+    // Change title
+    const titleInput = screen.getByLabelText(/Título do Serviço/i);
+    fireEvent.change(titleInput, {
+      target: { value: "Troca de Óleo e Junta Atualizada" },
+    });
+
+    // Submit form
+    const submitBtn = screen.getAllByRole("button", {
+      name: /^Salvar Manutenção$/i,
+    })[0];
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => {
+      expect(maintenanceService.update).toHaveBeenCalledWith(
+        "maint-456",
+        expect.objectContaining({
+          title: "Troca de Óleo e Junta Atualizada",
+          cost: 620,
+          mileage: 118000,
+        }),
+      );
+      expect(mockNavigate).toHaveBeenCalledWith("/vehicles/car-123", {
+        state: { message: "Manutenção atualizada com sucesso" },
+      });
+    });
+  });
+
+  it("allows removing an existing attachment in edit mode", async () => {
+    mockParams = { id: "car-123", maintenanceId: "maint-456" };
+    vi.mocked(carService.get).mockResolvedValue(mockCar);
+    vi.mocked(maintenanceService.get).mockResolvedValue({
+      id: "maint-456",
+      carId: "car-123",
+      title: "Revisão",
+      description: "",
+      date: "2026-08-15T12:00:00Z",
+      mileage: 118000,
+      attachments: [
+        {
+          id: "att-old",
+          name: "recibo.pdf",
+          size: 1024 * 100,
+          mimeType: "application/pdf",
+          dataUrl: "data:application/pdf;base64,JVBERi0xLjQK",
+          createdAt: "2026-08-15T12:00:00Z",
+        },
+      ],
+    });
+
+    render(
+      <BrowserRouter>
+        <RegisterMaintenancePage />
+      </BrowserRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("recibo.pdf")).toBeInTheDocument();
+    });
+
+    const removeBtn = screen.getByRole("button", {
+      name: "Remover comprovante recibo.pdf",
+    });
+    fireEvent.click(removeBtn);
+
+    expect(screen.queryByText("recibo.pdf")).not.toBeInTheDocument();
   });
 });

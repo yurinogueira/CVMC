@@ -29,6 +29,7 @@ vi.mock("../../maintenance/services/maintenance.service", () => ({
   maintenanceService: {
     listByCar: vi.fn(),
     create: vi.fn(),
+    delete: vi.fn(),
   },
 }));
 
@@ -199,5 +200,108 @@ describe("VehicleDetailsPage", () => {
     expect(mockNavigate).toHaveBeenCalledWith(
       "/vehicles/car-123/maintenance/new",
     );
+  });
+
+  it("navigates to edit maintenance page when edit button is clicked in a maintenance card", async () => {
+    vi.mocked(carService.get).mockResolvedValue(mockCar);
+    vi.mocked(maintenanceService.listByCar).mockResolvedValue(mockMaintenances);
+
+    render(
+      <BrowserRouter>
+        <VehicleDetailsPage />
+      </BrowserRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Troca de Óleo e Filtro")).toBeInTheDocument();
+    });
+
+    const editButtons = screen.getAllByRole("button", {
+      name: "Editar manutenção",
+    });
+    expect(editButtons.length).toBe(2);
+
+    fireEvent.click(editButtons[0]);
+    expect(mockNavigate).toHaveBeenCalledWith(
+      "/vehicles/car-123/maintenance/maint-2/edit",
+    );
+  });
+
+  it("opens delete dialog, confirms deletion and updates maintenance list", async () => {
+    vi.mocked(carService.get).mockResolvedValue(mockCar);
+    vi.mocked(maintenanceService.listByCar).mockResolvedValue(mockMaintenances);
+    vi.mocked(maintenanceService.delete).mockResolvedValue();
+
+    render(
+      <BrowserRouter>
+        <VehicleDetailsPage />
+      </BrowserRouter>,
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("Troca de Pastilhas de Freio"),
+      ).toBeInTheDocument();
+    });
+
+    const deleteButtons = screen.getAllByRole("button", {
+      name: "Excluir manutenção",
+    });
+    fireEvent.click(deleteButtons[0]);
+
+    // Dialog appears
+    expect(screen.getByText("Excluir Manutenção")).toBeInTheDocument();
+    expect(
+      screen.getByText(/Tem certeza que deseja excluir a manutenção/i),
+    ).toBeInTheDocument();
+
+    // Click confirm Excluir inside dialog
+    const confirmDeleteBtn = screen.getByRole("button", { name: "Excluir" });
+    fireEvent.click(confirmDeleteBtn);
+
+    await waitFor(() => {
+      expect(maintenanceService.delete).toHaveBeenCalledWith("maint-2");
+      expect(
+        screen.queryByText("Troca de Pastilhas de Freio"),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.getByText("Manutenção removida com sucesso"),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("closes delete dialog when Cancelar is clicked without deleting", async () => {
+    vi.mocked(carService.get).mockResolvedValue(mockCar);
+    vi.mocked(maintenanceService.listByCar).mockResolvedValue(mockMaintenances);
+
+    render(
+      <BrowserRouter>
+        <VehicleDetailsPage />
+      </BrowserRouter>,
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("Troca de Pastilhas de Freio"),
+      ).toBeInTheDocument();
+    });
+
+    const deleteButtons = screen.getAllByRole("button", {
+      name: "Excluir manutenção",
+    });
+    fireEvent.click(deleteButtons[0]);
+
+    expect(screen.getByText("Excluir Manutenção")).toBeInTheDocument();
+
+    const cancelBtn = screen.getByRole("button", { name: "Cancelar" });
+    fireEvent.click(cancelBtn);
+
+    await waitFor(() => {
+      expect(screen.queryByText("Excluir Manutenção")).not.toBeInTheDocument();
+      expect(maintenanceService.delete).not.toHaveBeenCalled();
+      expect(
+        screen.getByText("Troca de Pastilhas de Freio"),
+      ).toBeInTheDocument();
+    });
   });
 });

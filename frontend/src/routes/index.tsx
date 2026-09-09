@@ -83,6 +83,10 @@ export function AppRoutes() {
               path="/vehicles/:id/maintenance/new"
               element={<RegisterMaintenancePage />}
             />
+            <Route
+              path="/vehicles/:id/maintenance/:maintenanceId/edit"
+              element={<RegisterMaintenancePage />}
+            />
             <Route path="/maintenance" element={<MaintenancePage />} />
             <Route path="/profile" element={<ProfilePage />} />
           </Route>
