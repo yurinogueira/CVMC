@@ -1063,6 +1063,56 @@
             }
         },
         "/api/v1/maintenances/{maintenanceID}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna os detalhes de uma manutenção específica por ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Maintenances"
+                ],
+                "summary": "Obter detalhes de uma manutenção",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID da manutenção",
+                        "name": "maintenanceID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.SuccessEnvelope"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorEnvelope"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorEnvelope"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorEnvelope"
+                        }
+                    }
+                }
+            },
             "put": {
                 "security": [
                     {

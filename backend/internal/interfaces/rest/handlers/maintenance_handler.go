@@ -158,6 +158,33 @@ func (h *MaintenanceHandler) List(w http.ResponseWriter, r *http.Request) {
 	httpx.Success(w, maintenances)
 }
 
+// Get godoc
+// @Summary      Obter detalhes de uma manutenção
+// @Description  Retorna os detalhes de uma manutenção específica por ID
+// @Tags         Maintenances
+// @Produce      json
+// @Security     BearerAuth
+// @Param        maintenanceID path string true "ID da manutenção"
+// @Success      200 {object} httpx.SuccessEnvelope
+// @Failure      401 {object} httpx.ErrorEnvelope
+// @Failure      403 {object} httpx.ErrorEnvelope
+// @Failure      404 {object} httpx.ErrorEnvelope
+// @Router       /api/v1/maintenances/{maintenanceID} [get]
+func (h *MaintenanceHandler) Get(w http.ResponseWriter, r *http.Request) {
+	actorID := h.extractUserID(r)
+	if actorID == "" {
+		httpx.Error(w, http.StatusUnauthorized, "Unauthorized", nil)
+		return
+	}
+	maintID := r.PathValue("maintenanceID")
+	maintenance, err := h.service.Get(r.Context(), actorID, maintID)
+	if err != nil {
+		handleMaintenanceError(w, err)
+		return
+	}
+	httpx.Success(w, maintenance)
+}
+
 // Update godoc
 // @Summary      Atualizar manutenção
 // @Description  Atualiza dados de uma manutenção existente

@@ -76,4 +76,42 @@ describe("MaintenanceCard", () => {
 
     window.open = originalOpen;
   });
+
+  it("renders action buttons when onEdit and onDelete callbacks are provided", () => {
+    const handleEdit = vi.fn();
+    const handleDelete = vi.fn();
+
+    render(
+      <MaintenanceCard
+        maintenance={mockMaintenance}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />,
+    );
+
+    const editBtn = screen.getByRole("button", { name: "Editar manutenção" });
+    const deleteBtn = screen.getByRole("button", {
+      name: "Excluir manutenção",
+    });
+
+    expect(editBtn).toBeInTheDocument();
+    expect(deleteBtn).toBeInTheDocument();
+
+    fireEvent.click(editBtn);
+    expect(handleEdit).toHaveBeenCalledWith(mockMaintenance);
+
+    fireEvent.click(deleteBtn);
+    expect(handleDelete).toHaveBeenCalledWith(mockMaintenance.id);
+  });
+
+  it("does not render action buttons when onEdit and onDelete are omitted", () => {
+    render(<MaintenanceCard maintenance={mockMaintenance} />);
+
+    expect(
+      screen.queryByRole("button", { name: "Editar manutenção" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Excluir manutenção" }),
+    ).not.toBeInTheDocument();
+  });
 });

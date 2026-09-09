@@ -14,6 +14,13 @@ export const maintenanceService = {
     return response.data.data || [];
   },
 
+  async get(maintenanceId: string): Promise<Maintenance> {
+    const response = await apiClient.get<ApiEnvelope<Maintenance>>(
+      `/maintenances/${maintenanceId}`,
+    );
+    return response.data.data;
+  },
+
   async create(
     carId: string,
     payload: CreateMaintenancePayload,

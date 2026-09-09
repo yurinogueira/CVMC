@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -13,6 +13,12 @@ import {
   Alert,
   Snackbar,
   Divider,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  CircularProgress,
 } from "@mui/material";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
@@ -25,6 +31,7 @@ import MonetizationOnRoundedIcon from "@mui/icons-material/MonetizationOnRounded
 import DirectionsCarRoundedIcon from "@mui/icons-material/DirectionsCarRounded";
 import TwoWheelerRoundedIcon from "@mui/icons-material/TwoWheelerRounded";
 import LocalShippingRoundedIcon from "@mui/icons-material/LocalShippingRounded";
+import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 
 import { carService } from "../services/car.service";
 import { Car } from "../types/car.types";
@@ -44,9 +51,23 @@ export function VehicleDetailsPage() {
   const [loadingCar, setLoadingCar] = useState(true);
   const [loadingMaintenances, setLoadingMaintenances] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const location = useLocation();
+  const [toastMessage, setToastMessage] = useState<string | null>(
+    () => (location.state as { message?: string } | null)?.message || null,
+  );
+
+  const [maintenanceToDelete, setMaintenanceToDelete] =
+    useState<Maintenance | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useDocumentTitle(car ? `${car.name} - Detalhes` : "Detalhes do Veículo");
+
+  useEffect(() => {
+    if (location.state?.message) {
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     if (!id) return;
@@ -119,6 +140,42 @@ export function VehicleDetailsPage() {
         return "Caminhão";
       default:
         return "Carro";
+    }
+  };
+
+  const formatMaintenanceDate = (dateStr?: string): string => {
+    if (!dateStr) return "";
+    try {
+      const datePart = dateStr.split("T")[0];
+      const parts = datePart.split("-");
+      if (parts.length === 3) {
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+      }
+      return new Date(dateStr).toLocaleDateString("pt-BR");
+    } catch {
+      return dateStr;
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!maintenanceToDelete) return;
+    try {
+      setDeleting(true);
+      setDeleteError(null);
+      await maintenanceService.delete(maintenanceToDelete.id);
+      setMaintenances((prev) =>
+        prev.filter((m) => m.id !== maintenanceToDelete.id),
+      );
+      setMaintenanceToDelete(null);
+      setToastMessage("Manutenção removida com sucesso");
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { message?: string } } };
+      setDeleteError(
+        errorObj.response?.data?.message ||
+          "Não foi possível excluir a manutenção. Tente novamente.",
+      );
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -556,10 +613,81 @@ export function VehicleDetailsPage() {
       ) : (
         <Stack spacing={2}>
           {maintenances.map((maint) => (
-            <MaintenanceCard key={maint.id} maintenance={maint} />
+            <MaintenanceCard
+              key={maint.id}
+              maintenance={maint}
+              onEdit={(m) =>
+                navigate(`/vehicles/${car?.id || id}/maintenance/${m.id}/edit`)
+              }
+              onDelete={(maintId) => {
+                const target = maintenances.find((m) => m.id === maintId);
+                if (target) {
+                  setMaintenanceToDelete(target);
+                  setDeleteError(null);
+                }
+              }}
+            />
           ))}
         </Stack>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={Boolean(maintenanceToDelete)}
+        onClose={() => !deleting && setMaintenanceToDelete(null)}
+        maxWidth="xs"
+        fullWidth
+        slotProps={{
+          paper: {
+            sx: { borderRadius: 3, p: 1 },
+          },
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, pb: 1 }}>
+          Excluir Manutenção
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ color: "text.primary", mb: 2 }}>
+            Tem certeza que deseja excluir a manutenção{" "}
+            <strong>"{maintenanceToDelete?.title}"</strong> realizada em{" "}
+            <strong>{formatMaintenanceDate(maintenanceToDelete?.date)}</strong>?
+            Esta ação é irreversível e removerá o registro do histórico do
+            veículo.
+          </DialogContentText>
+          {deleteError && (
+            <Alert severity="error" sx={{ borderRadius: 2 }}>
+              {deleteError}
+            </Alert>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button
+            variant="outlined"
+            color="inherit"
+            onClick={() => setMaintenanceToDelete(null)}
+            disabled={deleting}
+            sx={{ borderRadius: 2 }}
+          >
+            Cancelar
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleConfirmDelete}
+            disabled={deleting}
+            startIcon={
+              deleting ? (
+                <CircularProgress size={18} color="inherit" />
+              ) : (
+                <DeleteOutlineRoundedIcon />
+              )
+            }
+            sx={{ borderRadius: 2 }}
+          >
+            Excluir
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Success Toast */}
       <Snackbar

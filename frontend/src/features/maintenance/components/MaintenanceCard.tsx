@@ -6,6 +6,8 @@ import {
   Stack,
   Chip,
   Button,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
 import BuildCircleRoundedIcon from "@mui/icons-material/BuildCircleRounded";
 import CalendarMonthRoundedIcon from "@mui/icons-material/CalendarMonthRounded";
@@ -14,14 +16,22 @@ import AttachMoneyRoundedIcon from "@mui/icons-material/AttachMoneyRounded";
 import PictureAsPdfRoundedIcon from "@mui/icons-material/PictureAsPdfRounded";
 import ImageRoundedIcon from "@mui/icons-material/ImageRounded";
 import ReceiptLongRoundedIcon from "@mui/icons-material/ReceiptLongRounded";
+import EditRoundedIcon from "@mui/icons-material/EditRounded";
+import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import { Maintenance, MaintenanceAttachment } from "../types/maintenance.types";
 import { brandColors } from "../../../styles/theme";
 
 interface MaintenanceCardProps {
   maintenance: Maintenance;
+  onEdit?: (maintenance: Maintenance) => void;
+  onDelete?: (maintenanceId: string) => void;
 }
 
-export function MaintenanceCard({ maintenance }: MaintenanceCardProps) {
+export function MaintenanceCard({
+  maintenance,
+  onEdit,
+  onDelete,
+}: MaintenanceCardProps) {
   const formatDate = (dateStr: string): string => {
     try {
       const datePart = dateStr.split("T")[0];
@@ -119,7 +129,11 @@ export function MaintenanceCard({ maintenance }: MaintenanceCardProps) {
             </Box>
           </Stack>
 
-          <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1 }}>
+          <Stack
+            direction="row"
+            spacing={1}
+            sx={{ flexWrap: "wrap", alignItems: "center", gap: 1 }}
+          >
             {maintenance.cost !== undefined && maintenance.cost !== null && (
               <Chip
                 icon={
@@ -166,6 +180,57 @@ export function MaintenanceCard({ maintenance }: MaintenanceCardProps) {
                 borderRadius: 1,
               }}
             />
+
+            {(onEdit || onDelete) && (
+              <Stack
+                direction="row"
+                spacing={0.5}
+                sx={{ ml: { xs: 0, sm: 0.5 }, alignItems: "center" }}
+              >
+                {onEdit && (
+                  <Tooltip title="Editar manutenção">
+                    <IconButton
+                      size="small"
+                      color="primary"
+                      onClick={() => onEdit(maintenance)}
+                      aria-label="Editar manutenção"
+                      sx={{
+                        border: "1px solid #E2E8F0",
+                        borderRadius: 1.5,
+                        p: 0.6,
+                        "&:hover": {
+                          bgcolor: "rgba(2, 132, 199, 0.08)",
+                          borderColor: "primary.main",
+                        },
+                      }}
+                    >
+                      <EditRoundedIcon sx={{ fontSize: 18 }} />
+                    </IconButton>
+                  </Tooltip>
+                )}
+                {onDelete && (
+                  <Tooltip title="Excluir manutenção">
+                    <IconButton
+                      size="small"
+                      color="error"
+                      onClick={() => onDelete(maintenance.id)}
+                      aria-label="Excluir manutenção"
+                      sx={{
+                        border: "1px solid #E2E8F0",
+                        borderRadius: 1.5,
+                        p: 0.6,
+                        "&:hover": {
+                          bgcolor: "rgba(239, 68, 68, 0.08)",
+                          borderColor: "error.main",
+                        },
+                      }}
+                    >
+                      <DeleteOutlineRoundedIcon sx={{ fontSize: 18 }} />
+                    </IconButton>
+                  </Tooltip>
+                )}
+              </Stack>
+            )}
           </Stack>
         </Stack>
 

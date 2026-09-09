@@ -86,6 +86,7 @@ func NewRouter(cfg config.Config, users userport.Repository, hasher portauth.Pas
 	// Maintenance endpoints
 	mux.Handle("GET /api/v1/cars/{id}/maintenances", middleware.Chain(http.HandlerFunc(maintenanceHandler.List), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
 	mux.Handle("POST /api/v1/cars/{id}/maintenances", middleware.Chain(http.HandlerFunc(maintenanceHandler.Create), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
+	mux.Handle("GET /api/v1/maintenances/{maintenanceID}", middleware.Chain(http.HandlerFunc(maintenanceHandler.Get), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
 	mux.Handle("PUT /api/v1/maintenances/{maintenanceID}", middleware.Chain(http.HandlerFunc(maintenanceHandler.Update), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
 	mux.Handle("DELETE /api/v1/maintenances/{maintenanceID}", middleware.Chain(http.HandlerFunc(maintenanceHandler.Delete), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
 

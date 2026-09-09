@@ -956,6 +956,38 @@ paths:
       summary: Excluir manutenção
       tags:
       - Maintenances
+    get:
+      description: Retorna os detalhes de uma manutenção específica por ID
+      parameters:
+      - description: ID da manutenção
+        in: path
+        name: maintenanceID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Obter detalhes de uma manutenção
+      tags:
+      - Maintenances
     put:
       consumes:
       - application/json

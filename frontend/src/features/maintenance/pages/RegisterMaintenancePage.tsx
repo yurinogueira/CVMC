@@ -34,7 +34,7 @@ import { useDocumentTitle } from "../../shared";
 import { carService } from "../../cars/services/car.service";
 import { Car } from "../../cars/types/car.types";
 import { maintenanceService } from "../services/maintenance.service";
-import { MaintenanceAttachment } from "../types/maintenance.types";
+import { Maintenance, MaintenanceAttachment } from "../types/maintenance.types";
 import {
   MAINTENANCE_CATEGORIES,
   MaintenanceCategoryGroup,
@@ -171,7 +171,11 @@ function getCategoryIcon(categoryId: string) {
 }
 
 export function RegisterMaintenancePage() {
-  const { id } = useParams<{ id: string }>();
+  const { id, maintenanceId } = useParams<{
+    id: string;
+    maintenanceId?: string;
+  }>();
+  const isEdit = Boolean(maintenanceId);
   const navigate = useNavigate();
 
   const getTodayString = () => {
@@ -184,6 +188,7 @@ export function RegisterMaintenancePage() {
 
   const [car, setCar] = useState<Car | null>(null);
   const [loadingCar, setLoadingCar] = useState(true);
+  const [loadingMaintenance, setLoadingMaintenance] = useState(false);
 
   const [types, setTypes] = useState<string[]>([]);
   const [customType, setCustomType] = useState("");
@@ -201,7 +206,11 @@ export function RegisterMaintenancePage() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useDocumentTitle(
-    car ? `Registrar Manutenção - ${car.name}` : "Registrar Manutenção",
+    car
+      ? `${isEdit ? "Editar Manutenção" : "Registrar Manutenção"} - ${car.name}`
+      : isEdit
+        ? "Editar Manutenção"
+        : "Registrar Manutenção",
   );
 
   useEffect(() => {
@@ -211,7 +220,7 @@ export function RegisterMaintenancePage() {
         setLoadingCar(true);
         const data = await carService.get(id);
         setCar(data);
-        if (data.lastMileage) {
+        if (!isEdit && data.lastMileage) {
           setMileage(data.lastMileage);
         }
       } catch {
@@ -221,7 +230,72 @@ export function RegisterMaintenancePage() {
       }
     };
     fetchCar();
-  }, [id]);
+  }, [id, isEdit]);
+
+  useEffect(() => {
+    if (!isEdit || !maintenanceId) return;
+    let isMounted = true;
+
+    const fetchMaintenance = async () => {
+      try {
+        setLoadingMaintenance(true);
+        let data: Maintenance | undefined;
+        try {
+          data = await maintenanceService.get(maintenanceId);
+        } catch {
+          if (id) {
+            const list = await maintenanceService.listByCar(id);
+            data = list.find((m) => m.id === maintenanceId);
+          }
+        }
+
+        if (!isMounted) return;
+
+        if (data) {
+          setTitle(data.title || "");
+          setTitleTouched(true);
+          if (data.description) setDescription(data.description);
+          if (data.date) {
+            setDate(data.date.split("T")[0]);
+          }
+          if (data.mileage !== undefined) setMileage(data.mileage);
+          if (data.cost !== undefined && data.cost !== null)
+            setCost(String(data.cost));
+          if (data.attachments) setAttachments(data.attachments);
+
+          if (data.types && data.types.length > 0) {
+            const allPredefined = new Set(
+              MAINTENANCE_CATEGORIES.flatMap((c) => c.items),
+            );
+            const loadedTypes: string[] = [];
+            for (const t of data.types) {
+              if (allPredefined.has(t)) {
+                loadedTypes.push(t);
+              } else {
+                loadedTypes.push(OTHER_MAINTENANCE_TYPE);
+                setCustomType(t);
+              }
+            }
+            setTypes(loadedTypes);
+          }
+        } else {
+          setErrorMsg("Manutenção não encontrada para edição.");
+        }
+      } catch {
+        if (isMounted) {
+          setErrorMsg("Não foi possível carregar os dados da manutenção.");
+        }
+      } finally {
+        if (isMounted) setLoadingMaintenance(false);
+      }
+    };
+
+    fetchMaintenance();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isEdit, maintenanceId, id]);
 
   const toggleType = (item: string) => {
     const isSelected = types.includes(item);
@@ -331,29 +405,49 @@ export function RegisterMaintenancePage() {
       setSubmitting(true);
       const isoDate = new Date(`${date}T12:00:00Z`).toISOString();
 
-      await maintenanceService.create(id, {
-        title: trimmedTitle,
-        description: description.trim(),
-        date: isoDate,
-        mileage: numMileage,
-        types: finalTypes.length > 0 ? finalTypes : undefined,
-        cost: parsedCost,
-        attachments: attachments.length > 0 ? attachments : undefined,
-      });
+      if (isEdit && maintenanceId) {
+        await maintenanceService.update(maintenanceId, {
+          title: trimmedTitle,
+          description: description.trim(),
+          date: isoDate,
+          mileage: numMileage,
+          types: finalTypes.length > 0 ? finalTypes : undefined,
+          cost: parsedCost,
+          attachments: attachments.length > 0 ? attachments : undefined,
+        });
 
-      navigate(`/vehicles/${id}`);
+        navigate(`/vehicles/${id}`, {
+          state: { message: "Manutenção atualizada com sucesso" },
+        });
+      } else {
+        await maintenanceService.create(id, {
+          title: trimmedTitle,
+          description: description.trim(),
+          date: isoDate,
+          mileage: numMileage,
+          types: finalTypes.length > 0 ? finalTypes : undefined,
+          cost: parsedCost,
+          attachments: attachments.length > 0 ? attachments : undefined,
+        });
+
+        navigate(`/vehicles/${id}`, {
+          state: { message: "Manutenção registrada com sucesso" },
+        });
+      }
     } catch (err: unknown) {
       const errorObj = err as { response?: { data?: { message?: string } } };
       setErrorMsg(
         errorObj.response?.data?.message ||
-          "Não foi possível registrar a manutenção. Tente novamente.",
+          (isEdit
+            ? "Não foi possível atualizar a manutenção. Tente novamente."
+            : "Não foi possível registrar a manutenção. Tente novamente."),
       );
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (loadingCar) {
+  if (loadingCar || loadingMaintenance) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", py: 12 }}>
         <CircularProgress />
@@ -389,7 +483,7 @@ export function RegisterMaintenancePage() {
               variant="h5"
               sx={{ fontWeight: 800, color: "text.primary" }}
             >
-              Registrar Manutenção
+              {isEdit ? "Editar Manutenção" : "Registrar Manutenção"}
             </Typography>
             {car && (
               <Stack

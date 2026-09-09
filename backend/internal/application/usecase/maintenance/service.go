@@ -105,6 +105,21 @@ func (s *Service) List(ctx context.Context, actorID, carID string) ([]domainmain
 	return items, nil
 }
 
+func (s *Service) Get(ctx context.Context, actorID, maintenanceID string) (domainmaintenance.Maintenance, error) {
+	item, err := s.maintenances.GetByID(ctx, maintenanceID)
+	if err != nil {
+		return domainmaintenance.Maintenance{}, ErrMaintenanceNotFound
+	}
+	car, err := s.cars.GetByID(ctx, item.CarID)
+	if err != nil {
+		return domainmaintenance.Maintenance{}, ErrMaintenanceNotFound
+	}
+	if !accessible(actorID, car) {
+		return domainmaintenance.Maintenance{}, ErrMaintenanceForbidden
+	}
+	return item, nil
+}
+
 func (s *Service) Update(ctx context.Context, actorID, maintenanceID string, input UpdateInput) (domainmaintenance.Maintenance, error) {
 	item, err := s.maintenances.GetByID(ctx, maintenanceID)
 	if err != nil {
