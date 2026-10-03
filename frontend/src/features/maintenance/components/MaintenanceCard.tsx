@@ -55,26 +55,41 @@ export function MaintenanceCard({
   const handleOpenAttachment = (att: MaintenanceAttachment) => {
     if (!att.dataUrl) return;
 
-    if (att.dataUrl.startsWith("data:application/pdf")) {
-      // Abre PDF em uma nova aba convertendo dataURL em blob para compatibilidade ampla
-      const byteString = atob(att.dataUrl.split(",")[1]);
-      const ab = new ArrayBuffer(byteString.length);
-      const ia = new Uint8Array(ab);
-      for (let i = 0; i < byteString.length; i++) {
-        ia[i] = byteString.charCodeAt(i);
+    try {
+      if (att.dataUrl.startsWith("data:application/pdf")) {
+        const parts = att.dataUrl.split(",");
+        if (parts.length < 2) return;
+        const byteString = atob(parts[1]);
+        const ab = new ArrayBuffer(byteString.length);
+        const ia = new Uint8Array(ab);
+        for (let i = 0; i < byteString.length; i++) {
+          ia[i] = byteString.charCodeAt(i);
+        }
+        const blob = new Blob([ab], { type: "application/pdf" });
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, "_blank", "noopener,noreferrer");
+      } else if (
+        att.dataUrl.startsWith("data:image/jpeg") ||
+        att.dataUrl.startsWith("data:image/png") ||
+        att.dataUrl.startsWith("data:image/webp")
+      ) {
+        const [header, base64Data] = att.dataUrl.split(",");
+        if (!base64Data) return;
+        const mimeType = header.split(";")[0].replace("data:", "");
+        const byteString = atob(base64Data);
+        const ab = new ArrayBuffer(byteString.length);
+        const ia = new Uint8Array(ab);
+        for (let i = 0; i < byteString.length; i++) {
+          ia[i] = byteString.charCodeAt(i);
+        }
+        const blob = new Blob([ab], { type: mimeType });
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, "_blank", "noopener,noreferrer");
+      } else if (/^https?:\/\//i.test(att.dataUrl)) {
+        window.open(att.dataUrl, "_blank", "noopener,noreferrer");
       }
-      const blob = new Blob([ab], { type: "application/pdf" });
-      const blobUrl = URL.createObjectURL(blob);
-      window.open(blobUrl, "_blank");
-    } else {
-      // Imagens ou links diretos
-      const win = window.open();
-      if (win) {
-        win.document.write(
-          `<img src="${att.dataUrl}" style="max-width:100%; height:auto;" alt="${att.name}" />`,
-        );
-        win.document.title = att.name;
-      }
+    } catch {
+      // Ignora erro ao processar dados corrompidos
     }
   };
 
