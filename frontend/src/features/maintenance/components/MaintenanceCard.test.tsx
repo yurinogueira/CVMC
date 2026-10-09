@@ -58,7 +58,7 @@ describe("MaintenanceCard", () => {
     expect(screen.getByText(/780,50/)).toBeInTheDocument();
   });
 
-  it("renders attachments buttons and handles click", () => {
+  it("renders attachments buttons and handles click safely for pdf and images", () => {
     const originalOpen = window.open;
     window.open = vi.fn();
 
@@ -72,7 +72,61 @@ describe("MaintenanceCard", () => {
     expect(imgBtn).toBeInTheDocument();
 
     fireEvent.click(pdfBtn);
-    expect(window.open).toHaveBeenCalled();
+    expect(window.open).toHaveBeenCalledWith(
+      expect.stringContaining("blob:"),
+      "_blank",
+      "noopener,noreferrer",
+    );
+
+    fireEvent.click(imgBtn);
+    expect(window.open).toHaveBeenCalledWith(
+      expect.stringContaining("blob:"),
+      "_blank",
+      "noopener,noreferrer",
+    );
+
+    window.open = originalOpen;
+  });
+
+  it("safely ignores attachments with unsafe schemes or malformed data", () => {
+    const originalOpen = window.open;
+    window.open = vi.fn();
+
+    const unsafeMaintenance: Maintenance = {
+      ...mockMaintenance,
+      id: "maint-unsafe",
+      attachments: [
+        {
+          id: "att-xss",
+          name: '<script>alert("xss")</script>',
+          size: 100,
+          mimeType: "text/html",
+          dataUrl: 'javascript:alert("xss")',
+          createdAt: "2026-08-20T12:00:00Z",
+        },
+        {
+          id: "att-corrupt",
+          name: "corrupt.jpg",
+          size: 100,
+          mimeType: "image/jpeg",
+          dataUrl: "data:image/jpeg;base64,invalid-base64-content@@@",
+          createdAt: "2026-08-20T12:00:00Z",
+        },
+      ],
+    };
+
+    render(<MaintenanceCard maintenance={unsafeMaintenance} />);
+
+    const xssBtn = screen.getByRole("button", {
+      name: /<script>alert\("xss"\)<\/script>/i,
+    });
+    const corruptBtn = screen.getByRole("button", { name: /corrupt.jpg/i });
+
+    fireEvent.click(xssBtn);
+    expect(window.open).not.toHaveBeenCalled();
+
+    // Clicking corrupt attachment should not throw or open
+    expect(() => fireEvent.click(corruptBtn)).not.toThrow();
 
     window.open = originalOpen;
   });
