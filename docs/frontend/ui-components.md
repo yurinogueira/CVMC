@@ -68,8 +68,8 @@ Para prevenir estouro horizontal (*horizontal overflow*) e garantir adaptação 
    - O título deve possuir `noWrap` com `textOverflow: "ellipsis"`, e o bloco de avatar/ações deve declarar `flexShrink: 0`, impedindo que títulos longos empurrem o perfil para fora da tela.
 4. **Empilhamento de Ações em Telas Estreitas**:
    - Cabeçalhos de seção e formulários devem utilizar `Stack direction={{ xs: "column", sm: "row" }}` com botões de largura total (`width: { xs: "100%", sm: "auto" }`) em resoluções móveis.
-5. **Alinhamento e Largura de Botões Sociais (`GoogleSignInButton.tsx`)**:
-   - Botões de provedores externos renderizados via SDKs de terceiros (como o Google Identity Services / GIS) devem possuir container flexível centralizado e regras de `width: 100%` com forçamento de iframe (`& iframe { width: 100% !important }`), garantindo paridade de largura e alinhamento milimétrico com os botões e campos de entrada dos formulários de login e cadastro.
+5. **Alinhamento e Centralização de Botões Sociais (`GoogleSignInButton.tsx`)**:
+   - Botões de provedores externos renderizados via SDKs de terceiros (como o Google Identity Services / GIS) devem utilizar `logo_alignment: "center"` e container flexível centralizado (`justifyContent: "center"`), garantindo agrupamento simétrico do logotipo e texto com centralização natural e harmônica com os formulários de autenticação.
 
 ---
 
