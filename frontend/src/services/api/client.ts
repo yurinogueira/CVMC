@@ -1,18 +1,34 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
+import { Capacitor } from "@capacitor/core";
 import { useAuthStore } from "../../features/auth/state/auth.store";
 import {
   ApiEnvelope,
   AuthResponseData,
 } from "../../features/auth/types/auth.types";
 
-const baseURL = import.meta.env.VITE_API_BASE_URL
-  ? `${import.meta.env.VITE_API_BASE_URL}/api/v1`
-  : "/api/v1";
+const resolveBaseURL = (): string => {
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return `${import.meta.env.VITE_API_BASE_URL}/api/v1`;
+  }
+  // In native mobile app (Capacitor), default to production API if not explicitly overridden
+  if (Capacitor.isNativePlatform()) {
+    return "https://api-cvmc.yurinogueira.dev.br/api/v1";
+  }
+  return "/api/v1";
+};
 
 export const apiClient = axios.create({
-  baseURL,
+  baseURL: resolveBaseURL(),
   timeout: 15000,
   withCredentials: true,
+});
+
+apiClient.interceptors.request.use((config) => {
+  const token = useAuthStore.getState().accessToken;
+  if (token && !config.headers.Authorization) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
 });
 
 interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
@@ -104,11 +120,26 @@ export const handleResponseRejected = async (error: AxiosError) => {
   isRefreshing = true;
 
   try {
-    const refreshResponse =
-      await apiClient.post<ApiEnvelope<AuthResponseData>>("/auth/refresh");
+    const currentRefreshToken = useAuthStore.getState().refreshToken;
+    const refreshHeaders: Record<string, string> = {};
+    if (currentRefreshToken) {
+      refreshHeaders.Authorization = `Bearer ${currentRefreshToken}`;
+    }
 
-    if (refreshResponse.data?.data?.user) {
-      useAuthStore.getState().setUser(refreshResponse.data.data.user);
+    const refreshResponse = await apiClient.post<ApiEnvelope<AuthResponseData>>(
+      "/auth/refresh",
+      {},
+      { headers: refreshHeaders },
+    );
+
+    if (refreshResponse.data?.data) {
+      const { user, accessToken, refreshToken } = refreshResponse.data.data;
+      if (accessToken) {
+        useAuthStore.getState().setTokens({ accessToken, refreshToken });
+      }
+      if (user) {
+        useAuthStore.getState().setUser(user);
+      }
     }
 
     processQueue(null);

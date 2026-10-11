@@ -30,7 +30,7 @@ import { brandColors } from "../../../styles/theme";
 export function LoginPage() {
   useDocumentTitle("Entrar");
   const navigate = useNavigate();
-  const setUser = useAuthStore((state) => state.setUser);
+  const setSession = useAuthStore((state) => state.setSession);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -50,7 +50,7 @@ export function LoginPage() {
     try {
       setLoading(true);
       const data = await authService.login({ email: email.trim(), password });
-      setUser(data.user);
+      setSession(data);
       navigate("/dashboard", { replace: true });
     } catch (err: unknown) {
       const errorObj = err as { response?: { data?: { message?: string } } };
@@ -68,7 +68,7 @@ export function LoginPage() {
     try {
       setLoading(true);
       const data = await authService.loginWithGoogle(idToken);
-      setUser(data.user);
+      setSession(data);
       navigate("/dashboard", { replace: true });
     } catch (err: unknown) {
       const errorObj = err as { response?: { data?: { message?: string } } };

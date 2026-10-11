@@ -31,7 +31,7 @@ import { brandColors } from "../../../styles/theme";
 export function RegisterPage() {
   useDocumentTitle("Criar Conta");
   const navigate = useNavigate();
-  const setUser = useAuthStore((state) => state.setUser);
+  const setSession = useAuthStore((state) => state.setSession);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -93,7 +93,7 @@ export function RegisterPage() {
         email: trimmedEmail,
         password,
       });
-      setUser(data.user);
+      setSession(data);
       navigate("/dashboard", { replace: true });
     } catch (err: unknown) {
       const errorObj = err as { response?: { data?: { message?: string } } };
@@ -111,7 +111,7 @@ export function RegisterPage() {
     try {
       setLoading(true);
       const data = await authService.loginWithGoogle(idToken);
-      setUser(data.user);
+      setSession(data);
       navigate("/dashboard", { replace: true });
     } catch (err: unknown) {
       const errorObj = err as { response?: { data?: { message?: string } } };

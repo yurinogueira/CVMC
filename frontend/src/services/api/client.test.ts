@@ -104,6 +104,53 @@ describe("apiClient and silent refresh interceptor", () => {
     expect(useAuthStore.getState().isAuthenticated).toBe(true);
   });
 
+  it("attaches stored refreshToken to Authorization header on mobile refresh and updates tokens", async () => {
+    useAuthStore.getState().setTokens({
+      accessToken: "old-access-token",
+      refreshToken: "stored-mobile-refresh-token",
+    });
+
+    let sentRefreshAuthHeader: string | undefined;
+
+    apiClient.defaults.adapter = async (config: InternalAxiosRequestConfig) => {
+      if (config.url?.includes("/auth/refresh")) {
+        sentRefreshAuthHeader = config.headers?.Authorization as string;
+        return {
+          data: {
+            success: true,
+            data: {
+              accessToken: "new-access-token",
+              refreshToken: "new-refresh-token",
+              user: { id: "u-3", name: "User 3", email: "u3@test.com" },
+            },
+          },
+          status: 200,
+          statusText: "OK",
+          headers: {},
+          config,
+        };
+      }
+      return {
+        data: { success: true, data: [] },
+        status: 200,
+        statusText: "OK",
+        headers: {},
+        config,
+      };
+    };
+
+    const error = {
+      response: { status: 401 },
+      config: { url: "/vehicles", method: "get", headers: {} },
+    } as unknown as AxiosError;
+
+    await handleResponseRejected(error);
+
+    expect(sentRefreshAuthHeader).toBe("Bearer stored-mobile-refresh-token");
+    expect(useAuthStore.getState().accessToken).toBe("new-access-token");
+    expect(useAuthStore.getState().refreshToken).toBe("new-refresh-token");
+  });
+
   it("redirects and clears session if retried request fails again with 401", async () => {
     useAuthStore.getState().setUser({
       id: "u-3",

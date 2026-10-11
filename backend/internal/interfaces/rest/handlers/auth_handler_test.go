@@ -59,6 +59,20 @@ func TestAuthHandlerRegisterLoginRefreshLogoutMe(t *testing.T) {
 		t.Fatalf("expected cvmc_refresh_token MaxAge to be 604800 (7d), got %d", refreshTokenCookie.MaxAge)
 	}
 
+	var regResp struct {
+		Success bool `json:"success"`
+		Data    struct {
+			AccessToken  string `json:"accessToken"`
+			RefreshToken string `json:"refreshToken"`
+			User         struct {
+				Email string `json:"email"`
+			} `json:"user"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &regResp); err != nil || regResp.Data.AccessToken == "" || regResp.Data.RefreshToken == "" {
+		t.Fatalf("expected accessToken and refreshToken in register response JSON, got %+v", regResp)
+	}
+
 	// 2. Test Me with access token cookie
 	meReq := httptest.NewRequest(http.MethodGet, "/api/v1/auth/me", nil)
 	meReq.AddCookie(accessTokenCookie)
@@ -104,6 +118,16 @@ func TestAuthHandlerRegisterLoginRefreshLogoutMe(t *testing.T) {
 	}
 	if newRefreshCookie == nil || newRefreshCookie.MaxAge != 7*24*3600 {
 		t.Fatalf("expected new refresh cookie with 7d MaxAge")
+	}
+
+	// 3.1 Test Refresh with Authorization Bearer header (Mobile fallback)
+	refreshBearerReq := httptest.NewRequest(http.MethodPost, "/api/v1/auth/refresh", nil)
+	refreshBearerReq.Header.Set("Authorization", "Bearer "+newRefreshCookie.Value)
+	refreshBearerRec := httptest.NewRecorder()
+	handler.Refresh(refreshBearerRec, refreshBearerReq)
+
+	if refreshBearerRec.Code != http.StatusOK {
+		t.Fatalf("expected status 200 OK for /refresh with Bearer header, got %d. Body: %s", refreshBearerRec.Code, refreshBearerRec.Body.String())
 	}
 
 	// 4. Test Logout

@@ -1,5 +1,6 @@
 dist
 node_modules
+android
 *.tsbuildinfo
 package-lock.json
 vite.config.js
