@@ -95,7 +95,7 @@ export function GoogleSignInButton({
         window.google.accounts.id.renderButton(buttonRef.current, {
           theme: "outline",
           size: "large",
-          width: "100%",
+          width: 400,
           text,
           shape: "rectangular",
           logo_alignment: "left",
@@ -133,7 +133,13 @@ export function GoogleSignInButton({
     (text === "signup_with" ? "Cadastrar com Google" : "Entrar com Google");
 
   return (
-    <Box sx={{ width: "100%", position: "relative" }}>
+    <Box
+      sx={{
+        width: "100%",
+        display: "flex",
+        justifyContent: "center",
+      }}
+    >
       {/* Official Google Button container */}
       <Box
         ref={buttonRef}
@@ -141,9 +147,15 @@ export function GoogleSignInButton({
           width: "100%",
           display: "flex",
           justifyContent: "center",
+          "& > div": {
+            width: "100% !important",
+            display: "flex !important",
+            justifyContent: "center !important",
+          },
           "& iframe": {
             margin: "0 auto !important",
             width: "100% !important",
+            minWidth: "100% !important",
           },
         }}
       />
