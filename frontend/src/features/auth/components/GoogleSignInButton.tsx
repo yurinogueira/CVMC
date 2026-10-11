@@ -1,5 +1,7 @@
-import React, { useEffect, useRef } from "react";
-import { Box, Button } from "@mui/material";
+import React, { useEffect, useRef, useState } from "react";
+import { Box, Button, CircularProgress } from "@mui/material";
+import { Capacitor } from "@capacitor/core";
+import { SocialLogin } from "@capgo/capacitor-social-login";
 
 export function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -65,21 +67,32 @@ interface GoogleSignInButtonProps {
   text?: "signin_with" | "signup_with" | "continue_with";
   disabled?: boolean;
   label?: string;
+  width?: number;
 }
 
 export function GoogleSignInButton({
   onSuccess,
+  onError,
   text = "signin_with",
   disabled = false,
   label,
+  width,
 }: GoogleSignInButtonProps) {
   const buttonRef = useRef<HTMLDivElement>(null);
-  const [isGsiRendered, setIsGsiRendered] = React.useState(false);
+  const [isGsiRendered, setIsGsiRendered] = useState(false);
+  const [loadingNative, setLoadingNative] = useState(false);
+  const isNative = Capacitor.isNativePlatform();
+
   const clientId =
     import.meta.env.VITE_GOOGLE_CLIENT_ID ||
     "cvmc-google-client-id-placeholder";
 
   useEffect(() => {
+    // On native mobile platforms (Android/iOS), use native SocialLogin rather than Web GIS
+    if (isNative) {
+      return;
+    }
+
     // If window.google already exists, render the button
     const initializeGsi = () => {
       if (!window.google?.accounts?.id || !buttonRef.current) return;
@@ -92,10 +105,14 @@ export function GoogleSignInButton({
             }
           },
         });
+
+        // Clamped width between Google GIS limits (200px to 400px)
+        const effectiveWidth = Math.min(380, Math.max(200, width || 280));
+
         window.google.accounts.id.renderButton(buttonRef.current, {
           theme: "outline",
           size: "large",
-          width: 360,
+          width: effectiveWidth,
           text,
           shape: "rectangular",
           logo_alignment: "center",
@@ -112,7 +129,7 @@ export function GoogleSignInButton({
       return;
     }
 
-    // Load GIS script dynamically
+    // Load GIS script dynamically on web
     const scriptId = "google-gsi-client";
     let script = document.getElementById(scriptId) as HTMLScriptElement | null;
     if (!script) {
@@ -126,60 +143,122 @@ export function GoogleSignInButton({
     } else {
       script.addEventListener("load", initializeGsi);
     }
-  }, [clientId, text, onSuccess]);
+  }, [clientId, text, onSuccess, isNative, width]);
 
   const buttonText =
     label ||
     (text === "signup_with" ? "Cadastrar com Google" : "Entrar com Google");
 
+  const handleNativeLogin = async () => {
+    if (disabled || loadingNative) return;
+    try {
+      setLoadingNative(true);
+      await SocialLogin.initialize({
+        google: {
+          webClientId: clientId,
+        },
+      });
+
+      const res = await SocialLogin.login({
+        provider: "google",
+        options: {},
+      });
+
+      const result = res?.result as { idToken?: string | null } | undefined;
+      if (result?.idToken) {
+        onSuccess(result.idToken);
+      } else {
+        onError?.(new Error("Token do Google não retornado pelo dispositivo."));
+      }
+    } catch (err: unknown) {
+      const error = err as { code?: string; message?: string };
+      // User cancelled account selection; dismiss cleanly
+      if (
+        error?.code === "USER_CANCELLED" ||
+        error?.message?.toLowerCase().includes("cancel")
+      ) {
+        return;
+      }
+      onError?.(
+        err instanceof Error
+          ? err
+          : new Error(
+              error?.message || "Erro na autenticação nativa com o Google.",
+            ),
+      );
+    } finally {
+      setLoadingNative(false);
+    }
+  };
+
+  const handleFallbackClick = () => {
+    if (isNative) {
+      handleNativeLogin();
+    } else if (window.google?.accounts?.id) {
+      window.google.accounts.id.prompt();
+    }
+  };
+
   return (
     <Box
       sx={{
         width: "100%",
+        maxWidth: "100%",
         display: "flex",
         justifyContent: "center",
+        overflow: "hidden",
       }}
     >
-      {/* Official Google Button container */}
-      <Box
-        ref={buttonRef}
-        sx={{
-          width: "100%",
-          display: "flex",
-          justifyContent: "center",
-          "& iframe": {
-            margin: "0 auto",
-          },
-        }}
-      />
-      {/* Fallback button for test environments or when GIS is not rendered */}
-      <Button
-        fullWidth
-        variant="outlined"
-        startIcon={<GoogleIcon />}
-        disabled={disabled}
-        onClick={() => {
-          if (window.google?.accounts?.id) {
-            window.google.accounts.id.prompt();
+      {/* Official Google Web Button container (only rendered on web) */}
+      {!isNative && (
+        <Box
+          ref={buttonRef}
+          sx={{
+            width: "100%",
+            maxWidth: "100%",
+            display: isGsiRendered ? "flex" : "none",
+            justifyContent: "center",
+            overflow: "hidden",
+            "& iframe": {
+              margin: "0 auto",
+              maxWidth: "100% !important",
+            },
+          }}
+        />
+      )}
+
+      {/* Styled button for Native Mobile platforms and Web fallback */}
+      {(isNative || !isGsiRendered) && (
+        <Button
+          fullWidth
+          variant="outlined"
+          startIcon={
+            loadingNative ? (
+              <CircularProgress size={18} color="inherit" />
+            ) : (
+              <GoogleIcon />
+            )
           }
-        }}
-        data-testid="google-signin-btn"
-        sx={{
-          display: isGsiRendered ? "none" : "flex",
-          color: "text.primary",
-          borderColor: "#E2E8F0",
-          backgroundColor: "#FFFFFF",
-          textTransform: "none",
-          fontWeight: 600,
-          py: 1.1,
-          "&:hover": {
-            borderColor: "#CBD5E1",
-            backgroundColor: "#F8FAFC",
-          },
-        }}
-      >
-        {buttonText}
-      </Button>
+          disabled={disabled || loadingNative}
+          onClick={handleFallbackClick}
+          data-testid="google-signin-btn"
+          sx={{
+            color: "text.primary",
+            borderColor: "#E2E8F0",
+            backgroundColor: "#FFFFFF",
+            textTransform: "none",
+            fontWeight: 600,
+            py: 1.1,
+            maxWidth: "100%",
+            "&:hover": {
+              borderColor: "#CBD5E1",
+              backgroundColor: "#F8FAFC",
+            },
+          }}
+        >
+          {loadingNative ? "Conectando ao Google..." : buttonText}
+        </Button>
+      )}
     </Box>
   );
 }
