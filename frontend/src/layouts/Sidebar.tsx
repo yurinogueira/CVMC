@@ -281,6 +281,8 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
           "& .MuiDrawer-paper": {
             boxSizing: "border-box",
             width: DRAWER_WIDTH,
+            pt: "env(safe-area-inset-top, 0px)",
+            pb: "env(safe-area-inset-bottom, 0px)",
           },
         }}
       >

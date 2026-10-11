@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	"cvmc/internal/application/usecase/auth"
 	portauth "cvmc/internal/application/ports/auth"
+	"cvmc/internal/application/usecase/auth"
 	"cvmc/internal/infrastructure/auth/bcrypt"
 	jwtauth "cvmc/internal/infrastructure/auth/jwt"
 	carrepo "cvmc/internal/infrastructure/car/memory"

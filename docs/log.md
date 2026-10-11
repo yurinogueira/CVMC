@@ -21,6 +21,7 @@ Para navegação geral, retorne ao [Catálogo Canônico](index.md).
 - **UX Mobile Nativa**: Controle da cor da barra de status (`#0284C7`), splash screen, hardware back button do Android e suporte a Safe Area Insets.
 - **Correção de CORS e Tratamento de Erros**: Liberação das origens `https://localhost` e `capacitor://localhost` no backend Go e no deploy OCI (`backend.yml`), e refinamento no `LoginPage.tsx` para distinguir erro 401 de falha de conexão.
 - **Status Bar Fixa e Preta**: Desativação de sobreposição de tela no Android (`overlay: false`) e definição de fundo preto sólido (`#000000`) com ícones claros para legibilidade total.
+- **Sobreposição de Sidebar e Contraste Mobile (#104)**: Aplicação de safe area insets (`env(safe-area-inset-top)` e `env(safe-area-inset-bottom)`) no Drawer da `Sidebar.tsx`, eliminação de colisão com a barra de status do celular e configuração de alto contraste (`Style.Light`, `android:windowLightStatusBar="true"`, `#FFFFFF`) para o topo da aplicação.
 - **Automação de Build do APK**: Novo job `build-android-apk` no workflow `frontend.yml` com injeção automática de `VITE_GOOGLE_CLIENT_ID`, build Gradle e disponibilização do artefato `app-debug-apk` no GitHub Actions.
 - **Documentação de Build**: Criação do runbook operacional [docs/operations/mobile-build.md](operations/mobile-build.md) detalhando compilação do APK de debug, geração de bundle AAB e assinatura com keystore para publicação na Google Play.
 

@@ -70,6 +70,10 @@ Para prevenir estouro horizontal (*horizontal overflow*) e garantir adaptação 
    - Cabeçalhos de seção e formulários devem utilizar `Stack direction={{ xs: "column", sm: "row" }}` com botões de largura total (`width: { xs: "100%", sm: "auto" }`) em resoluções móveis.
 5. **Alinhamento e Centralização de Botões Sociais (`GoogleSignInButton.tsx`)**:
    - Botões de provedores externos renderizados via SDKs de terceiros (como o Google Identity Services / GIS) devem utilizar `logo_alignment: "center"` e container flexível centralizado (`justifyContent: "center"`), garantindo agrupamento simétrico do logotipo e texto com centralização natural e harmônica com os formulários de autenticação.
+6. **Safe Area Insets no Menu Lateral Móvel (`Sidebar.tsx`)**:
+   - O Drawer temporário para dispositivos móveis deve obrigatoriamente declarar `pt: "env(safe-area-inset-top, 0px)"` e `pb: "env(safe-area-inset-bottom, 0px)"` em seu container (`& .MuiDrawer-paper`). Como o Drawer é renderizado em um portal com `position: fixed; top: 0`, ele não herda o padding do `body`. A aplicação de safe area insets previne que o logotipo e cabeçalho colidam com a barra de status do sistema (relógio, bateria, etc.) e que a seção de usuário encavale na barra de gestos do Android/iOS.
+7. **Alto Contraste da Barra de Status Nativa**:
+   - Em aplicações com tema visual claro (`mode: "light"`), a barra de status do celular deve operar com ícones e textos escuros (`Style.Light` no Capacitor, `android:windowLightStatusBar="true"` no Android nativo e `<meta name="theme-color" content="#FFFFFF">` no HTML), assegurando contraste nítido e legibilidade perfeita do relógio e indicadores sobre os cabeçalhos claros do app.
 
 ---
 
