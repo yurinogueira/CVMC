@@ -189,7 +189,11 @@ function AddFuelingDialogModal({
       fullWidth
       slotProps={{
         paper: {
-          sx: { borderRadius: 3, p: 1 },
+          sx: {
+            borderRadius: { xs: 2, sm: 3 },
+            p: { xs: 0.5, sm: 1 },
+            m: { xs: 1.5, sm: 3 },
+          },
         },
       }}
     >

@@ -423,4 +423,25 @@ describe("VehicleDetailsPage", () => {
       ).toBeInTheDocument();
     });
   });
+
+  it("renders navigation tabs with scrollable variant to prevent mobile overflow", async () => {
+    vi.mocked(carService.get).mockResolvedValue(mockCar);
+    vi.mocked(maintenanceService.listByCar).mockResolvedValue([]);
+    vi.mocked(fuelService.listByCar).mockResolvedValue([]);
+
+    render(
+      <BrowserRouter>
+        <VehicleDetailsPage />
+      </BrowserRouter>,
+    );
+
+    await waitFor(() => {
+      const tablist = screen.getByRole("tablist");
+      expect(tablist).toBeInTheDocument();
+      // The parent element of tablist is the scroller
+      const scroller = tablist.parentElement;
+      expect(scroller).toHaveClass("MuiTabs-scroller");
+      expect(scroller).toHaveClass("MuiTabs-scrollableX");
+    });
+  });
 });

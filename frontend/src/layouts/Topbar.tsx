@@ -75,27 +75,50 @@ export function Topbar({ onDrawerToggle }: TopbarProps) {
           height: 64,
           minHeight: "64px !important",
           px: { xs: 2, sm: 3 },
+          gap: 1,
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1.5,
+            minWidth: 0,
+            flex: 1,
+            mr: 1,
+          }}
+        >
           <IconButton
             color="inherit"
             aria-label="abrir menu lateral"
             edge="start"
             onClick={onDrawerToggle}
-            sx={{ display: { md: "none" } }}
+            sx={{ display: { md: "none" }, flexShrink: 0 }}
           >
             <MenuRoundedIcon />
           </IconButton>
           <Typography
             variant="h6"
-            sx={{ fontWeight: 700, fontSize: { xs: "1.1rem", sm: "1.25rem" } }}
+            noWrap
+            sx={{
+              fontWeight: 700,
+              fontSize: { xs: "1.1rem", sm: "1.25rem" },
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
           >
             {currentTitle}
           </Typography>
         </Box>
 
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            flexShrink: 0,
+          }}
+        >
           <IconButton onClick={handleMenuOpen} size="small" sx={{ p: 0.5 }}>
             <Avatar
               sx={{

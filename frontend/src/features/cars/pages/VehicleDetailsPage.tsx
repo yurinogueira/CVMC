@@ -294,12 +294,16 @@ export function VehicleDetailsPage() {
         direction={{ xs: "column", sm: "row" }}
         spacing={2}
         sx={{
-          alignItems: { xs: "flex-start", sm: "center" },
+          alignItems: { xs: "stretch", sm: "center" },
           justifyContent: "space-between",
           mb: 3,
         }}
       >
-        <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+        <Stack
+          direction="row"
+          spacing={1.5}
+          sx={{ alignItems: "center", minWidth: 0, flexWrap: "wrap", gap: 1 }}
+        >
           <Button
             variant="outlined"
             size="small"
@@ -309,6 +313,7 @@ export function VehicleDetailsPage() {
               borderRadius: 2,
               color: "text.secondary",
               borderColor: "#E2E8F0",
+              flexShrink: 0,
               "&:hover": {
                 borderColor: "#CBD5E1",
                 bgcolor: "#F8FAFC",
@@ -323,7 +328,12 @@ export function VehicleDetailsPage() {
             <Typography
               component="h1"
               variant="h5"
-              sx={{ fontWeight: 800, color: "text.primary" }}
+              sx={{
+                fontWeight: 800,
+                color: "text.primary",
+                wordBreak: "break-word",
+                fontSize: { xs: "1.25rem", sm: "1.5rem" },
+              }}
             >
               {car?.name}
             </Typography>
@@ -339,7 +349,7 @@ export function VehicleDetailsPage() {
               setFuelDialogOpen(true);
             }}
             disabled={loadingCar || !car}
-            sx={{ px: 2.5, py: 1.1 }}
+            sx={{ px: 2.5, py: 1.1, width: { xs: "100%", sm: "auto" } }}
           >
             Registrar Abastecimento
           </Button>
@@ -351,7 +361,7 @@ export function VehicleDetailsPage() {
               navigate(`/vehicles/${car?.id || id}/maintenance/new`)
             }
             disabled={loadingCar || !car}
-            sx={{ px: 2.5, py: 1.1 }}
+            sx={{ px: 2.5, py: 1.1, width: { xs: "100%", sm: "auto" } }}
           >
             Registrar Manutenção
           </Button>
@@ -427,12 +437,21 @@ export function VehicleDetailsPage() {
                   <Stack
                     direction="row"
                     spacing={1}
-                    sx={{ alignItems: "center", mb: 0.5 }}
+                    sx={{
+                      alignItems: "center",
+                      mb: 0.5,
+                      flexWrap: "wrap",
+                      gap: 1,
+                    }}
                   >
                     <Typography
                       variant="h5"
                       component="h2"
-                      sx={{ fontWeight: 800, color: "text.primary" }}
+                      sx={{
+                        fontWeight: 800,
+                        color: "text.primary",
+                        wordBreak: "break-word",
+                      }}
                     >
                       {car.name}
                     </Typography>
@@ -450,7 +469,11 @@ export function VehicleDetailsPage() {
                   </Stack>
                   <Typography
                     variant="subtitle1"
-                    sx={{ color: "text.secondary", fontWeight: 600 }}
+                    sx={{
+                      color: "text.secondary",
+                      fontWeight: 600,
+                      wordBreak: "break-word",
+                    }}
                   >
                     {car.manufacturer} • {car.model}
                   </Typography>
@@ -766,6 +789,21 @@ export function VehicleDetailsPage() {
           onChange={(_, val) => setActiveTab(val)}
           textColor="primary"
           indicatorColor="primary"
+          variant="scrollable"
+          scrollButtons="auto"
+          allowScrollButtonsMobile
+          sx={{
+            "& .MuiTabs-scroller": {
+              overflowX: "auto",
+            },
+            "& .MuiTab-root": {
+              minHeight: 48,
+              minWidth: { xs: "auto", sm: 160 },
+              px: { xs: 1.5, sm: 2 },
+              fontWeight: 700,
+              textTransform: "none",
+            },
+          }}
         >
           <Tab
             icon={<LocalGasStationRoundedIcon sx={{ fontSize: 20 }} />}
@@ -788,7 +826,6 @@ export function VehicleDetailsPage() {
                 )}
               </Stack>
             }
-            sx={{ fontWeight: 700, textTransform: "none" }}
           />
           <Tab
             icon={<BuildCircleRoundedIcon sx={{ fontSize: 20 }} />}
@@ -811,7 +848,6 @@ export function VehicleDetailsPage() {
                 )}
               </Stack>
             }
-            sx={{ fontWeight: 700, textTransform: "none" }}
           />
         </Tabs>
       </Box>
@@ -820,14 +856,24 @@ export function VehicleDetailsPage() {
       {activeTab === 0 && (
         <Box>
           <Stack
-            direction="row"
+            direction={{ xs: "column", sm: "row" }}
+            spacing={1.5}
             sx={{
-              alignItems: "center",
+              alignItems: { xs: "stretch", sm: "center" },
               justifyContent: "space-between",
               mb: 2.5,
             }}
           >
-            <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{
+                alignItems: "center",
+                minWidth: 0,
+                flexWrap: "wrap",
+                gap: 1,
+              }}
+            >
               <Typography
                 component="h2"
                 variant="h6"
@@ -857,7 +903,7 @@ export function VehicleDetailsPage() {
                 setFuelDialogOpen(true);
               }}
               disabled={!car}
-              sx={{ borderRadius: 2 }}
+              sx={{ borderRadius: 2, width: { xs: "100%", sm: "auto" } }}
             >
               Registrar Abastecimento
             </Button>
@@ -968,14 +1014,24 @@ export function VehicleDetailsPage() {
       {activeTab === 1 && (
         <Box>
           <Stack
-            direction="row"
+            direction={{ xs: "column", sm: "row" }}
+            spacing={1.5}
             sx={{
-              alignItems: "center",
+              alignItems: { xs: "stretch", sm: "center" },
               justifyContent: "space-between",
               mb: 2.5,
             }}
           >
-            <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{
+                alignItems: "center",
+                minWidth: 0,
+                flexWrap: "wrap",
+                gap: 1,
+              }}
+            >
               <Typography
                 component="h2"
                 variant="h6"
@@ -1004,7 +1060,7 @@ export function VehicleDetailsPage() {
                 navigate(`/vehicles/${car?.id || id}/maintenance/new`)
               }
               disabled={!car}
-              sx={{ borderRadius: 2 }}
+              sx={{ borderRadius: 2, width: { xs: "100%", sm: "auto" } }}
             >
               Registrar Manutenção
             </Button>
@@ -1142,7 +1198,7 @@ export function VehicleDetailsPage() {
         fullWidth
         slotProps={{
           paper: {
-            sx: { borderRadius: 3, p: 1 },
+            sx: { borderRadius: 3, p: 1, m: { xs: 1.5, sm: 3 } },
           },
         }}
       >
@@ -1199,7 +1255,7 @@ export function VehicleDetailsPage() {
         fullWidth
         slotProps={{
           paper: {
-            sx: { borderRadius: 3, p: 1 },
+            sx: { borderRadius: 3, p: 1, m: { xs: 1.5, sm: 3 } },
           },
         }}
       >
