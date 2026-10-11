@@ -94,6 +94,10 @@ check_terraform() {
   return 0
 }
 
+check_docs() {
+  "$PROJECT_ROOT/scripts/check-docs.sh" --verify-sync
+}
+
 TARGET="${1:-all}"
 FAILED=0
 
@@ -107,7 +111,11 @@ case "$TARGET" in
   terraform)
     check_terraform || FAILED=1
     ;;
+  docs)
+    check_docs || FAILED=1
+    ;;
   all)
+    check_docs || FAILED=1
     check_backend || FAILED=1
     check_frontend || FAILED=1
     check_terraform || FAILED=1
@@ -116,7 +124,7 @@ case "$TARGET" in
     fi
     ;;
   *)
-    echo "Usage: $0 [backend|frontend|terraform|all]"
+    echo "Usage: $0 [backend|frontend|terraform|docs|all]"
     exit 1
     ;;
 esac

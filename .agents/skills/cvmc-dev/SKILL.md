@@ -2,7 +2,8 @@
 name: cvmc-dev
 description: >-
   Guia e comandos otimizados para editar, validar e executar o projeto CVMC
-  (Go backend, React frontend e Docker Compose), minimizando o consumo de tokens.
+  (Go backend, React frontend e Docker Compose), minimizando o consumo de tokens
+  e garantindo a atualização mandatória da documentação canônica (OKF), do log diário (docs/logs/) e docs/log.md em cada entrega.
 ---
 
 # Skill: Desenvolvimento e Execução do CVMC
@@ -11,12 +12,14 @@ Esta skill define as diretrizes de arquitetura, fluxos de edição, documentaç�
 
 ---
 
-## ⚡ Regra de Ouro: Economia de Tokens
+## ⚡ Regra de Ouro: Economia de Tokens & Documentação Canônica
 
 > [!IMPORTANT]
-> **Nunca** execute comandos brutos e verbosos como `go test ./...` ou `npm run lint` diretamente, pois eles poluem o contexto com dezenas de linhas irrelevantes (`? [no test files]`, logs de build, etc.).
+> **1. Consulta Prévia Obrigatória**: Antes de iniciar qualquer alteração ou pesquisa em código, consulte o catálogo canônico em `docs/index.md` (seguindo as diretrizes da skill `cvmc-docs`). A divulgação progressiva (*progressive disclosure*) evita a leitura de arquivos desnecessários e economiza até 90% dos tokens de contexto.
+> **2. Documentação e Log Obrigatórios em Toda Tarefa**: Qualquer alteração (nova feature, correção de bug, atualização de versões/dependências ou refatoração) exige a atualização da respectiva documentação canônica em `docs/` e o registro datado no arquivo diário correspondente sob `docs/logs/AAAA-MM-DD.md` (indexado em `docs/log.md`) antes de finalizar o trabalho.
+> **3. Evite Comandos Verbosos**: **Nunca** execute comandos brutos como `go test ./...` ou `npm run lint` diretamente, pois eles poluem o contexto com dezenas de linhas irrelevantes (`? [no test files]`, logs de build, etc.).
 > **Sempre utilize os scripts auxiliares compactos em `scripts/`**:
-> - `./scripts/check.sh all` ou `./scripts/check.sh backend|frontend|terraform`
+> - `./scripts/check.sh all` ou `./scripts/check.sh backend|frontend|terraform|docs`
 > - `./scripts/fix.sh`
 > - `./scripts/swagger.sh` (obrigatório ao alterar rotas/handlers do backend)
 > - `./scripts/dev.sh start|stop|status|logs|restart`
@@ -25,7 +28,8 @@ Esta skill define as diretrizes de arquitetura, fluxos de edição, documentaç�
 
 | Tarefa | Comando Verboso (Evitar) | Comando Compacto (Usar) | Redução de Tokens |
 | :--- | :--- | :--- | :--- |
-| **Checagem Geral** | `go vet + go test + tsc + eslint + prettier + vitest + terraform fmt` | `./scripts/check.sh all` | **~85% menos tokens** |
+| **Checagem Geral** | `docs + go vet + go test + tsc + eslint + prettier + vitest + terraform` | `./scripts/check.sh all` | **~85% menos tokens** |
+| **Checar Docs** | `manual check` | `./scripts/check.sh docs` | Retorna 1 linha em sucesso |
 | **Checar Backend** | `cd backend && go vet ./... && go test ./...` | `./scripts/check.sh backend` | Retorna 1 linha em sucesso |
 | **Checar Frontend** | `cd frontend && npx tsc -b && npm run lint && ...` | `./scripts/check.sh frontend` | Retorna 1 linha em sucesso |
 | **Checar Terraform**| `cd terraform && terraform fmt -check` | `./scripts/check.sh terraform` | Retorna 1 linha em sucesso |

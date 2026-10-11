@@ -85,3 +85,11 @@ Estas diretrizes são **inegociáveis** e devem ser seguidas em qualquer altera�
   - Use sempre o caminho do arquivo de chave (`private_key_path = "~/.oci/oci_api_key.pem"`).
 - **Acesso SSH Restrito**:
   - Regras de ingress de SSH (porta 22) no Terraform não devem usar `0.0.0.0/0` irrestrito; devem usar `var.admin_cidr`.
+
+---
+
+## 📝 6. Sincronização Mandatória com a Documentação Canônica (OKF)
+
+- **Atualização Obrigatória em `docs/`**: Toda e qualquer alteração de segurança, mitigação de vulnerabilidade (ex: XSS em anexos, DoS em bcrypt, bypass de autorização) ou ajuste em autenticação/autorização deve atualizar obrigatoriamente `docs/architecture/auth-and-security.md`.
+- **Registro Datado no Log Diário**: Cada intervenção deve ser documentada no arquivo diário `docs/logs/AAAA-MM-DD.md` (com sumário em `docs/log.md`) informando severidade, causa raiz, correção aplicada e arquivos alterados.
+- **Validação Pré-Commit**: Execute `./scripts/check.sh docs` e `./scripts/check.sh all` antes de submeter alterações.

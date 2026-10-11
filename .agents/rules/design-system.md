@@ -100,8 +100,59 @@ Os cabeçalhos devem ser organizados de forma sequencial e descendente, sem pula
 
 ---
 
-## 🚫 7. O que NÃO Fazer
+## 📏 7. Padrão de Margens, Padding e Arquitetura de Layouts de Páginas
 
+Para evitar margens desiguais entre páginas e garantir alinhamento perfeito de todos os componentes com o banner de status e cabeçalhos:
+
+1. **Single Source of Truth para Padding de Páginas (`AppLayout.tsx`)**:
+   - O container principal da aplicação (`AppLayout.tsx`) é o **único responsável** por gerenciar o padding externo de tela:
+     ```tsx
+     <Box
+       sx={{
+         flex: 1,
+         p: { xs: 1.5, sm: 2.5, md: 3 },
+         minWidth: 0,
+         maxWidth: "100%",
+       }}
+     >
+       <Box sx={{ maxWidth: 1600, mx: "auto", width: "100%" }}>
+         <Outlet />
+       </Box>
+     </Box>
+     ```
+   - Isso garante que todos os filhos compartilhem **sempre** a mesma largura máxima (`maxWidth: 1600`) e o mesmo espaçamento lateral em qualquer resolução.
+
+2. **Regra de Ouro para Componentes de Página (`*Page.tsx`)**:
+   - **Nunca** adicione padding externo (`p: ...`) no `<Box>` raiz de uma página (`*Page.tsx`).
+   - Isso provocaria **padding duplo** (padding dentro de padding), fazendo com que a página ficasse desalinhada com cabeçalhos e mais estreita que outras telas.
+   - O `<Box>` raiz de qualquer página deve ser:
+     ```tsx
+     <Box sx={{ width: "100%" }}>
+     ```
+     *(Apenas formulários estritamente restritos podem aplicar `maxWidth: 1000, mx: "auto"`, mas **sempre sem `p: ...`**)*.
+
+3. **Semântica Válida em Modais e Diálogos (Prevenção de Erros de Hidratação)**:
+   - No Material-UI, o `<DialogTitle>` renderiza por padrão uma tag `<h2>`.
+   - **Nunca** insira `<Typography variant="h6">` (ou qualquer outro heading) dentro de `<DialogTitle>` sem especificar `component="div"` ou `component="span"`:
+     ```tsx
+     {/* ✅ Correto */}
+     <DialogTitle
+       component="div"
+       sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
+     >
+       <Typography variant="h6" component="span">
+         {t("titulo")}
+       </Typography>
+     </DialogTitle>
+     ```
+   - O aninhamento incorreto gera `<h2><h6>...</h6></h2>` no DOM, violando a especificação HTML e disparando erro de hidratação no React.
+
+---
+
+## 🚫 8. O que NÃO Fazer
+
+- ❌ **Não adicionar padding externo (`p: ...`) na raiz de páginas dentro do `<Outlet />`** (o `AppLayout` já gerencia o espaçamento de forma centralizada).
+- ❌ **Não aninhar `<Typography variant="h6">` dentro de `<DialogTitle>`** sem configurar `component="div"` ou `component="span"`.
 - ❌ Não usar texto branco sobre cores claras como `#4CFCF7` ou `#A7F3D0` (exigem texto escuro `#064E3B` ou `#0F172A`).
 - ❌ Não usar texto azul claro sobre fundo branco em botões (usar `#0369A1` ou `#0F172A` para manter contraste > 4.5:1).
 - ❌ Não pular níveis de heading (ex.: ir direto de `h1` para `h6` ou `h4` para `h6`).

@@ -12,6 +12,16 @@ const (
 	MinJWTSecretLength = 32
 )
 
+var (
+	ErrJWTSecretEmpty           = errors.New("JWT_SECRET must not be empty")
+	ErrJWTRefreshSecretEmpty    = errors.New("JWT_REFRESH_SECRET must not be empty")
+	ErrJWTSecretInsecure        = errors.New("JWT_SECRET cannot use insecure default placeholder value ('change-me')")
+	ErrJWTRefreshSecretInsecure = errors.New("JWT_REFRESH_SECRET cannot use insecure default placeholder value ('change-me-too')")
+	ErrJWTSecretTooShort        = fmt.Errorf("JWT_SECRET must be at least %d characters long", MinJWTSecretLength)
+	ErrJWTRefreshSecretTooShort = fmt.Errorf("JWT_REFRESH_SECRET must be at least %d characters long", MinJWTSecretLength)
+	ErrJWTSecretsIdentical      = errors.New("JWT_SECRET and JWT_REFRESH_SECRET must be different")
+)
+
 var defaultInsecureSecrets = map[string]struct{}{
 	"change-me":     {},
 	"change-me-too": {},
@@ -19,17 +29,28 @@ var defaultInsecureSecrets = map[string]struct{}{
 
 // ValidateJWTSecrets ensures JWT secrets meet minimum entropy requirements and are not known insecure defaults.
 func ValidateJWTSecrets(secret, refreshSecret string) error {
-	if _, insecure := defaultInsecureSecrets[secret]; insecure {
-		return errors.New("JWT_SECRET cannot use insecure default placeholder value ('change-me')")
+	if secret == "" {
+		return ErrJWTSecretEmpty
 	}
-	if _, insecure := defaultInsecureSecrets[refreshSecret]; insecure {
-		return errors.New("JWT_REFRESH_SECRET cannot use insecure default placeholder value ('change-me-too')")
+	if _, insecure := defaultInsecureSecrets[secret]; insecure {
+		return ErrJWTSecretInsecure
 	}
 	if len(secret) < MinJWTSecretLength {
 		return fmt.Errorf("JWT_SECRET must be at least %d characters long (got %d)", MinJWTSecretLength, len(secret))
 	}
+
+	if refreshSecret == "" {
+		return ErrJWTRefreshSecretEmpty
+	}
+	if _, insecure := defaultInsecureSecrets[refreshSecret]; insecure {
+		return ErrJWTRefreshSecretInsecure
+	}
 	if len(refreshSecret) < MinJWTSecretLength {
 		return fmt.Errorf("JWT_REFRESH_SECRET must be at least %d characters long (got %d)", MinJWTSecretLength, len(refreshSecret))
+	}
+
+	if secret == refreshSecret {
+		return ErrJWTSecretsIdentical
 	}
 	return nil
 }
@@ -61,6 +82,10 @@ type Config struct {
 	EmailFrom           string
 }
 
+func (c Config) Validate() error {
+	return ValidateJWTSecrets(c.JWTSecret, c.JWTRefreshSecret)
+}
+
 func Load() Config {
 	cfg := Config{
 		Port:                getenv("PORT", "8080"),
@@ -90,8 +115,8 @@ func Load() Config {
 	}
 
 	// Unconditionally reject default and low-entropy JWT secrets in all environments.
-	if err := ValidateJWTSecrets(cfg.JWTSecret, cfg.JWTRefreshSecret); err != nil {
-		log.Fatalf("FATAL: invalid JWT configuration: %v", err)
+	if err := cfg.Validate(); err != nil {
+		log.Fatalf("FATAL: invalid configuration: %v", err)
 	}
 
 	return cfg

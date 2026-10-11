@@ -1,61 +1,57 @@
-## 📌 Descrição das Alterações
+## 📌 Tipo de Alteração
 
-<!-- Forneça um resumo claro e conciso das alterações realizadas e o contexto técnico ou de negócio. -->
+Marque com um `x` a opção que melhor descreve sua mudança:
 
----
-
-## 🏷️ Tipo de Alteração
-
-Marque as opções que se aplicam a este Pull Request:
-
-- [ ] ✨ `feat`: Nova funcionalidade ou recurso para o usuário
-- [ ] 🐛 `fix`: Correção de bug ou comportamento inesperado
-- [ ] ♻️ `refactor`: Refatoração de código sem alteração de comportamento externo
-- [ ] ⚡ `perf`: Melhoria de performance ou carregamento (LCP/FCP)
+- [ ] ✨ `feat`: Nova funcionalidade ou melhoria de produto
+- [ ] 🐛 `fix`: Correção de bug
 - [ ] 📝 `docs`: Atualização ou adição de documentação
-- [ ] 🔧 `chore`: Manutenção de dependências, builds ou arquivos auxiliares
-- [ ] 👷 `ci`: Alterações em pipelines de CI/CD ou automações do GitHub Actions
-- [ ] 🔒 `security`: Correções ou melhorias focadas em segurança defensiva
+- [ ] ♻️ `refactor`: Refatoração de código sem alteração de comportamento externo
+- [ ] ⚡ `perf`: Otimização de performance
+- [ ] 🧪 `test`: Adição ou correção de testes automatizados
+- [ ] 🔧 `chore`: Tarefas de manutenção, dependências ou infraestrutura
+- [ ] 🛡️ `security`: Correção ou aprimoramento de segurança
+- [ ] 👷 `ci`: Alterações nos fluxos de CI/CD
 
 ---
 
-## 🔗 Issues Relacionadas
+## 🎯 Contexto e Motivação
 
-<!-- Vincule a issue correspondente para fechamento automático após o merge. Exemplos: Closes #123, Resolves #456 -->
-- Closes #
-- Resolves #
+Descreva o motivo desta alteração e o contexto do problema/oportunidade. Se aplicável, vincule a issue correspondente para fechamento automático:
+
+- **Issue vinculada**: Closes # <!-- ou Resolves # -->
 
 ---
 
-## 🧪 Checklist de Validação Técnica
+## 🛠️ Resumo das Alterações Técnicas
 
-Antes de submeter o PR, confirme se os seguintes passos foram executados com sucesso no seu ambiente local:
+Liste as principais mudanças técnicas realizadas neste PR:
 
-- [ ] **Sincronia com a Main**: A branch foi atualizada com o commit mais recente de `origin/main` (`git fetch origin main && git rebase origin/main`).
-- [ ] **Regeneração da Documentação Swagger** (obrigatório caso tenha alterado rotas/handlers HTTP da API Go):
-  ```bash
-  ./scripts/swagger.sh
-  ```
-- [ ] **Validação Completa da Stack** (Backend Go vet + testes, Frontend typecheck + lint + format + vitest e Terraform fmt):
+- 
+- 
+- 
+
+---
+
+## 🔒 Considerações de Segurança e Integridade
+
+- [ ] **Autenticação & Autorização**: Validação de escopo de usuário, permissões RBAC e integridade de cookies `HttpOnly`.
+- [ ] **Sanitização & Validação**: Validação de inputs no backend, proteção contra XSS, NoSQL Injection e *Path Traversal*.
+- [ ] **Exposição de Dados**: Nenhuma informação sensível, credencial ou segredo foi exposto.
+
+---
+
+## 🧪 Checklist de Validação Obrigatória
+
+Antes de solicitar a revisão do PR, certifique-se de que todos os itens abaixo foram cumpridos:
+
+- [ ] A branch foi criada e rebaseada a partir da `main` mais recente (`git pull origin main --ff-only` / `git rebase origin/main`).
+- [ ] O comando de validação completa passou com 100% de sucesso (Backend, Frontend, Terraform e Docs):
   ```bash
   ./scripts/check.sh all
   ```
-
----
-
-## 🖼️ Demonstração Visual / Evidências (Obrigatório para Frontend)
-
-<!-- Se este PR incluir alterações visuais, telas novas ou componentes do Design System, inclua capturas de tela ou GIFs antes/depois. -->
-
-| Antes | Depois |
-| :---: | :---: |
-| _Insira imagem ou N/A_ | _Insira imagem ou N/A_ |
-
----
-
-## 🛡️ Checklist de Segurança & Boas Práticas
-
-- [ ] Tokens JWT trafegados estritamente através de cookies `HttpOnly`, `Secure`, `SameSite=Lax`.
-- [ ] Nenhum token sensível armazenado em `localStorage` ou `sessionStorage`.
-- [ ] Nenhuma credencial, segredo ou IP privado/público exposto em arquivos de código, configurações ou workflows.
-- [ ] Entradas de usuário devidamente sanitizadas (sem injeção NoSQL, XSS ou Path Traversal).
+- [ ] A documentação Swagger foi atualizada caso novos endpoints ou DTOs tenham sido alterados:
+  ```bash
+  ./scripts/swagger.sh
+  ```
+- [ ] A documentação canônica em `docs/` e o log diário em `docs/logs/` (indexado em `docs/log.md`) foram atualizados.
+- [ ] Os commits seguem o padrão [Conventional Commits](https://www.conventionalcommits.org/).

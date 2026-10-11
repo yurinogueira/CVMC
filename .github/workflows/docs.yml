@@ -1,0 +1,41 @@
+name: Documentation
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/**'
+      - 'scripts/check-docs.sh'
+      - 'scripts/check.sh'
+      - '.github/workflows/docs.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+jobs:
+  validate-docs:
+    name: OKF Documentation Quality Gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Validate OKF Bundle Integrity & Zero-Divergence
+        run: |
+          chmod +x scripts/check-docs.sh
+          if [ "${{ github.actor }}" = "dependabot[bot]" ]; then
+            ./scripts/check-docs.sh
+          else
+            ./scripts/check-docs.sh --verify-sync
+          fi
