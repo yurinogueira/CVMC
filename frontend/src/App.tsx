@@ -15,12 +15,11 @@ function MobileAppBridge() {
       return;
     }
 
-    // Configure Status Bar (Fixed, solid black background, light icons, no overlay)
+    // Configure Status Bar (Light background with dark icons for optimal contrast)
     void (async () => {
       try {
-        await StatusBar.setOverlaysWebView({ overlay: false });
-        await StatusBar.setBackgroundColor({ color: "#000000" });
-        await StatusBar.setStyle({ style: Style.Dark });
+        await StatusBar.setBackgroundColor({ color: "#FFFFFF" });
+        await StatusBar.setStyle({ style: Style.Light });
       } catch {
         // Plugin error fallback
       }

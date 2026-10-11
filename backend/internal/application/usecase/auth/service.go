@@ -442,4 +442,3 @@ func (s *Service) LoginWithGoogle(ctx context.Context, idToken string) (AuthOutp
 	}
 	return AuthOutput{User: created, AccessToken: pair.AccessToken, RefreshToken: pair.RefreshToken}, nil
 }
-

@@ -258,4 +258,3 @@ func (s *Service) SetPassword(ctx context.Context, userID, newPassword string) e
 	_, err = s.users.Update(ctx, user)
 	return err
 }
-

@@ -68,4 +68,15 @@ describe("Sidebar", () => {
     expect(mockNavigate).toHaveBeenCalledWith("/profile");
     expect(mockOnMobileClose).toHaveBeenCalled();
   });
+
+  it("renders brand logo and nav items when mobile drawer is open", () => {
+    render(
+      <MemoryRouter initialEntries={["/dashboard"]}>
+        <Sidebar mobileOpen={true} onMobileClose={mockOnMobileClose} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getAllByText("Como Vai Meu Carro")[0]).toBeInTheDocument();
+    expect(screen.getAllByText("Dashboard")[0]).toBeInTheDocument();
+  });
 });
