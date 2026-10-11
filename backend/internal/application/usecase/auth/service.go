@@ -38,11 +38,12 @@ var (
 )
 
 type Service struct {
-	users       userport.Repository
-	hasher      portauth.PasswordHasher
-	tokens      portauth.TokenService
-	emailSender emailport.Sender
-	now         func() time.Time
+	users           userport.Repository
+	hasher          portauth.PasswordHasher
+	tokens          portauth.TokenService
+	emailSender     emailport.Sender
+	googleValidator portauth.GoogleTokenValidator
+	now             func() time.Time
 }
 
 type RegisterInput struct {
@@ -62,14 +63,22 @@ type AuthOutput struct {
 	RefreshToken string
 }
 
-func NewService(users userport.Repository, hasher portauth.PasswordHasher, tokens portauth.TokenService, emailSender emailport.Sender) *Service {
-	return &Service{
+func NewService(users userport.Repository, hasher portauth.PasswordHasher, tokens portauth.TokenService, emailSender emailport.Sender, googleValidator ...portauth.GoogleTokenValidator) *Service {
+	s := &Service{
 		users:       users,
 		hasher:      hasher,
 		tokens:      tokens,
 		emailSender: emailSender,
 		now:         time.Now,
 	}
+	if len(googleValidator) > 0 {
+		s.googleValidator = googleValidator[0]
+	}
+	return s
+}
+
+func (s *Service) SetGoogleValidator(v portauth.GoogleTokenValidator) {
+	s.googleValidator = v
 }
 
 func hashToken(token string) string {
@@ -354,3 +363,83 @@ func (s *Service) ResetPassword(ctx context.Context, token, newPassword string) 
 	_, err = s.users.Update(ctx, user)
 	return err
 }
+
+func (s *Service) LoginWithGoogle(ctx context.Context, idToken string) (AuthOutput, error) {
+	if s.googleValidator == nil {
+		return AuthOutput{}, errors.New("google authentication not configured")
+	}
+	cleanToken := strings.TrimSpace(idToken)
+	if cleanToken == "" {
+		return AuthOutput{}, ErrInvalidInput
+	}
+
+	payload, err := s.googleValidator.Validate(ctx, cleanToken)
+	if err != nil {
+		return AuthOutput{}, ErrInvalidToken
+	}
+
+	if !payload.EmailVerified {
+		return AuthOutput{}, ErrInvalidToken
+	}
+
+	// 1. Try to find user by GoogleID
+	user, err := s.users.FindByGoogleID(ctx, payload.Subject)
+	if err == nil {
+		pair, err := s.tokens.GeneratePair(user)
+		if err != nil {
+			return AuthOutput{}, err
+		}
+		return AuthOutput{User: user, AccessToken: pair.AccessToken, RefreshToken: pair.RefreshToken}, nil
+	}
+
+	// 2. Not found by GoogleID, try to find user by Email (auto-linking)
+	user, err = s.users.FindByEmail(ctx, payload.Email)
+	if err == nil {
+		now := s.now().UTC()
+		user.GoogleID = payload.Subject
+		if !user.EmailVerified {
+			user.EmailVerified = true
+			user.EmailVerifiedAt = &now
+		}
+		user.UpdatedAt = now
+		updated, err := s.users.Update(ctx, user)
+		if err != nil {
+			return AuthOutput{}, err
+		}
+		pair, err := s.tokens.GeneratePair(updated)
+		if err != nil {
+			return AuthOutput{}, err
+		}
+		return AuthOutput{User: updated, AccessToken: pair.AccessToken, RefreshToken: pair.RefreshToken}, nil
+	}
+
+	// 3. New user registration via Google
+	now := s.now().UTC()
+	name := strings.TrimSpace(payload.Name)
+	if name == "" {
+		parts := strings.Split(payload.Email, "@")
+		name = parts[0]
+	}
+
+	created, err := s.users.Create(ctx, domainuser.User{
+		Name:            name,
+		Email:           payload.Email,
+		GoogleID:        payload.Subject,
+		PasswordHash:    "",
+		EmailVerified:   true,
+		EmailVerifiedAt: &now,
+		MaxVehicles:     3,
+		CreatedAt:       now,
+		UpdatedAt:       now,
+	})
+	if err != nil {
+		return AuthOutput{}, err
+	}
+
+	pair, err := s.tokens.GeneratePair(created)
+	if err != nil {
+		return AuthOutput{}, err
+	}
+	return AuthOutput{User: created, AccessToken: pair.AccessToken, RefreshToken: pair.RefreshToken}, nil
+}
+

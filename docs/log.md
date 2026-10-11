@@ -15,7 +15,10 @@ Este documento funciona como o índice mestre de todas as mudanças de engenhari
 
 Para navegação geral, retorne ao [Catálogo Canônico](index.md).
 
----
+## 📅 [2026-10-10](logs/2026-10-10.md) — Suporte a Login Social Google e Vínculo de Contas Existentes (#91)
+- **Autenticação Direta Google Cloud**: Implementação de autenticação social com Google Identity Services (GIS) no frontend e validação nativa de ID tokens com `google.golang.org/api/idtoken` no backend Go, dispensando intermediários (sem Firebase).
+- **Auto-linking e Gestão de Provedores**: Associação automática de contas existentes por e-mail, prevenção de lockout (desvinculação proibida sem senha cadastrada) e suporte a definição de senha inicial via `POST /api/v1/user/password/set`.
+- **Interface e Experiência**: Botão GIS oficial em login/cadastro, card de contas conectadas na página de perfil e alternância dinâmica entre definição e troca de senha.
 
 ## 📅 [2026-10-10](logs/2026-10-10.md) — Correção de Layout Mobile e Responsividade Global
 - **Frontend & Layout**: Resolução do overflow horizontal na tela de detalhes do veículo (`VehicleDetailsPage.tsx`) tornando abas roláveis com `variant="scrollable"`, aplicando confinamento flexbox (`minWidth: 0`, `maxWidth: "100%"`, `overflowX: "hidden"`) em `AppLayout.tsx` e resiliência na `Topbar.tsx`.

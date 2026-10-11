@@ -26,11 +26,11 @@ type Router struct {
 	handler http.Handler
 }
 
-func NewRouter(cfg config.Config, users userport.Repository, hasher portauth.PasswordHasher, tokens portauth.TokenService, emailSender emailport.Sender, cars carport.Repository, maintenances maintport.Repository, fuelings fuelport.Repository, fipeService *fipeusecase.Service) *Router {
+func NewRouter(cfg config.Config, users userport.Repository, hasher portauth.PasswordHasher, tokens portauth.TokenService, emailSender emailport.Sender, cars carport.Repository, maintenances maintport.Repository, fuelings fuelport.Repository, fipeService *fipeusecase.Service, googleValidator ...portauth.GoogleTokenValidator) *Router {
 	mux := http.NewServeMux()
 	healthHandler := handlers.NewHealthHandler()
-	authHandler := handlers.NewAuthHandler(users, hasher, tokens, emailSender, cfg.CookieDomain, cfg.CookieSecure)
-	userHandler := handlers.NewUserHandler(users, cars, hasher, tokens)
+	authHandler := handlers.NewAuthHandler(users, hasher, tokens, emailSender, cfg.CookieDomain, cfg.CookieSecure, googleValidator...)
+	userHandler := handlers.NewUserHandler(users, cars, hasher, tokens, googleValidator...)
 	carHandler := handlers.NewCarHandler(carusecase.NewService(cars, users), tokens)
 	maintenanceHandler := handlers.NewMaintenanceHandler(maintusecase.NewService(maintenances, cars), tokens)
 	fuelHandler := handlers.NewFuelHandler(fuelusecase.NewService(fuelings, cars), tokens)
@@ -64,6 +64,7 @@ func NewRouter(cfg config.Config, users userport.Repository, hasher portauth.Pas
 
 	mux.Handle("POST /api/v1/auth/register", authChain(authHandler.Register))
 	mux.Handle("POST /api/v1/auth/login", authChain(authHandler.Login))
+	mux.Handle("POST /api/v1/auth/google", authChain(authHandler.GoogleAuth))
 	mux.Handle("POST /api/v1/auth/refresh", middleware.Chain(http.HandlerFunc(authHandler.Refresh), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
 	mux.Handle("GET /api/v1/auth/me", middleware.Chain(http.HandlerFunc(authHandler.Me), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
 	mux.Handle("POST /api/v1/auth/logout", middleware.Chain(http.HandlerFunc(authHandler.Logout), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
@@ -76,6 +77,10 @@ func NewRouter(cfg config.Config, users userport.Repository, hasher portauth.Pas
 	mux.Handle("GET /api/v1/user/profile", middleware.Chain(http.HandlerFunc(userHandler.GetProfile), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
 	mux.Handle("PUT /api/v1/user/profile", middleware.Chain(http.HandlerFunc(userHandler.UpdateProfile), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
 	mux.Handle("PUT /api/v1/user/password", middleware.Chain(http.HandlerFunc(userHandler.UpdatePassword), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
+	mux.Handle("POST /api/v1/user/password/set", middleware.Chain(http.HandlerFunc(userHandler.SetPassword), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
+	mux.Handle("GET /api/v1/user/auth-providers", middleware.Chain(http.HandlerFunc(userHandler.GetAuthProviders), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
+	mux.Handle("POST /api/v1/user/auth-providers/google/link", middleware.Chain(http.HandlerFunc(userHandler.LinkGoogle), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
+	mux.Handle("POST /api/v1/user/auth-providers/google/unlink", middleware.Chain(http.HandlerFunc(userHandler.UnlinkGoogle), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
 
 	// Cars endpoints
 	mux.Handle("GET /api/v1/cars", middleware.Chain(http.HandlerFunc(carHandler.List), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))

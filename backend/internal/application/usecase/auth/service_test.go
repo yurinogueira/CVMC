@@ -365,4 +365,100 @@ func TestServiceLoginRejectsOversizedInputs(t *testing.T) {
 	}
 }
 
+type mockGoogleValidator struct {
+	payload *portauth.GoogleTokenPayload
+	err     error
+}
+
+func (m *mockGoogleValidator) Validate(ctx context.Context, idToken string) (*portauth.GoogleTokenPayload, error) {
+	if m.err != nil {
+		return nil, m.err
+	}
+	return m.payload, nil
+}
+
+func TestServiceLoginWithGoogle(t *testing.T) {
+	users := memoryuser.NewRepository()
+	hasher := bcrypt.NewHasher()
+	tokens := jwtauth.NewProvider("access-secret-32-chars-long-security", "refresh-secret-32-chars-long-security")
+	mockValidator := &mockGoogleValidator{
+		payload: &portauth.GoogleTokenPayload{
+			Subject:       "google-sub-12345",
+			Email:         "google.user@example.com",
+			EmailVerified: true,
+			Name:          "Google User",
+		},
+	}
+	service := NewService(users, hasher, tokens, nil, mockValidator)
+	ctx := context.Background()
+
+	// 1. New user registration via Google
+	res1, err := service.LoginWithGoogle(ctx, "valid-token")
+	if err != nil {
+		t.Fatalf("expected successful login, got: %v", err)
+	}
+	if res1.User.Email != "google.user@example.com" {
+		t.Fatalf("unexpected user email: %s", res1.User.Email)
+	}
+	if res1.User.GoogleID != "google-sub-12345" {
+		t.Fatalf("unexpected google ID: %s", res1.User.GoogleID)
+	}
+	if !res1.User.EmailVerified {
+		t.Fatalf("expected email to be verified")
+	}
+	if res1.AccessToken == "" || res1.RefreshToken == "" {
+		t.Fatalf("expected tokens to be issued")
+	}
+
+	// 2. Existing user login with already linked GoogleID
+	res2, err := service.LoginWithGoogle(ctx, "valid-token")
+	if err != nil {
+		t.Fatalf("expected successful login for existing user, got: %v", err)
+	}
+	if res2.User.ID != res1.User.ID {
+		t.Fatalf("expected same user ID, got %s vs %s", res2.User.ID, res1.User.ID)
+	}
+
+	// 3. Auto-linking: Existing user registered with email/password logs in with Google
+	_, err = service.Register(ctx, RegisterInput{Name: "Bob", Email: "bob@example.com", Password: "password123"})
+	if err != nil {
+		t.Fatalf("failed to register bob: %v", err)
+	}
+	mockValidator.payload = &portauth.GoogleTokenPayload{
+		Subject:       "google-sub-bob-999",
+		Email:         "bob@example.com",
+		EmailVerified: true,
+		Name:          "Bob Google",
+	}
+	resBob, err := service.LoginWithGoogle(ctx, "bob-token")
+	if err != nil {
+		t.Fatalf("expected successful auto-link login, got: %v", err)
+	}
+	if resBob.User.GoogleID != "google-sub-bob-999" {
+		t.Fatalf("expected bob's GoogleID to be updated, got: %s", resBob.User.GoogleID)
+	}
+	if !resBob.User.EmailVerified {
+		t.Fatalf("expected bob's email to become verified after google login")
+	}
+
+	// 4. Invalid token
+	mockValidator.err = errors.New("invalid token")
+	_, err = service.LoginWithGoogle(ctx, "invalid-token")
+	if !errors.Is(err, ErrInvalidToken) {
+		t.Fatalf("expected ErrInvalidToken, got %v", err)
+	}
+
+	// 5. Unverified email from Google
+	mockValidator.err = nil
+	mockValidator.payload = &portauth.GoogleTokenPayload{
+		Subject:       "google-sub-unverified",
+		Email:         "unverified@example.com",
+		EmailVerified: false,
+	}
+	_, err = service.LoginWithGoogle(ctx, "unverified-token")
+	if !errors.Is(err, ErrInvalidToken) {
+		t.Fatalf("expected ErrInvalidToken for unverified email, got %v", err)
+	}
+}
+
 var _ portauth.TokenService = (*jwtauth.Provider)(nil)

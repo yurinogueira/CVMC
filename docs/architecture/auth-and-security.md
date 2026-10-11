@@ -42,6 +42,10 @@ Para navegação geral, retorne ao [Catálogo Canônico](../index.md).
   - O método `Config.Validate()` aborta a inicialização da aplicação (`log.Fatalf`) caso `JWT_SECRET` ou `JWT_REFRESH_SECRET` estejam vazios, utilizem padrões inseguros (`change-me`), possuam menos de 32 caracteres ou sejam idênticos.
 - **Hashes Criptográficos para Tokens Temporários**:
   - Tokens de redefinição de senha e confirmação de e-mail nunca são salvos em texto plano; o banco armazena o hash `SHA-256` do token gerado via `crypto/rand`.
+- **Validação de ID Tokens do Google sem Intermediários**:
+  - A autenticação social com Google utiliza validação direta de ID tokens criptográficos via biblioteca oficial `google.golang.org/api/idtoken`, sem dependência do Firebase.
+  - O backend valida a assinatura, a expiração e confere o claim `aud` contra a variável `GOOGLE_CLIENT_ID`.
+  - Usuários autenticados pelo Google têm seus e-mails considerados verificados pelo provedor de identidade, e contas são associadas de forma segura prevenindo lockout.
 
 ---
 

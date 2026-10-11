@@ -119,6 +119,18 @@ definitions:
         example: yuri@cvmc.com
         type: string
     type: object
+  handlers.GoogleAuthRequest:
+    properties:
+      idToken:
+        example: eyJhbGciOiJSUzI1NiIsImtpZCI6...
+        type: string
+    type: object
+  handlers.LinkGoogleRequest:
+    properties:
+      idToken:
+        example: eyJhbGciOiJSUzI1NiIsImtpZCI6...
+        type: string
+    type: object
   handlers.LoginRequest:
     properties:
       email:
@@ -147,6 +159,12 @@ definitions:
         type: string
       token:
         example: a1b2c3d4e5f6...
+        type: string
+    type: object
+  handlers.SetPasswordRequest:
+    properties:
+      newPassword:
+        example: senhaNova12345
         type: string
     type: object
   handlers.ShareCarRequest:
@@ -321,6 +339,37 @@ paths:
           schema:
             $ref: '#/definitions/httpx.ErrorEnvelope'
       summary: Solicitar recuperação de senha
+      tags:
+      - Auth
+  /api/v1/auth/google:
+    post:
+      consumes:
+      - application/json
+      description: Autentica ou cadastra usuário via Google ID Token, seta cookies
+        httpOnly com tokens de sessão e retorna dados do usuário
+      parameters:
+      - description: Google ID Token
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.GoogleAuthRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      summary: Autenticação social via Google
       tags:
       - Auth
   /api/v1/auth/login:
@@ -1273,6 +1322,91 @@ paths:
       summary: Atualizar manutenção
       tags:
       - Maintenances
+  /api/v1/user/auth-providers:
+    get:
+      description: Retorna o status dos provedores de login vinculados à conta do
+        usuário (senha, Google)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Provedores de autenticação conectados
+      tags:
+      - User
+  /api/v1/user/auth-providers/google/link:
+    post:
+      consumes:
+      - application/json
+      description: Vincula uma conta Google à conta do usuário autenticado validando
+        o ID Token
+      parameters:
+      - description: Google ID Token
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.LinkGoogleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Vincular conta Google
+      tags:
+      - User
+  /api/v1/user/auth-providers/google/unlink:
+    post:
+      description: Desvincula a conta Google da conta do usuário autenticado (requer
+        senha cadastrada para evitar lockout)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Desvincular conta Google
+      tags:
+      - User
   /api/v1/user/password:
     put:
       consumes:
@@ -1303,6 +1437,39 @@ paths:
       security:
       - BearerAuth: []
       summary: Alterar senha do usuário
+      tags:
+      - User
+  /api/v1/user/password/set:
+    post:
+      consumes:
+      - application/json
+      description: Define a senha para um usuário que se cadastrou via Google e ainda
+        não possui senha local
+      parameters:
+      - description: Nova senha
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.SetPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Definir senha inicial para conta social
       tags:
       - User
   /api/v1/user/profile:

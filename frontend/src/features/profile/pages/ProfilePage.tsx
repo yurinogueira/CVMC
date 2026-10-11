@@ -26,10 +26,17 @@ import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
+import LinkRoundedIcon from "@mui/icons-material/LinkRounded";
+import LinkOffRoundedIcon from "@mui/icons-material/LinkOffRounded";
 
 import { profileService } from "../services/profile.service";
 import { authService } from "../../auth/services/auth.service";
 import { useAuthStore } from "../../auth/state/auth.store";
+import { AuthProvidersData } from "../../auth/types/auth.types";
+import {
+  GoogleIcon,
+  GoogleSignInButton,
+} from "../../auth/components/GoogleSignInButton";
 import { ProfileData } from "../types/profile.types";
 import { useDocumentTitle, PageLoadingFallback } from "../../shared";
 
@@ -58,6 +65,14 @@ export function ProfilePage() {
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
+  // Auth providers state
+  const [authProviders, setAuthProviders] = useState<AuthProvidersData | null>(
+    null,
+  );
+  const [unlinkingGoogle, setUnlinkingGoogle] = useState(false);
+  const [providerSuccess, setProviderSuccess] = useState<string | null>(null);
+  const [providerError, setProviderError] = useState<string | null>(null);
+
   // Resend email verification state
   const [resendingEmail, setResendingEmail] = useState(false);
   const [emailSuccess, setEmailSuccess] = useState<string | null>(null);
@@ -66,12 +81,17 @@ export function ProfilePage() {
 
   useEffect(() => {
     let isMounted = true;
-    profileService
-      .getProfile()
-      .then((data) => {
+    Promise.all([
+      profileService.getProfile(),
+      profileService.getAuthProviders().catch(() => null),
+    ])
+      .then(([data, providers]) => {
         if (isMounted) {
           setProfileData(data);
           setName(data.user.name);
+          if (providers) {
+            setAuthProviders(providers);
+          }
           const currentUser = useAuthStore.getState().user;
           if (currentUser) {
             setUser({ ...currentUser, ...data.user });
@@ -140,12 +160,55 @@ export function ProfilePage() {
     }
   };
 
+  const handleLinkGoogle = async (idToken: string) => {
+    setProviderSuccess(null);
+    setProviderError(null);
+    try {
+      const res = await profileService.linkGoogle(idToken);
+      setProviderSuccess(res.message || "Conta Google vinculada com sucesso!");
+      const updatedProviders = await profileService.getAuthProviders();
+      setAuthProviders(updatedProviders);
+      const updatedProfile = await profileService.getProfile();
+      setProfileData(updatedProfile);
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { message?: string } } };
+      setProviderError(
+        errorObj.response?.data?.message || "Erro ao vincular conta Google.",
+      );
+    }
+  };
+
+  const handleUnlinkGoogle = async () => {
+    setProviderSuccess(null);
+    setProviderError(null);
+    try {
+      setUnlinkingGoogle(true);
+      const res = await profileService.unlinkGoogle();
+      setProviderSuccess(
+        res.message || "Conta Google desvinculada com sucesso!",
+      );
+      const updatedProviders = await profileService.getAuthProviders();
+      setAuthProviders(updatedProviders);
+      const updatedProfile = await profileService.getProfile();
+      setProfileData(updatedProfile);
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { message?: string } } };
+      setProviderError(
+        errorObj.response?.data?.message || "Erro ao desvincular conta Google.",
+      );
+    } finally {
+      setUnlinkingGoogle(false);
+    }
+  };
+
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordSuccess(null);
     setPasswordError(null);
 
-    if (!currentPassword) {
+    const hasPassword = authProviders ? authProviders.hasPassword : true;
+
+    if (hasPassword && !currentPassword) {
       setPasswordError("Informe sua senha atual.");
       return;
     }
@@ -162,18 +225,25 @@ export function ProfilePage() {
 
     try {
       setUpdatingPassword(true);
-      const res = await profileService.updatePassword({
-        currentPassword,
-        newPassword,
-      });
-      setPasswordSuccess(res.message || "Senha alterada com sucesso!");
+      if (!hasPassword) {
+        const res = await profileService.setPassword(newPassword);
+        setPasswordSuccess(res.message || "Senha cadastrada com sucesso!");
+        const updatedProviders = await profileService.getAuthProviders();
+        setAuthProviders(updatedProviders);
+      } else {
+        const res = await profileService.updatePassword({
+          currentPassword,
+          newPassword,
+        });
+        setPasswordSuccess(res.message || "Senha alterada com sucesso!");
+      }
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
     } catch (err: unknown) {
       const errorObj = err as { response?: { data?: { message?: string } } };
       setPasswordError(
-        errorObj.response?.data?.message || "Erro ao alterar a senha.",
+        errorObj.response?.data?.message || "Erro ao atualizar a senha.",
       );
     } finally {
       setUpdatingPassword(false);
@@ -508,7 +578,153 @@ export function ProfilePage() {
           </Card>
         </Grid>
 
-        {/* Card 4: Segurança & Alteração de Senha */}
+        {/* Card 4: Contas Conectadas */}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Card
+            elevation={0}
+            sx={{
+              height: "100%",
+              borderRadius: 3,
+              border: "1px solid #E2E8F0",
+              p: 1,
+            }}
+          >
+            <CardContent>
+              <Stack
+                direction="row"
+                spacing={1.5}
+                sx={{ alignItems: "center", mb: 2 }}
+              >
+                <LinkRoundedIcon sx={{ color: "primary.main", fontSize: 28 }} />
+                <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                  Contas Conectadas
+                </Typography>
+              </Stack>
+
+              <Typography
+                variant="body2"
+                sx={{ color: "text.secondary", mb: 2.5 }}
+              >
+                Vincule provedores sociais para acessar o CVMC com agilidade e
+                segurança.
+              </Typography>
+
+              {providerSuccess && (
+                <Alert
+                  severity="success"
+                  onClose={() => setProviderSuccess(null)}
+                  sx={{ mb: 2 }}
+                >
+                  {providerSuccess}
+                </Alert>
+              )}
+
+              {providerError && (
+                <Alert
+                  severity="error"
+                  onClose={() => setProviderError(null)}
+                  sx={{ mb: 2 }}
+                >
+                  {providerError}
+                </Alert>
+              )}
+
+              {/* Google Provider Row */}
+              <Box
+                sx={{
+                  p: 2,
+                  borderRadius: 2,
+                  border: "1px solid #E2E8F0",
+                  bgcolor: "background.default",
+                }}
+              >
+                <Stack
+                  direction="row"
+                  spacing={2}
+                  sx={{
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    flexWrap: "wrap",
+                    gap: 1.5,
+                  }}
+                >
+                  <Stack
+                    direction="row"
+                    spacing={1.5}
+                    sx={{ alignItems: "center" }}
+                  >
+                    <GoogleIcon />
+                    <Box>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                        Google
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        sx={{ color: "text.secondary" }}
+                      >
+                        {authProviders?.googleLinked
+                          ? authProviders.googleEmail ||
+                            user?.email ||
+                            "Conectado"
+                          : "Não conectado"}
+                      </Typography>
+                    </Box>
+                  </Stack>
+
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    {authProviders?.googleLinked ? (
+                      <>
+                        <Chip
+                          label="Vinculado"
+                          size="small"
+                          color="success"
+                          variant="outlined"
+                          sx={{ fontWeight: 600 }}
+                        />
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          color="error"
+                          startIcon={
+                            unlinkingGoogle ? (
+                              <CircularProgress size={14} color="inherit" />
+                            ) : (
+                              <LinkOffRoundedIcon fontSize="small" />
+                            )
+                          }
+                          disabled={unlinkingGoogle}
+                          onClick={handleUnlinkGoogle}
+                          data-testid="unlink-google-btn"
+                          sx={{ textTransform: "none", fontWeight: 600 }}
+                        >
+                          {unlinkingGoogle ? "Desvinculando..." : "Desvincular"}
+                        </Button>
+                      </>
+                    ) : (
+                      <Box sx={{ minWidth: 160 }}>
+                        <GoogleSignInButton
+                          onSuccess={handleLinkGoogle}
+                          text="signin_with"
+                          label="Vincular Conta"
+                        />
+                      </Box>
+                    )}
+                  </Box>
+                </Stack>
+
+                {authProviders?.googleLinked && !authProviders?.hasPassword && (
+                  <Alert severity="info" sx={{ mt: 2, fontSize: "0.8rem" }}>
+                    Você se autenticou via Google e ainda não possui senha.
+                    Cadastre uma senha de acesso ao lado antes de desvincular
+                    para evitar bloqueio.
+                  </Alert>
+                )}
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Card 5: Segurança & Alteração / Definição de Senha */}
         <Grid size={{ xs: 12, md: 6 }}>
           <Card
             elevation={0}
@@ -528,9 +744,21 @@ export function ProfilePage() {
                   sx={{ color: "primary.main", fontSize: 28 }}
                 />
                 <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                  Alterar Senha
+                  {authProviders && !authProviders.hasPassword
+                    ? "Definir Senha Inicial"
+                    : "Alterar Senha"}
                 </Typography>
               </Stack>
+
+              {authProviders && !authProviders.hasPassword && (
+                <Typography
+                  variant="body2"
+                  sx={{ color: "text.secondary", mb: 2 }}
+                >
+                  Sua conta foi criada via Google. Defina uma senha caso queira
+                  fazer login também utilizando e-mail e senha.
+                </Typography>
+              )}
 
               {passwordSuccess && (
                 <Alert
@@ -554,38 +782,41 @@ export function ProfilePage() {
 
               <Box component="form" onSubmit={handleUpdatePassword} noValidate>
                 <Stack spacing={2}>
-                  <TextField
-                    fullWidth
-                    label="Senha Atual"
-                    type={showCurrentPassword ? "text" : "password"}
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    disabled={updatingPassword}
-                    required
-                    slotProps={{
-                      input: {
-                        endAdornment: (
-                          <InputAdornment position="end">
-                            <IconButton
-                              onClick={() =>
-                                setShowCurrentPassword((prev) => !prev)
-                              }
-                              edge="end"
-                              size="small"
-                            >
-                              {showCurrentPassword ? (
-                                <VisibilityOff fontSize="small" />
-                              ) : (
-                                <Visibility fontSize="small" />
-                              )}
-                            </IconButton>
-                          </InputAdornment>
-                        ),
-                      },
-                    }}
-                  />
-
-                  <Divider />
+                  {authProviders?.hasPassword !== false && (
+                    <>
+                      <TextField
+                        fullWidth
+                        label="Senha Atual"
+                        type={showCurrentPassword ? "text" : "password"}
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        disabled={updatingPassword}
+                        required
+                        slotProps={{
+                          input: {
+                            endAdornment: (
+                              <InputAdornment position="end">
+                                <IconButton
+                                  onClick={() =>
+                                    setShowCurrentPassword((prev) => !prev)
+                                  }
+                                  edge="end"
+                                  size="small"
+                                >
+                                  {showCurrentPassword ? (
+                                    <VisibilityOff fontSize="small" />
+                                  ) : (
+                                    <Visibility fontSize="small" />
+                                  )}
+                                </IconButton>
+                              </InputAdornment>
+                            ),
+                          },
+                        }}
+                      />
+                      <Divider />
+                    </>
+                  )}
 
                   <TextField
                     fullWidth
@@ -643,13 +874,18 @@ export function ProfilePage() {
                     }
                     disabled={
                       updatingPassword ||
-                      !currentPassword ||
+                      (authProviders?.hasPassword !== false &&
+                        !currentPassword) ||
                       !newPassword ||
                       !confirmPassword
                     }
                     sx={{ alignSelf: "flex-start", fontWeight: 600 }}
                   >
-                    {updatingPassword ? "Atualizando..." : "Alterar Senha"}
+                    {updatingPassword
+                      ? "Salvando..."
+                      : authProviders && !authProviders.hasPassword
+                        ? "Cadastrar Senha"
+                        : "Alterar Senha"}
                   </Button>
                 </Stack>
               </Box>

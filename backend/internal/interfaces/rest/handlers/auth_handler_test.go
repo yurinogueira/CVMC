@@ -2,11 +2,14 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	portauth "cvmc/internal/application/ports/auth"
 	"cvmc/internal/infrastructure/auth/bcrypt"
 	jwtauth "cvmc/internal/infrastructure/auth/jwt"
 	memoryuser "cvmc/internal/infrastructure/user/memory"
@@ -163,5 +166,62 @@ func TestAuthHandlerUnauthorizedWithoutTokens(t *testing.T) {
 
 	if recRefresh.Code != http.StatusUnauthorized {
 		t.Fatalf("expected status 401 Unauthorized for /refresh without cookie, got %d", recRefresh.Code)
+	}
+}
+
+type mockGoogleValidator struct {
+	payload *portauth.GoogleTokenPayload
+	err     error
+}
+
+func (m *mockGoogleValidator) Validate(ctx context.Context, idToken string) (*portauth.GoogleTokenPayload, error) {
+	if m.err != nil {
+		return nil, m.err
+	}
+	return m.payload, nil
+}
+
+func TestAuthHandlerGoogleAuth(t *testing.T) {
+	users := memoryuser.NewRepository()
+	hasher := bcrypt.NewHasher()
+	tokens := jwtauth.NewProvider("test-access-secret-32-chars-long", "test-refresh-secret-32-chars-long")
+	mockVal := &mockGoogleValidator{
+		payload: &portauth.GoogleTokenPayload{
+			Subject:       "google-uid-test",
+			Email:         "google-handler@test.com",
+			EmailVerified: true,
+			Name:          "Google Handler Test",
+		},
+	}
+	handler := NewAuthHandler(users, hasher, tokens, nil, "", false, mockVal)
+
+	payload := []byte(`{"idToken":"valid-google-idtoken"}`)
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/google", bytes.NewReader(payload))
+	rec := httptest.NewRecorder()
+	handler.GoogleAuth(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200 OK for GoogleAuth, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	cookies := rec.Result().Cookies()
+	var accessTokenCookie *http.Cookie
+	for _, c := range cookies {
+		if c.Name == "cvmc_access_token" {
+			accessTokenCookie = c
+		}
+	}
+	if accessTokenCookie == nil || accessTokenCookie.Value == "" {
+		t.Fatalf("expected access token cookie to be set on GoogleAuth")
+	}
+
+	// Invalid token returns 401
+	mockVal.err = errors.New("invalid token")
+	reqInvalid := httptest.NewRequest(http.MethodPost, "/api/v1/auth/google", bytes.NewReader(payload))
+	recInvalid := httptest.NewRecorder()
+	handler.GoogleAuth(recInvalid, reqInvalid)
+
+	if recInvalid.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401 Unauthorized for invalid token, got %d", recInvalid.Code)
 	}
 }

@@ -7,6 +7,7 @@ type User struct {
 	Name                       string     `json:"name"`
 	Email                      string     `json:"email"`
 	PasswordHash               string     `json:"-"`
+	GoogleID                   string     `json:"googleId,omitempty" bson:"googleId,omitempty"`
 	EmailVerified              bool       `json:"emailVerified"`
 	EmailVerifiedAt            *time.Time `json:"emailVerifiedAt,omitempty"`
 	EmailVerificationTokenHash string     `json:"-"`
@@ -16,4 +17,8 @@ type User struct {
 	MaxVehicles                int        `json:"maxVehicles"`
 	CreatedAt                  time.Time  `json:"createdAt"`
 	UpdatedAt                  time.Time  `json:"updatedAt,omitempty"`
+}
+
+func (u User) HasPassword() bool {
+	return u.PasswordHash != ""
 }
