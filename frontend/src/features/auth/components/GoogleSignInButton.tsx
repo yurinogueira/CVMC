@@ -95,10 +95,10 @@ export function GoogleSignInButton({
         window.google.accounts.id.renderButton(buttonRef.current, {
           theme: "outline",
           size: "large",
-          width: 400,
+          width: 360,
           text,
           shape: "rectangular",
-          logo_alignment: "left",
+          logo_alignment: "center",
           locale: "pt-BR",
         });
         setIsGsiRendered(true);
@@ -147,15 +147,8 @@ export function GoogleSignInButton({
           width: "100%",
           display: "flex",
           justifyContent: "center",
-          "& > div": {
-            width: "100% !important",
-            display: "flex !important",
-            justifyContent: "center !important",
-          },
           "& iframe": {
-            margin: "0 auto !important",
-            width: "100% !important",
-            minWidth: "100% !important",
+            margin: "0 auto",
           },
         }}
       />
