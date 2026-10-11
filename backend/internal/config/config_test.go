@@ -56,14 +56,21 @@ func TestValidateJWTSecrets(t *testing.T) {
 			secret:        "",
 			refreshSecret: validRefresh,
 			wantErr:       true,
-			errContains:   "JWT_SECRET must be at least 32 characters long",
+			errContains:   "JWT_SECRET must not be empty",
 		},
 		{
 			name:          "rejects empty refresh secret",
 			secret:        validSecret,
 			refreshSecret: "",
 			wantErr:       true,
-			errContains:   "JWT_REFRESH_SECRET must be at least 32 characters long",
+			errContains:   "JWT_REFRESH_SECRET must not be empty",
+		},
+		{
+			name:          "rejects identical secrets",
+			secret:        validSecret,
+			refreshSecret: validSecret,
+			wantErr:       true,
+			errContains:   "JWT_SECRET and JWT_REFRESH_SECRET must be different",
 		},
 	}
 

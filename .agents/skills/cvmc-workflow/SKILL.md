@@ -2,8 +2,9 @@
 name: cvmc-workflow
 description: >-
   Fluxo padronizado de ciclo de vida de desenvolvimento e entrega de tarefas no CVMC:
-  sincronização obrigatória com a main remota, preparação de branch, commits semânticos (Conventional Commits),
-  validação via scripts, abertura de Pull Request para a branch 'main' e fechamento de issue com comentários vinculados
+  sincronização obrigatória com a main remota, preparação de branch, commits semânticos
+  (Conventional Commits), atualização mandatória de documentação canônica (OKF) e docs/log.md,
+  validação unificada via scripts, abertura de Pull Request para a branch 'main' e fechamento de issue
   utilizando o GitHub MCP.
 ---
 
@@ -18,10 +19,12 @@ Esta skill estabelece o fluxo de trabalho obrigatório de ponta a ponta para qua
 ```mermaid
 flowchart LR
     A[1. Ler/Mapear Contexto ou Issue] --> B[2. Sincronizar Main & Criar Branch]
-    B --> C[3. Desenvolver & Validar]
-    C --> D[4. Commit Semântico]
-    D --> E[5. Subir PR para Main]
-    E --> F[6. Comentar e Fechar Issue]
+    B --> C[3. Desenvolver & Testar]
+    C --> D[4. Atualizar Docs OKF & docs/log.md]
+    D --> E[5. Validar check.sh all]
+    E --> F[6. Commit Semântico]
+    F --> G[7. Subir PR para Main]
+    G --> H[8. Comentar e Fechar Issue]
 ```
 
 ---
@@ -72,12 +75,20 @@ flowchart LR
   ```bash
   ./scripts/swagger.sh
   ```
+
+### 3. Atualização Mandatória da Documentação Canônica (OKF) e Log Diário
+- Conforme a skill `cvmc-docs` e a regra `docs.md`, **toda entrega exige a atualização da documentação canônica**:
+  - Atualize os documentos relevantes em `docs/` (`domain/`, `architecture/`, `frontend/`, `operations/`).
+  - Registre a intervenção no arquivo diário `docs/logs/AAAA-MM-DD.md` e insira o sumário em `docs/log.md`.
+  - Verifique se não há links quebrados executando `./scripts/check.sh docs`.
+
+### 4. Validação Pré-Commit Completa
 - Execute a checagem completa e assegure 100% de aprovação antes de qualquer commit:
   ```bash
   ./scripts/check.sh all
   ```
 
-### 3. Commits Semânticos (Conventional Commits)
+### 5. Commits Semânticos (Conventional Commits)
 - Organize os commits de forma atômica seguindo o padrão Conventional Commits:
   - **Com Issue**: `<tipo>(<escopo>): <descrição clara no imperativo> (#<id_da_issue>)`
     - `feat(user): validacao de e-mail, pagina de perfil e limites de veiculos (#24)`
@@ -89,7 +100,7 @@ flowchart LR
     - `chore(skills): sincronizar diretrizes de workflow com a main remota`
     - `feat(deps): bump frontend npm dependencies and backend mongodb driver`
 
-### 4. Criação do Pull Request para `main` (GitHub MCP)
+### 6. Criação do Pull Request para `main` (GitHub MCP)
 - Antes de submeter o PR, garanta que a branch está perfeitamente sincronizada com a última versão da `origin/main` (`git fetch origin main && git rebase origin/main`).
 - Faça o push da branch para o repositório remoto:
   ```bash
@@ -102,9 +113,9 @@ flowchart LR
   - **Body**: Deve conter:
     - Resumo detalhado das alterações realizadas.
     - Referência de fechamento se aplicável: `Closes #<id_da_issue>` ou `Resolves #<id_da_issue>`.
-    - Checklist de validações executadas (`./scripts/check.sh all`, `./scripts/swagger.sh`).
+    - Checklist de validações executadas (`./scripts/check.sh all`, `./scripts/swagger.sh`, `./scripts/check.sh docs`).
 
-### 5. Atualização e Fechamento da Issue (GitHub MCP)
+### 7. Atualização e Fechamento da Issue (GitHub MCP)
 - Se a tarefa estiver vinculada a uma issue:
   - Adicione um comentário na issue utilizando `add_issue_comment` informando a entrega com o link do PR criado.
   - Atualize o status da issue para fechada utilizando `update_issue(state: "closed")` quando o trabalho for entregue.
