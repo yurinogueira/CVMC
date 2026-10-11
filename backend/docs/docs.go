@@ -65,7 +65,7 @@ const docTemplate = `{
         },
         "/api/v1/auth/google": {
             "post": {
-                "description": "Autentica ou cadastra usuário via Google ID Token, seta cookies httpOnly com tokens de sessão e retorna dados do usuário",
+                "description": "Autentica ou cadastra usuário via Google ID Token, seta cookies httpOnly com tokens de sessão e retorna dados do usuário e tokens",
                 "consumes": [
                     "application/json"
                 ],
@@ -111,7 +111,7 @@ const docTemplate = `{
         },
         "/api/v1/auth/login": {
             "post": {
-                "description": "Autentica com e-mail e senha, seta cookies httpOnly com tokens e retorna dados do usuário",
+                "description": "Autentica com e-mail e senha, seta cookies httpOnly com tokens e retorna dados do usuário e tokens",
                 "consumes": [
                     "application/json"
                 ],
@@ -208,7 +208,7 @@ const docTemplate = `{
         },
         "/api/v1/auth/refresh": {
             "post": {
-                "description": "Gera um novo par de tokens a partir do cookie de refresh",
+                "description": "Gera um novo par de tokens a partir do cookie de refresh ou cabeçalho Authorization",
                 "produces": [
                     "application/json"
                 ],

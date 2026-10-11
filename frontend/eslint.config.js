@@ -9,6 +9,7 @@ export default tseslint.config(
     ignores: [
       "dist",
       "node_modules",
+      "android",
       "*.tsbuildinfo",
       "coverage",
       "vite.config.d.ts",

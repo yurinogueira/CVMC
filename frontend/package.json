@@ -10,9 +10,18 @@
     "lint": "eslint .",
     "format": "prettier --check .",
     "test": "vitest run",
-    "deploy:gh-pages": "node scripts/deploy-gh-pages.mjs"
+    "deploy:gh-pages": "node scripts/deploy-gh-pages.mjs",
+    "cap:sync": "cap sync",
+    "cap:open": "cap open android",
+    "cap:build": "npm run build && cap sync android"
   },
   "dependencies": {
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.5.3",
+    "@capacitor/preferences": "^8.0.1",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.4",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^9.4.0",
@@ -24,6 +33,7 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.5.3",
     "@eslint/js": "^10.0.1",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",

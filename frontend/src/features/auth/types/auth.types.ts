@@ -17,6 +17,8 @@ export interface AuthTokens {
 
 export interface AuthResponseData {
   user: User;
+  accessToken?: string;
+  refreshToken?: string;
 }
 
 export interface ApiEnvelope<T> {

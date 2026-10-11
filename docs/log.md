@@ -6,7 +6,7 @@ tags:
   - log
   - audit
   - history
-timestamp: 2026-10-10
+timestamp: 2026-10-11
 ---
 
 # 🕒 Diário de Bordo & Histórico Cronológico — CVMC
@@ -14,6 +14,12 @@ timestamp: 2026-10-10
 Este documento funciona como o índice mestre de todas as mudanças de engenharia aplicadas ao projeto **CVMC (Como Vai Meu Carro)**. Cada entrada detalhada reside em um arquivo diário específico na pasta [docs/logs/2026-10-10.md](logs/2026-10-10.md), garantindo economia de tokens e histórico auditável.
 
 Para navegação geral, retorne ao [Catálogo Canônico](index.md).
+
+## 📅 [2026-10-11](logs/2026-10-11.md) — Empacotamento Android com Capacitor e Configuração de Build (#92)
+- **Capacitor 8 no Frontend**: Configuração do `capacitor.config.ts` com `appId: com.cvmc.app`, inicialização do projeto `frontend/android` e scripts `cap:sync`, `cap:open` e `cap:build`.
+- **Comunicação de API & Sessão Mobile**: BaseURL dinâmica para ambiente nativo, injeção de `Authorization: Bearer <token>`, persistência segura com `@capacitor/preferences` e retorno de tokens em JSON nos endpoints de autenticação em Go.
+- **UX Mobile Nativa**: Controle da cor da barra de status (`#0284C7`), splash screen, hardware back button do Android e suporte a Safe Area Insets.
+- **Documentação de Build**: Criação do runbook operacional [docs/operations/mobile-build.md](operations/mobile-build.md) detalhando compilação do APK de debug, geração de bundle AAB e assinatura com keystore para publicação na Google Play.
 
 ## 📅 [2026-10-10](logs/2026-10-10.md) — Suporte a Login Social Google e Vínculo de Contas Existentes (#91)
 - **Autenticação Direta Google Cloud**: Implementação de autenticação social com Google Identity Services (GIS) no frontend e validação nativa de ID tokens com `google.golang.org/api/idtoken` no backend Go, dispensando intermediários (sem Firebase).

@@ -80,6 +80,8 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 	h.setTokenCookies(w, output.AccessToken, output.RefreshToken)
 	httpx.Created(w, map[string]any{
+		"accessToken":  output.AccessToken,
+		"refreshToken": output.RefreshToken,
 		"user": map[string]any{
 			"id":            output.User.ID,
 			"name":          output.User.Name,
@@ -93,7 +95,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 // Login godoc
 // @Summary      Autenticação de usuário
-// @Description  Autentica com e-mail e senha, seta cookies httpOnly com tokens e retorna dados do usuário
+// @Description  Autentica com e-mail e senha, seta cookies httpOnly com tokens e retorna dados do usuário e tokens
 // @Tags         Auth
 // @Accept       json
 // @Produce      json
@@ -115,6 +117,8 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 	h.setTokenCookies(w, output.AccessToken, output.RefreshToken)
 	httpx.Success(w, map[string]any{
+		"accessToken":  output.AccessToken,
+		"refreshToken": output.RefreshToken,
 		"user": map[string]any{
 			"id":              output.User.ID,
 			"name":            output.User.Name,
@@ -129,7 +133,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 // GoogleAuth godoc
 // @Summary      Autenticação social via Google
-// @Description  Autentica ou cadastra usuário via Google ID Token, seta cookies httpOnly com tokens de sessão e retorna dados do usuário
+// @Description  Autentica ou cadastra usuário via Google ID Token, seta cookies httpOnly com tokens de sessão e retorna dados do usuário e tokens
 // @Tags         Auth
 // @Accept       json
 // @Produce      json
@@ -151,6 +155,8 @@ func (h *AuthHandler) GoogleAuth(w http.ResponseWriter, r *http.Request) {
 	}
 	h.setTokenCookies(w, output.AccessToken, output.RefreshToken)
 	httpx.Success(w, map[string]any{
+		"accessToken":  output.AccessToken,
+		"refreshToken": output.RefreshToken,
 		"user": map[string]any{
 			"id":            output.User.ID,
 			"name":          output.User.Name,
@@ -165,25 +171,33 @@ func (h *AuthHandler) GoogleAuth(w http.ResponseWriter, r *http.Request) {
 
 // Refresh godoc
 // @Summary      Renovar token de acesso
-// @Description  Gera um novo par de tokens a partir do cookie de refresh
+// @Description  Gera um novo par de tokens a partir do cookie de refresh ou cabeçalho Authorization
 // @Tags         Auth
 // @Produce      json
 // @Success      200 {object} httpx.SuccessEnvelope
 // @Failure      401 {object} httpx.ErrorEnvelope
 // @Router       /api/v1/auth/refresh [post]
 func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie("cvmc_refresh_token")
-	if err != nil || cookie.Value == "" {
+	var refreshToken string
+	if cookie, err := r.Cookie("cvmc_refresh_token"); err == nil && cookie.Value != "" {
+		refreshToken = cookie.Value
+	} else if bearer := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer "); bearer != "" && bearer != r.Header.Get("Authorization") {
+		refreshToken = bearer
+	}
+
+	if refreshToken == "" {
 		httpx.Error(w, http.StatusUnauthorized, "Missing refresh token", nil)
 		return
 	}
-	output, err := h.service.Refresh(r.Context(), cookie.Value)
+	output, err := h.service.Refresh(r.Context(), refreshToken)
 	if err != nil {
 		handleAuthError(w, err)
 		return
 	}
 	h.setTokenCookies(w, output.AccessToken, output.RefreshToken)
 	httpx.Success(w, map[string]any{
+		"accessToken":  output.AccessToken,
+		"refreshToken": output.RefreshToken,
 		"user": map[string]any{
 			"id":              output.User.ID,
 			"name":            output.User.Name,

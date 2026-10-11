@@ -90,6 +90,7 @@ Manuais operacionais, infraestrutura como código e automação de entrega cont�
 - [Docker e Ambiente de Desenvolvimento Local](operations/docker-and-local-dev.md): Stack Docker Compose e comandos rápidos via scripts.
 - [Deploy e Topologia de Nuvem](operations/deploy-and-infrastructure.md): Oracle Cloud Infrastructure (OCI Compute), Caddy com SSL automático e Cloudflare.
 - [Pipelines de CI/CD](operations/ci-cd-pipelines.md): GitHub Actions, esteiras de testes automatizados, linters e governança de releases.
+- [Empacotamento Mobile Android e Guia de Build](operations/mobile-build.md): Configuração do Capacitor 8, empacotamento Android, APK de debug e bundle release AAB.
 - **Runbooks de Resolução de Incidentes**:
   - [Runbook: Recuperação de Desastres (Disaster Recovery)](operations/runbooks/disaster-recovery.md): Restabelecimento de nó OCI e failover de DNS.
   - [Runbook: Backup e Restauração de Banco de Dados](operations/runbooks/database-backup.md): Procedimentos de dump/restore no MongoDB Atlas e local.
