@@ -354,6 +354,7 @@ export function RegisterPage() {
 
                 <GoogleSignInButton
                   onSuccess={handleGoogleSuccess}
+                  onError={(err) => setErrorMsg(err.message)}
                   disabled={loading}
                   text="signup_with"
                 />

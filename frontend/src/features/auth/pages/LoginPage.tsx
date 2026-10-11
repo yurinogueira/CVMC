@@ -287,6 +287,7 @@ export function LoginPage() {
 
                 <GoogleSignInButton
                   onSuccess={handleGoogleSuccess}
+                  onError={(err) => setErrorMsg(err.message)}
                   disabled={loading}
                   text="signin_with"
                 />

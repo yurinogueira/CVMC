@@ -639,10 +639,10 @@ export function ProfilePage() {
                 }}
               >
                 <Stack
-                  direction="row"
+                  direction={{ xs: "column", sm: "row" }}
                   spacing={2}
                   sx={{
-                    alignItems: "center",
+                    alignItems: { xs: "stretch", sm: "center" },
                     justifyContent: "space-between",
                     flexWrap: "wrap",
                     gap: 1.5,
@@ -671,7 +671,15 @@ export function ProfilePage() {
                     </Box>
                   </Stack>
 
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                      width: { xs: "100%", sm: "auto" },
+                      justifyContent: { xs: "stretch", sm: "flex-end" },
+                    }}
+                  >
                     {authProviders?.googleLinked ? (
                       <>
                         <Chip
@@ -701,11 +709,19 @@ export function ProfilePage() {
                         </Button>
                       </>
                     ) : (
-                      <Box sx={{ minWidth: 160 }}>
+                      <Box
+                        sx={{
+                          width: { xs: "100%", sm: "auto" },
+                          minWidth: { sm: 160 },
+                          maxWidth: "100%",
+                        }}
+                      >
                         <GoogleSignInButton
                           onSuccess={handleLinkGoogle}
+                          onError={(err) => setProviderError(err.message)}
                           text="signin_with"
-                          label="Vincular Conta"
+                          label="Vincular Conta Google"
+                          width={280}
                         />
                       </Box>
                     )}

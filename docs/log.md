@@ -24,6 +24,7 @@ Para navegação geral, retorne ao [Catálogo Canônico](index.md).
 - **Sobreposição de Sidebar e Contraste Mobile (#104)**: Aplicação de safe area insets (`env(safe-area-inset-top)` e `env(safe-area-inset-bottom)`) no Drawer da `Sidebar.tsx`, eliminação de colisão com a barra de status do celular e configuração de alto contraste (`Style.Light`, `android:windowLightStatusBar="true"`, `#FFFFFF`) para o topo da aplicação.
 - **Automação de Build do APK**: Novo job `build-android-apk` no workflow `frontend.yml` com injeção automática de `VITE_GOOGLE_CLIENT_ID`, build Gradle e disponibilização do artefato `app-debug-apk` no GitHub Actions.
 - **Documentação de Build**: Criação do runbook operacional [docs/operations/mobile-build.md](operations/mobile-build.md) detalhando compilação do APK de debug, geração de bundle AAB e assinatura com keystore para publicação na Google Play.
+- **Login Google Nativo e Layout Mobile (#105)**: Integração do plugin `@capgo/capacitor-social-login` com Android Credential Manager para contornar bloqueio de OAuth em WebViews, layout 100% responsivo no card de perfil sem overflow horizontal e feedback de erro aprimorado.
 
 ## 📅 [2026-10-10](logs/2026-10-10.md) — Suporte a Login Social Google e Vínculo de Contas Existentes (#91)
 - **Autenticação Direta Google Cloud**: Implementação de autenticação social com Google Identity Services (GIS) no frontend e validação nativa de ID tokens com `google.golang.org/api/idtoken` no backend Go, dispensando intermediários (sem Firebase).

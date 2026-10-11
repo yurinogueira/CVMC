@@ -149,6 +149,27 @@ A pipeline de Frontend (`.github/workflows/frontend.yml`) compila automaticament
 
 ---
 
+## 🔐 Autenticação Social Google no Android (Google Credential Manager)
+
+O Google bloqueia explicitamente fluxos de autenticação web baseados em popups/postMessage dentro de WebViews embutidas no Android (`disallowed_useragent`). Para viabilizar login e vínculo social no app Android, o CVMC adota o plugin nativo `@capgo/capacitor-social-login`, acoplado ao moderno **Android Credential Manager** (`androidx.credentials`):
+
+### 1. Configuração no Google Cloud Console
+No mesmo projeto do Google Cloud onde reside o Client ID Web (`ID do cliente para Aplicativo da Web`):
+1. Acesse **APIs e Serviços > Credenciais > Criar Credenciais > ID do cliente OAuth**.
+2. Selecione o tipo de aplicativo **Android**.
+3. Preencha o nome do pacote: `com.cvmc.app`.
+4. Adicione a impressão digital do certificado SHA-1:
+   - **Ambiente de Testes / Debug Local**:
+     ```
+     D6:0C:13:47:7D:E7:29:43:DF:AA:FB:B3:F5:10:00:BC:5A:7D:AF:02
+     ```
+     *(Gerado a partir do `~/.android/debug.keystore` local)*.
+   - **Ambiente de Produção**:
+     O SHA-1 da chave privada `cvmc-release-key.jks` ou da chave de assinatura do app gerada pelo Google Play App Signing.
+5. O Web Client ID continua sendo informado na variável `VITE_GOOGLE_CLIENT_ID` (frontend) e `GOOGLE_CLIENT_ID` (backend Go), sendo repassado como `webClientId` para o Credential Manager gerar um ID Token válido para a audiência da API.
+
+---
+
 ## 🧪 Validação e Checklist Pré-Publicação
 
 Antes de submeter uma nova versão à Google Play:
@@ -156,4 +177,5 @@ Antes de submeter uma nova versão à Google Play:
 - [ ] Garantir que o `versionCode` e `versionName` foram incrementados em `frontend/android/app/build.gradle`.
 - [ ] Validar a navegação via hardware back button no dispositivo físico ou emulador Android.
 - [ ] Validar autenticação e silent refresh funcionando via conexão externa HTTPS.
+- [ ] Validar login e vínculo com conta Google via Credential Manager nativo.
 - [ ] Testar Safe Area Insets em aparelhos com entalhe/camera cutout e barra de gestos.
