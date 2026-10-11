@@ -19,6 +19,7 @@ type userDoc struct {
 	Name                       string     `bson:"name"`
 	Email                      string     `bson:"email"`
 	PasswordHash               string     `bson:"passwordHash"`
+	GoogleID                   string     `bson:"googleId,omitempty"`
 	EmailVerified              bool       `bson:"emailVerified"`
 	EmailVerifiedAt            *time.Time `bson:"emailVerifiedAt,omitempty"`
 	EmailVerificationTokenHash string     `bson:"emailVerificationTokenHash,omitempty"`
@@ -40,6 +41,7 @@ func (d userDoc) toDomain() domainuser.User {
 		Name:                       d.Name,
 		Email:                      d.Email,
 		PasswordHash:               d.PasswordHash,
+		GoogleID:                   d.GoogleID,
 		EmailVerified:              d.EmailVerified,
 		EmailVerifiedAt:            d.EmailVerifiedAt,
 		EmailVerificationTokenHash: d.EmailVerificationTokenHash,
@@ -67,6 +69,10 @@ func (r *Repository) EnsureIndexes(ctx context.Context) error {
 		{
 			Keys:    bson.D{{Key: "email", Value: 1}},
 			Options: options.Index().SetUnique(true),
+		},
+		{
+			Keys:    bson.D{{Key: "googleId", Value: 1}},
+			Options: options.Index().SetUnique(true).SetSparse(true),
 		},
 		{
 			Keys:    bson.D{{Key: "emailVerificationTokenHash", Value: 1}},
@@ -109,6 +115,7 @@ func (r *Repository) Create(ctx context.Context, user domainuser.User) (domainus
 		Name:                       strings.TrimSpace(user.Name),
 		Email:                      user.Email,
 		PasswordHash:               user.PasswordHash,
+		GoogleID:                   strings.TrimSpace(user.GoogleID),
 		EmailVerified:              user.EmailVerified,
 		EmailVerifiedAt:            user.EmailVerifiedAt,
 		EmailVerificationTokenHash: user.EmailVerificationTokenHash,
@@ -146,6 +153,7 @@ func (r *Repository) Update(ctx context.Context, user domainuser.User) (domainus
 			"name":                       strings.TrimSpace(user.Name),
 			"email":                      user.Email,
 			"passwordHash":               user.PasswordHash,
+			"googleId":                   strings.TrimSpace(user.GoogleID),
 			"emailVerified":              user.EmailVerified,
 			"emailVerifiedAt":            user.EmailVerifiedAt,
 			"emailVerificationTokenHash": user.EmailVerificationTokenHash,
@@ -196,6 +204,24 @@ func (r *Repository) FindByID(ctx context.Context, id string) (domainuser.User, 
 	filter := bson.D{{Key: "_id", Value: cleanID}}
 	var doc userDoc
 	err = r.coll.FindOne(ctx, filter).Decode(&doc)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return domainuser.User{}, userport.ErrNotFound
+		}
+		return domainuser.User{}, err
+	}
+	return doc.toDomain(), nil
+}
+
+func (r *Repository) FindByGoogleID(ctx context.Context, googleID string) (domainuser.User, error) {
+	cleanID := strings.TrimSpace(googleID)
+	if cleanID == "" {
+		return domainuser.User{}, userport.ErrNotFound
+	}
+
+	filter := bson.D{{Key: "googleId", Value: cleanID}}
+	var doc userDoc
+	err := r.coll.FindOne(ctx, filter).Decode(&doc)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return domainuser.User{}, userport.ErrNotFound

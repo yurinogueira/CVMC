@@ -2,6 +2,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  googleId?: string;
   emailVerified?: boolean;
   emailVerifiedAt?: string;
   maxVehicles?: number;
@@ -47,4 +48,14 @@ export interface ResetPasswordPayload {
 
 export interface VerifyEmailPayload {
   token: string;
+}
+
+export interface GoogleAuthPayload {
+  idToken: string;
+}
+
+export interface AuthProvidersData {
+  hasPassword: boolean;
+  googleLinked: boolean;
+  googleEmail?: string;
 }

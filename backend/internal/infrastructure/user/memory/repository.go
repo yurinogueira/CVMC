@@ -101,6 +101,27 @@ func (r *Repository) FindByID(ctx context.Context, id string) (domainuser.User, 
 	return user, nil
 }
 
+func (r *Repository) FindByGoogleID(ctx context.Context, googleID string) (domainuser.User, error) {
+	_ = ctx
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	cleanID := strings.TrimSpace(googleID)
+	if cleanID == "" {
+		return domainuser.User{}, ErrNotFound
+	}
+
+	for _, u := range r.byID {
+		if u.GoogleID == cleanID {
+			if u.MaxVehicles <= 0 {
+				u.MaxVehicles = 3
+			}
+			return u, nil
+		}
+	}
+	return domainuser.User{}, ErrNotFound
+}
+
 func (r *Repository) FindByEmailVerificationTokenHash(ctx context.Context, hash string) (domainuser.User, error) {
 	_ = ctx
 	r.mu.RLock()

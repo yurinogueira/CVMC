@@ -18,9 +18,9 @@ type UserHandler struct {
 	tokens  portauth.TokenService
 }
 
-func NewUserHandler(users userport.Repository, cars carport.Repository, hasher portauth.PasswordHasher, tokens portauth.TokenService) *UserHandler {
+func NewUserHandler(users userport.Repository, cars carport.Repository, hasher portauth.PasswordHasher, tokens portauth.TokenService, googleValidator ...portauth.GoogleTokenValidator) *UserHandler {
 	return &UserHandler{
-		service: userusecase.NewService(users, cars, hasher),
+		service: userusecase.NewService(users, cars, hasher, googleValidator...),
 		tokens:  tokens,
 	}
 }
@@ -32,6 +32,14 @@ type UpdateProfileRequest struct {
 type UpdatePasswordRequest struct {
 	CurrentPassword string `json:"currentPassword" example:"senhaAntiga123"`
 	NewPassword     string `json:"newPassword" example:"senhaNova12345"`
+}
+
+type LinkGoogleRequest struct {
+	IDToken string `json:"idToken" example:"eyJhbGciOiJSUzI1NiIsImtpZCI6..."`
+}
+
+type SetPasswordRequest struct {
+	NewPassword string `json:"newPassword" example:"senhaNova12345"`
 }
 
 // GetProfile godoc
@@ -145,6 +153,120 @@ func (h *UserHandler) UpdatePassword(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// GetAuthProviders godoc
+// @Summary      Provedores de autenticação conectados
+// @Description  Retorna o status dos provedores de login vinculados à conta do usuário (senha, Google)
+// @Tags         User
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200 {object} httpx.SuccessEnvelope
+// @Failure      401 {object} httpx.ErrorEnvelope
+// @Failure      404 {object} httpx.ErrorEnvelope
+// @Router       /api/v1/user/auth-providers [get]
+func (h *UserHandler) GetAuthProviders(w http.ResponseWriter, r *http.Request) {
+	userID := h.extractUserID(r)
+	if userID == "" {
+		httpx.Error(w, http.StatusUnauthorized, "Unauthorized", nil)
+		return
+	}
+	providers, err := h.service.GetAuthProviders(r.Context(), userID)
+	if err != nil {
+		handleUserError(w, err)
+		return
+	}
+	httpx.Success(w, providers)
+}
+
+// LinkGoogle godoc
+// @Summary      Vincular conta Google
+// @Description  Vincula uma conta Google à conta do usuário autenticado validando o ID Token
+// @Tags         User
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        payload body LinkGoogleRequest true "Google ID Token"
+// @Success      200 {object} httpx.SuccessEnvelope
+// @Failure      400 {object} httpx.ErrorEnvelope
+// @Failure      401 {object} httpx.ErrorEnvelope
+// @Failure      409 {object} httpx.ErrorEnvelope
+// @Router       /api/v1/user/auth-providers/google/link [post]
+func (h *UserHandler) LinkGoogle(w http.ResponseWriter, r *http.Request) {
+	userID := h.extractUserID(r)
+	if userID == "" {
+		httpx.Error(w, http.StatusUnauthorized, "Unauthorized", nil)
+		return
+	}
+	var input LinkGoogleRequest
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		handleUserError(w, err)
+		return
+	}
+	if err := h.service.LinkGoogleAccount(r.Context(), userID, input.IDToken); err != nil {
+		handleUserError(w, err)
+		return
+	}
+	httpx.Success(w, map[string]string{
+		"message": "Conta Google vinculada com sucesso.",
+	})
+}
+
+// UnlinkGoogle godoc
+// @Summary      Desvincular conta Google
+// @Description  Desvincula a conta Google da conta do usuário autenticado (requer senha cadastrada para evitar lockout)
+// @Tags         User
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200 {object} httpx.SuccessEnvelope
+// @Failure      400 {object} httpx.ErrorEnvelope
+// @Failure      401 {object} httpx.ErrorEnvelope
+// @Router       /api/v1/user/auth-providers/google/unlink [post]
+func (h *UserHandler) UnlinkGoogle(w http.ResponseWriter, r *http.Request) {
+	userID := h.extractUserID(r)
+	if userID == "" {
+		httpx.Error(w, http.StatusUnauthorized, "Unauthorized", nil)
+		return
+	}
+	if err := h.service.UnlinkGoogleAccount(r.Context(), userID); err != nil {
+		handleUserError(w, err)
+		return
+	}
+	httpx.Success(w, map[string]string{
+		"message": "Conta Google desvinculada com sucesso.",
+	})
+}
+
+// SetPassword godoc
+// @Summary      Definir senha inicial para conta social
+// @Description  Define a senha para um usuário que se cadastrou via Google e ainda não possui senha local
+// @Tags         User
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        payload body SetPasswordRequest true "Nova senha"
+// @Success      200 {object} httpx.SuccessEnvelope
+// @Failure      400 {object} httpx.ErrorEnvelope
+// @Failure      401 {object} httpx.ErrorEnvelope
+// @Router       /api/v1/user/password/set [post]
+func (h *UserHandler) SetPassword(w http.ResponseWriter, r *http.Request) {
+	userID := h.extractUserID(r)
+	if userID == "" {
+		httpx.Error(w, http.StatusUnauthorized, "Unauthorized", nil)
+		return
+	}
+	var input SetPasswordRequest
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		handleUserError(w, err)
+		return
+	}
+	if err := h.service.SetPassword(r.Context(), userID, input.NewPassword); err != nil {
+		handleUserError(w, err)
+		return
+	}
+	httpx.Success(w, map[string]string{
+		"message": "Senha cadastrada com sucesso.",
+	})
+}
+
 func (h *UserHandler) extractUserID(r *http.Request) string {
 	token := ""
 	if cookie, err := r.Cookie("cvmc_access_token"); err == nil && cookie.Value != "" {
@@ -170,6 +292,18 @@ func handleUserError(w http.ResponseWriter, err error) {
 		httpx.Error(w, http.StatusBadRequest, "A nova senha deve conter entre 8 e 72 caracteres", nil)
 	case errors.Is(err, userusecase.ErrInvalidInput):
 		httpx.Error(w, http.StatusBadRequest, "Dados inválidos: verifique os campos informados", nil)
+	case errors.Is(err, userusecase.ErrInvalidGoogleToken):
+		httpx.Error(w, http.StatusUnauthorized, "Token do Google inválido ou expirado", nil)
+	case errors.Is(err, userusecase.ErrGoogleEmailMismatch):
+		httpx.Error(w, http.StatusBadRequest, "O e-mail da conta Google não corresponde ao e-mail da sua conta", nil)
+	case errors.Is(err, userusecase.ErrGoogleAlreadyLinked):
+		httpx.Error(w, http.StatusConflict, "Esta conta Google já está vinculada a outro usuário", nil)
+	case errors.Is(err, userusecase.ErrGoogleNotLinked):
+		httpx.Error(w, http.StatusBadRequest, "Conta Google não está vinculada a este usuário", nil)
+	case errors.Is(err, userusecase.ErrLockoutPrevented):
+		httpx.Error(w, http.StatusBadRequest, "Você deve cadastrar uma senha antes de desvincular sua conta Google", nil)
+	case errors.Is(err, userusecase.ErrPasswordAlreadySet):
+		httpx.Error(w, http.StatusBadRequest, "Sua conta já possui uma senha. Utilize a alteração de senha", nil)
 	case errors.Is(err, userusecase.ErrUserNotFound):
 		httpx.Error(w, http.StatusNotFound, "Usuário não encontrado", nil)
 	default:

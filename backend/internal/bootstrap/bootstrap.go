@@ -14,6 +14,7 @@ import (
 	fipeusecase "cvmc/internal/application/usecase/fipe"
 	"cvmc/internal/config"
 	bcryptinfra "cvmc/internal/infrastructure/auth/bcrypt"
+	googleinfra "cvmc/internal/infrastructure/auth/google"
 	jwtauth "cvmc/internal/infrastructure/auth/jwt"
 	carMemory "cvmc/internal/infrastructure/car/memory"
 	carMongo "cvmc/internal/infrastructure/car/mongo"
@@ -108,7 +109,8 @@ func New(ctx context.Context, cfg config.Config) (*App, error) {
 	}
 
 	fipeService := fipeusecase.NewService(fipes, fipeClient)
-	handler := rest.NewRouter(cfg, users, hasher, tokens, emailSender, cars, maintenances, fuelings, fipeService)
+	googleValidator := googleinfra.NewValidator(cfg.GoogleClientID)
+	handler := rest.NewRouter(cfg, users, hasher, tokens, emailSender, cars, maintenances, fuelings, fipeService, googleValidator)
 	return &App{
 		handler:     handler,
 		mongoClient: mongoClient,

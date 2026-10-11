@@ -13,6 +13,7 @@ import {
   InputAdornment,
   IconButton,
   Link,
+  Divider,
 } from "@mui/material";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
@@ -20,6 +21,7 @@ import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
 import { AuthHeroBanner } from "../components/AuthHeroBanner";
+import { GoogleSignInButton } from "../components/GoogleSignInButton";
 import { authService } from "../services/auth.service";
 import { useAuthStore } from "../state/auth.store";
 import { useDocumentTitle } from "../../shared";
@@ -55,6 +57,24 @@ export function LoginPage() {
       const message =
         errorObj.response?.data?.message ||
         "Não foi possível conectar ao servidor. Verifique suas credenciais ou se o backend está ativo.";
+      setErrorMsg(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (idToken: string) => {
+    setErrorMsg(null);
+    try {
+      setLoading(true);
+      const data = await authService.loginWithGoogle(idToken);
+      setUser(data.user);
+      navigate("/dashboard", { replace: true });
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { message?: string } } };
+      const message =
+        errorObj.response?.data?.message ||
+        "Não foi possível autenticar com o Google. Tente novamente.";
       setErrorMsg(message);
     } finally {
       setLoading(false);
@@ -248,6 +268,22 @@ export function LoginPage() {
                     "Entrar no CVMC"
                   )}
                 </Button>
+
+                <Divider
+                  sx={{
+                    my: 1.5,
+                    color: "text.secondary",
+                    fontSize: "0.85rem",
+                  }}
+                >
+                  ou continue com
+                </Divider>
+
+                <GoogleSignInButton
+                  onSuccess={handleGoogleSuccess}
+                  disabled={loading}
+                  text="signin_with"
+                />
               </Stack>
             </Box>
 

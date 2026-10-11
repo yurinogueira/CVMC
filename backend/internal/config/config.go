@@ -80,6 +80,7 @@ type Config struct {
 	SMTPUser            string
 	SMTPPass            string
 	EmailFrom           string
+	GoogleClientID      string
 }
 
 func (c Config) Validate() error {
@@ -112,6 +113,7 @@ func Load() Config {
 		SMTPUser:            getenv("SMTP_USER", ""),
 		SMTPPass:            getenv("SMTP_PASS", ""),
 		EmailFrom:           getenv("EMAIL_FROM", "no-reply@cvmc.com.br"),
+		GoogleClientID:      getenv("GOOGLE_CLIENT_ID", ""),
 	}
 
 	// Unconditionally reject default and low-entropy JWT secrets in all environments.

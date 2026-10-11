@@ -20,12 +20,16 @@ type AuthHandler struct {
 	cookieSecure bool
 }
 
-func NewAuthHandler(users userport.Repository, hasher portauth.PasswordHasher, tokens portauth.TokenService, emailSender emailport.Sender, cookieDomain string, cookieSecure bool) *AuthHandler {
+func NewAuthHandler(users userport.Repository, hasher portauth.PasswordHasher, tokens portauth.TokenService, emailSender emailport.Sender, cookieDomain string, cookieSecure bool, googleValidator ...portauth.GoogleTokenValidator) *AuthHandler {
 	return &AuthHandler{
-		service:      authusecase.NewService(users, hasher, tokens, emailSender),
+		service:      authusecase.NewService(users, hasher, tokens, emailSender, googleValidator...),
 		cookieDomain: cookieDomain,
 		cookieSecure: cookieSecure,
 	}
+}
+
+type GoogleAuthRequest struct {
+	IDToken string `json:"idToken" example:"eyJhbGciOiJSUzI1NiIsImtpZCI6..."`
 }
 
 type RegisterRequest struct {
@@ -119,6 +123,42 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 			"emailVerifiedAt": output.User.EmailVerifiedAt,
 			"maxVehicles":     output.User.MaxVehicles,
 			"createdAt":       output.User.CreatedAt,
+		},
+	})
+}
+
+// GoogleAuth godoc
+// @Summary      Autenticação social via Google
+// @Description  Autentica ou cadastra usuário via Google ID Token, seta cookies httpOnly com tokens de sessão e retorna dados do usuário
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        payload body GoogleAuthRequest true "Google ID Token"
+// @Success      200 {object} httpx.SuccessEnvelope
+// @Failure      400 {object} httpx.ErrorEnvelope
+// @Failure      401 {object} httpx.ErrorEnvelope
+// @Router       /api/v1/auth/google [post]
+func (h *AuthHandler) GoogleAuth(w http.ResponseWriter, r *http.Request) {
+	var input GoogleAuthRequest
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		handleAuthError(w, err)
+		return
+	}
+	output, err := h.service.LoginWithGoogle(r.Context(), input.IDToken)
+	if err != nil {
+		handleAuthError(w, err)
+		return
+	}
+	h.setTokenCookies(w, output.AccessToken, output.RefreshToken)
+	httpx.Success(w, map[string]any{
+		"user": map[string]any{
+			"id":            output.User.ID,
+			"name":          output.User.Name,
+			"email":         output.User.Email,
+			"googleId":      output.User.GoogleID,
+			"emailVerified": output.User.EmailVerified,
+			"maxVehicles":   output.User.MaxVehicles,
+			"createdAt":     output.User.CreatedAt,
 		},
 	})
 }

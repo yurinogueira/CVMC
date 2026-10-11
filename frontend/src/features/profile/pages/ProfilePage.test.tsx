@@ -9,6 +9,13 @@ vi.mock("../services/profile.service", () => ({
     getProfile: vi.fn(),
     updateProfile: vi.fn(),
     updatePassword: vi.fn(),
+    getAuthProviders: vi.fn().mockResolvedValue({
+      hasPassword: true,
+      googleLinked: false,
+    }),
+    linkGoogle: vi.fn(),
+    unlinkGoogle: vi.fn(),
+    setPassword: vi.fn(),
   },
 }));
 
@@ -81,5 +88,80 @@ describe("ProfilePage", () => {
         name: /Reenviar e-mail de confirmação/i,
       }),
     ).toBeInTheDocument();
+  });
+
+  it("renders Google linked status and permits unlinking when password is set", async () => {
+    vi.mocked(profileService.getProfile).mockResolvedValueOnce({
+      user: {
+        id: "user-3",
+        name: "Google Linked User",
+        email: "googleuser@cvmc.com",
+        googleId: "google-123",
+        emailVerified: true,
+        maxVehicles: 3,
+        createdAt: "2026-08-25T00:00:00Z",
+      },
+      vehiclesCount: 0,
+      maxVehicles: 3,
+    });
+    vi.mocked(profileService.getAuthProviders).mockResolvedValueOnce({
+      hasPassword: true,
+      googleLinked: true,
+      googleEmail: "googleuser@cvmc.com",
+    });
+
+    render(
+      <BrowserRouter>
+        <ProfilePage />
+      </BrowserRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Contas Conectadas")).toBeInTheDocument();
+    });
+
+    expect(screen.getByText("Vinculado")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Desvincular/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("renders 'Definir Senha Inicial' when user has only social login", async () => {
+    vi.mocked(profileService.getProfile).mockResolvedValueOnce({
+      user: {
+        id: "user-4",
+        name: "Social Only User",
+        email: "social@cvmc.com",
+        googleId: "google-456",
+        emailVerified: true,
+        maxVehicles: 3,
+        createdAt: "2026-08-25T00:00:00Z",
+      },
+      vehiclesCount: 0,
+      maxVehicles: 3,
+    });
+    vi.mocked(profileService.getAuthProviders).mockResolvedValueOnce({
+      hasPassword: false,
+      googleLinked: true,
+      googleEmail: "social@cvmc.com",
+    });
+
+    render(
+      <BrowserRouter>
+        <ProfilePage />
+      </BrowserRouter>,
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("heading", { name: /Definir Senha Inicial/i }),
+      ).toBeInTheDocument();
+    });
+
+    expect(
+      screen.getByRole("button", { name: /Cadastrar Senha/i }),
+    ).toBeInTheDocument();
+    // Senha Atual should NOT be in the document
+    expect(screen.queryByLabelText(/Senha Atual/i)).not.toBeInTheDocument();
   });
 });
