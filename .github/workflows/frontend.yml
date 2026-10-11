@@ -62,6 +62,7 @@ jobs:
         env:
           VITE_API_BASE_URL: https://api-cvmc.yurinogueira.dev.br
           VITE_BASE_PATH: /
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID || vars.GOOGLE_CLIENT_ID }}
         run: npm run build
 
       - name: Upload frontend build artifact

@@ -31,6 +31,9 @@ Para navegação geral, retorne ao [Catálogo Canônico](../index.md).
 | `COOKIE_DOMAIN` | Domínio dos cookies de autenticação | - | Sim (`.cvmc.yurinogueira.dev.br`) |
 | `COOKIE_SECURE` | Força flag Secure nos cookies | `true` | Sim |
 | `SMTP_HOST` | Host do servidor SMTP para envio de e-mails | - | Sim |
+| `GOOGLE_CLIENT_ID` | OAuth 2.0 Client ID do Google Cloud para validação backend | - | Sim (em produção com login Google) |
+| `VITE_GOOGLE_CLIENT_ID` | OAuth 2.0 Client ID do Google Cloud para GIS frontend | - | Sim (em produção com login Google) |
+
 
 ---
 
