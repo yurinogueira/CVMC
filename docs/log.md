@@ -19,6 +19,7 @@ Para navegação geral, retorne ao [Catálogo Canônico](index.md).
 - **Capacitor 8 no Frontend**: Configuração do `capacitor.config.ts` com `appId: com.cvmc.app`, inicialização do projeto `frontend/android` e scripts `cap:sync`, `cap:open` e `cap:build`.
 - **Comunicação de API & Sessão Mobile**: BaseURL dinâmica para ambiente nativo, injeção de `Authorization: Bearer <token>`, persistência segura com `@capacitor/preferences` e retorno de tokens em JSON nos endpoints de autenticação em Go.
 - **UX Mobile Nativa**: Controle da cor da barra de status (`#0284C7`), splash screen, hardware back button do Android e suporte a Safe Area Insets.
+- **Correção de CORS e Tratamento de Erros**: Liberação das origens `https://localhost` e `capacitor://localhost` no backend Go e no deploy OCI (`backend.yml`), e refinamento no `LoginPage.tsx` para distinguir erro 401 de falha de conexão.
 - **Documentação de Build**: Criação do runbook operacional [docs/operations/mobile-build.md](operations/mobile-build.md) detalhando compilação do APK de debug, geração de bundle AAB e assinatura com keystore para publicação na Google Play.
 
 ## 📅 [2026-10-10](logs/2026-10-10.md) — Suporte a Login Social Google e Vínculo de Contas Existentes (#91)

@@ -53,11 +53,17 @@ export function LoginPage() {
       setSession(data);
       navigate("/dashboard", { replace: true });
     } catch (err: unknown) {
-      const errorObj = err as { response?: { data?: { message?: string } } };
-      const message =
-        errorObj.response?.data?.message ||
-        "Não foi possível conectar ao servidor. Verifique suas credenciais ou se o backend está ativo.";
-      setErrorMsg(message);
+      const errorObj = err as {
+        response?: { status?: number; data?: { message?: string } };
+      };
+      if (errorObj.response?.status === 401) {
+        setErrorMsg("E-mail ou senha incorretos.");
+      } else {
+        const message =
+          errorObj.response?.data?.message ||
+          "Não foi possível conectar ao servidor. Verifique sua conexão com a internet ou se o backend está ativo.";
+        setErrorMsg(message);
+      }
     } finally {
       setLoading(false);
     }
