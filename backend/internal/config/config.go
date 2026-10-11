@@ -101,7 +101,7 @@ func Load() Config {
 		OCIStorageNamespace: getenv("OCI_STORAGE_NAMESPACE", ""),
 		OCIStorageRegion:    getenv("OCI_STORAGE_REGION", "sa-saopaulo-1"),
 		OCIStorageEndpoint:  getenv("OCI_STORAGE_ENDPOINT", ""),
-		AllowedOrigins:      parseCommaSeparated(getenv("ALLOWED_ORIGINS", "http://localhost:5173")),
+		AllowedOrigins:      parseCommaSeparated(getenv("ALLOWED_ORIGINS", "http://localhost:5173,https://localhost,capacitor://localhost")),
 		TrustedProxies:      parseCommaSeparated(getenv("TRUSTED_PROXIES", "127.0.0.1,::1")),
 		CookieDomain:        getenv("COOKIE_DOMAIN", ""),
 		CookieSecure:        getenv("COOKIE_SECURE", "true") == "true",

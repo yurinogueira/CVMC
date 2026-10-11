@@ -179,8 +179,9 @@ jobs:
           EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
           APP_BASE_URL: ${{ secrets.APP_BASE_URL || 'https://cvmc.yurinogueira.dev.br' }}
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID || vars.GOOGLE_CLIENT_ID }}
+          ALLOWED_ORIGINS: ${{ secrets.ALLOWED_ORIGINS || 'https://cvmc.yurinogueira.dev.br,https://localhost,capacitor://localhost' }}
         run: |
-          ssh "$USER@$HOST" "FIPE_API_TOKEN=\"$FIPE_API_TOKEN\" FIPE_BASE_URL=\"$FIPE_BASE_URL\" SMTP_HOST=\"$SMTP_HOST\" SMTP_PORT=\"$SMTP_PORT\" SMTP_USER=\"$SMTP_USER\" SMTP_PASS=\"$SMTP_PASS\" EMAIL_FROM=\"$EMAIL_FROM\" APP_BASE_URL=\"$APP_BASE_URL\" GOOGLE_CLIENT_ID=\"$GOOGLE_CLIENT_ID\" bash -s" << 'EOF'
+          ssh "$USER@$HOST" "FIPE_API_TOKEN=\"$FIPE_API_TOKEN\" FIPE_BASE_URL=\"$FIPE_BASE_URL\" SMTP_HOST=\"$SMTP_HOST\" SMTP_PORT=\"$SMTP_PORT\" SMTP_USER=\"$SMTP_USER\" SMTP_PASS=\"$SMTP_PASS\" EMAIL_FROM=\"$EMAIL_FROM\" APP_BASE_URL=\"$APP_BASE_URL\" GOOGLE_CLIENT_ID=\"$GOOGLE_CLIENT_ID\" ALLOWED_ORIGINS=\"$ALLOWED_ORIGINS\" bash -s" << 'EOF'
             set -euo pipefail
 
             # Instalar binário
@@ -206,8 +207,8 @@ jobs:
             sudo chown root:cvmc /etc/cvmc/backend.env
             sudo chmod 640 /etc/cvmc/backend.env
 
-            # Injetar ou atualizar FIPE, SMTP e Google Auth
-            for VAR in FIPE_API_TOKEN FIPE_BASE_URL SMTP_HOST SMTP_PORT SMTP_USER SMTP_PASS EMAIL_FROM APP_BASE_URL GOOGLE_CLIENT_ID; do
+            # Injetar ou atualizar FIPE, SMTP, Google Auth e CORS Origins
+            for VAR in FIPE_API_TOKEN FIPE_BASE_URL SMTP_HOST SMTP_PORT SMTP_USER SMTP_PASS EMAIL_FROM APP_BASE_URL GOOGLE_CLIENT_ID ALLOWED_ORIGINS; do
               VAL="${!VAR:-}"
               if [ -n "$VAL" ]; then
                 if sudo grep -q "^${VAR}=" /etc/cvmc/backend.env; then
