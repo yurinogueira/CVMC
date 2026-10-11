@@ -45,6 +45,30 @@ Para garantir uniformidade visual entre todas as telas:
 2. **Proibição de Padding Duplo**:
    - Os componentes de tela (`*Page.tsx`) **nunca** devem aplicar padding (`p: ...`) em sua tag raiz `<Box>`, prevenindo espaçamento descompensado.
 
+## 📱 Responsividade Mobile e Confinamento Flexbox
+
+Para prevenir estouro horizontal (*horizontal overflow*) e garantir adaptação impecável em telas móveis:
+
+1. **Confinamento em Itens Flexíveis**:
+   - Elementos principais de layout (`Box component="main"`) devem declarar explicitamente `minWidth: 0`, `maxWidth: "100%"` e `overflowX: "hidden"`. Por padrão da especificação CSS Flexbox, itens possuem `min-width: auto`, o que permite que elementos filhos com conteúdo amplo estiquem o layout além de 100vw.
+2. **Abas Roláveis no Mobile (`<Tabs>`)**:
+   - Em abas de navegação internas com textos longos ou chips de contagem (como em `VehicleDetailsPage.tsx`), deve-se utilizar obrigatoriamente:
+     ```tsx
+     <Tabs
+       variant="scrollable"
+       scrollButtons="auto"
+       allowScrollButtonsMobile
+       sx={{
+         "& .MuiTabs-scroller": { overflowX: "auto" },
+         "& .MuiTab-root": { minWidth: { xs: "auto", sm: 160 }, px: { xs: 1.5, sm: 2 } },
+       }}
+     >
+     ```
+3. **Barra Superior Resiliente (`Topbar.tsx`)**:
+   - O título deve possuir `noWrap` com `textOverflow: "ellipsis"`, e o bloco de avatar/ações deve declarar `flexShrink: 0`, impedindo que títulos longos empurrem o perfil para fora da tela.
+4. **Empilhamento de Ações em Telas Estreitas**:
+   - Cabeçalhos de seção e formulários devem utilizar `Stack direction={{ xs: "column", sm: "row" }}` com botões de largura total (`width: { xs: "100%", sm: "auto" }`) em resoluções móveis.
+
 ---
 
 ## ♿ Acessibilidade e Semântica de Cabeçalhos

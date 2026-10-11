@@ -503,13 +503,17 @@ export function RegisterMaintenancePage() {
           </Box>
         </Stack>
 
-        <Stack direction="row" spacing={1.5}>
+        <Stack
+          direction={{ xs: "column-reverse", sm: "row" }}
+          spacing={1.5}
+          sx={{ width: { xs: "100%", sm: "auto" } }}
+        >
           <Button
             variant="outlined"
             color="inherit"
             onClick={() => navigate(`/vehicles/${id}`)}
             disabled={submitting || processingFiles}
-            sx={{ borderRadius: 2 }}
+            sx={{ borderRadius: 2, width: { xs: "100%", sm: "auto" } }}
           >
             Cancelar
           </Button>
@@ -524,7 +528,7 @@ export function RegisterMaintenancePage() {
                 <BuildCircleRoundedIcon />
               )
             }
-            sx={{ px: 3, borderRadius: 2 }}
+            sx={{ px: 3, borderRadius: 2, width: { xs: "100%", sm: "auto" } }}
           >
             Salvar Manutenção
           </Button>

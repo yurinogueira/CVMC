@@ -17,6 +17,11 @@ Para navegação geral, retorne ao [Catálogo Canônico](index.md).
 
 ---
 
+## 📅 [2026-10-10](logs/2026-10-10.md) — Correção de Layout Mobile e Responsividade Global
+- **Frontend & Layout**: Resolução do overflow horizontal na tela de detalhes do veículo (`VehicleDetailsPage.tsx`) tornando abas roláveis com `variant="scrollable"`, aplicando confinamento flexbox (`minWidth: 0`, `maxWidth: "100%"`, `overflowX: "hidden"`) em `AppLayout.tsx` e resiliência na `Topbar.tsx`.
+- **Formulários & Modais**: Empilhamento responsivo de botões de ação em `RegisterMaintenancePage.tsx` e margens seguras para dispositivos móveis em `AddFuelingDialog.tsx` e modais de exclusão.
+- **Testes & Documentação**: Teste unitário para abas scrollable com MUI v6 e atualização da especificação de responsividade em `docs/frontend/ui-components.md`.
+
 ## 📅 [2026-10-10](logs/2026-10-10.md) — Sincronização Canônica e Modernização (PS -> CVMC)
 - **Documentação**: Criação da árvore canônica de documentação Open Knowledge Format (OKF) em `docs/` com mais de 25 documentos abrangendo arquitetura, domínio, frontend, operações, runbooks e ADRs.
 - **Governança & Automação**: Criação de `scripts/check-docs.sh`, inclusão do alvo `docs` em `scripts/check.sh`, novo workflow `.github/workflows/docs.yml` e modernização do template de PR.
