@@ -16,8 +16,24 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            def keystoreFile = project.findProperty('CVMC_RELEASE_STORE_FILE') ?: System.getenv('CVMC_RELEASE_STORE_FILE')
+            def keystorePassword = project.findProperty('CVMC_RELEASE_STORE_PASSWORD') ?: System.getenv('CVMC_RELEASE_STORE_PASSWORD')
+            def keyAlias = project.findProperty('CVMC_RELEASE_KEY_ALIAS') ?: System.getenv('CVMC_RELEASE_KEY_ALIAS')
+            def keyPassword = project.findProperty('CVMC_RELEASE_KEY_PASSWORD') ?: System.getenv('CVMC_RELEASE_KEY_PASSWORD') ?: keystorePassword
+
+            if (keystoreFile && file(keystoreFile).exists()) {
+                storeFile file(keystoreFile)
+                storePassword keystorePassword
+                this.keyAlias keyAlias
+                this.keyPassword keyPassword
+            }
+        }
+    }
     buildTypes {
         release {
+            signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
