@@ -139,6 +139,16 @@ CVMC_RELEASE_KEY_PASSWORD=senha_da_chave
 
 ---
 
+## 🤖 Compilação Automatizada no GitHub Actions
+
+A pipeline de Frontend (`.github/workflows/frontend.yml`) compila automaticamente o APK de Debug a cada push na branch `main` e em Pull Requests:
+1. Constrói a SPA com as variáveis de produção (`VITE_GOOGLE_CLIENT_ID` e `VITE_API_BASE_URL`).
+2. Sincroniza os web assets com o projeto nativo via `npx cap sync android`.
+3. Executa o build Gradle `./gradlew assembleDebug`.
+4. Disponibiliza o arquivo `app-debug-apk` na aba **Artifacts** da execução no GitHub Actions para download e teste direto no celular.
+
+---
+
 ## 🧪 Validação e Checklist Pré-Publicação
 
 Antes de submeter uma nova versão à Google Play:
