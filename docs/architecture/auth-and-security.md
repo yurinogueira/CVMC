@@ -44,7 +44,7 @@ Para navegação geral, retorne ao [Catálogo Canônico](../index.md).
   - Tokens de redefinição de senha e confirmação de e-mail nunca são salvos em texto plano; o banco armazena o hash `SHA-256` do token gerado via `crypto/rand`.
 - **Validação de ID Tokens do Google sem Intermediários**:
   - A autenticação social com Google utiliza validação direta de ID tokens criptográficos via biblioteca oficial `google.golang.org/api/idtoken`, sem dependência do Firebase.
-  - O backend valida a assinatura, a expiração e confere o claim `aud` contra a variável `GOOGLE_CLIENT_ID`.
+  - O backend valida a assinatura, a expiração e confere o claim `aud` contra a variável `GOOGLE_CLIENT_ID`, rejeitando incondicionalmente a validação de tokens quando `GOOGLE_CLIENT_ID` não estiver configurado para mitigar ataques de Confused Deputy / Audience Bypass.
   - Usuários autenticados pelo Google têm seus e-mails considerados verificados pelo provedor de identidade, e contas são associadas de forma segura prevenindo lockout.
 
 ---
