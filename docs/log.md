@@ -6,14 +6,19 @@ tags:
   - log
   - audit
   - history
-timestamp: 2026-10-16
+timestamp: 2026-10-17
 ---
 
 # 🕒 Diário de Bordo & Histórico Cronológico — CVMC
 
-Este documento funciona como o índice mestre de todas as mudanças de engenharia aplicadas ao projeto **CVMC (Como Vai Meu Carro)**. Cada entrada detalhada reside em um arquivo diário específico na pasta [docs/logs/2026-10-16.md](logs/2026-10-16.md), garantindo economia de tokens e histórico auditável.
+Este documento funciona como o índice mestre de todas as mudanças de engenharia aplicadas ao projeto **CVMC (Como Vai Meu Carro)**. Cada entrada detalhada reside em um arquivo diário específico na pasta [docs/logs/2026-10-17.md](logs/2026-10-17.md), garantindo economia de tokens e histórico auditável.
 
 Para navegação geral, retorne ao [Catálogo Canônico](index.md).
+
+## 📅 [2026-10-17](logs/2026-10-17.md) — Infraestrutura de Notificações Push com FCM no Backend e App Mobile (#93)
+- **Domínio, Repositórios e FCM HTTP v1 (Go)**: Criação da entidade `DeviceToken`, coleção `device_tokens` no MongoDB com índices otimizados, cliente FCM HTTP v1 com limpeza automática de tokens `UNREGISTERED` e endpoints `POST /api/v1/devices/token`, `DELETE /api/v1/devices/token` e `POST /api/v1/notifications/test`.
+- **Alertas de Manutenção Preventiva**: Implementação de verificação automática de revisões próximas ou vencidas por quilometragem/data com payload de *deep-link* (`/vehicles/:id`).
+- **App Mobile Android & Capacitor Push**: Integração de `@capacitor/push-notifications`, permissão `POST_NOTIFICATIONS` para Android 13+, canal `cvmc_alerts`, toast em primeiro plano, *deep-linking*, desvínculo seguro no logout e card de teste em `ProfilePage.tsx`.
 
 ## 📅 [2026-10-16](logs/2026-10-16.md) — Prevenção de Vazamento de Tokens em LocalStorage
 - **Isolamento de Tokens no Frontend**: Refatoração do `safeStorage.setSecureItem` e `useAuthStore` para impedir terminantemente o salvamento ou leitura de tokens JWT (`cvmc.access_token` e `cvmc.refresh_token`) no `localStorage` de navegadores web.

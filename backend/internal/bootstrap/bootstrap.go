@@ -10,8 +10,10 @@ import (
 	fipeport "cvmc/internal/application/ports/fipe"
 	fuelport "cvmc/internal/application/ports/fuel"
 	maintenanceport "cvmc/internal/application/ports/maintenance"
+	notificationport "cvmc/internal/application/ports/notification"
 	userport "cvmc/internal/application/ports/user"
 	fipeusecase "cvmc/internal/application/usecase/fipe"
+	notificationusecase "cvmc/internal/application/usecase/notification"
 	"cvmc/internal/config"
 	bcryptinfra "cvmc/internal/infrastructure/auth/bcrypt"
 	googleinfra "cvmc/internal/infrastructure/auth/google"
@@ -27,6 +29,9 @@ import (
 	fuelMongo "cvmc/internal/infrastructure/fuel/mongo"
 	maintMemory "cvmc/internal/infrastructure/maintenance/memory"
 	maintMongo "cvmc/internal/infrastructure/maintenance/mongo"
+	fcmInfra "cvmc/internal/infrastructure/notification/fcm"
+	notifMemory "cvmc/internal/infrastructure/notification/memory"
+	notifMongo "cvmc/internal/infrastructure/notification/mongo"
 	userMemory "cvmc/internal/infrastructure/user/memory"
 	userMongo "cvmc/internal/infrastructure/user/mongo"
 	"cvmc/internal/interfaces/rest"
@@ -46,6 +51,7 @@ func New(ctx context.Context, cfg config.Config) (*App, error) {
 		maintenances maintenanceport.Repository
 		fuelings     fuelport.Repository
 		fipes        fipeport.Repository
+		deviceTokens notificationport.DeviceTokenRepository
 		mongoClient  *mongo.Client
 		emailSender  emailport.Sender
 	)
@@ -76,15 +82,17 @@ func New(ctx context.Context, cfg config.Config) (*App, error) {
 		mMongo := maintMongo.NewRepository(db)
 		fuelMongoRepo := fuelMongo.NewRepository(db)
 		fMongo := fipeMongo.NewRepository(db)
+		dtMongo := notifMongo.NewRepository(db)
 
 		bootstrapper := mongoinfra.NewBootstrapper(
 			db,
-			[]string{"users", "cars", "maintenances", "fuelings", "brands"},
+			[]string{"users", "cars", "maintenances", "fuelings", "brands", "device_tokens"},
 			uMongo,
 			cMongo,
 			mMongo,
 			fuelMongoRepo,
 			fMongo,
+			dtMongo,
 		)
 
 		if err := bootstrapper.Ensure(ctx); err != nil {
@@ -92,13 +100,14 @@ func New(ctx context.Context, cfg config.Config) (*App, error) {
 			return nil, fmt.Errorf("failed to bootstrap mongodb collections and indexes: %w", err)
 		}
 
-		log.Printf("Successfully bootstrapped MongoDB collections (users, cars, maintenances, fuelings, brands) and indexes on %q", cfg.MongoDatabase)
+		log.Printf("Successfully bootstrapped MongoDB collections (users, cars, maintenances, fuelings, brands, device_tokens) and indexes on %q", cfg.MongoDatabase)
 
 		users = uMongo
 		cars = cMongo
 		maintenances = mMongo
 		fuelings = fuelMongoRepo
 		fipes = fMongo
+		deviceTokens = dtMongo
 	} else {
 		log.Println("Initializing application with in-memory repositories (MONGO_URI=memory)")
 		users = userMemory.NewRepository()
@@ -106,11 +115,24 @@ func New(ctx context.Context, cfg config.Config) (*App, error) {
 		maintenances = maintMemory.NewRepository()
 		fuelings = fuelMemory.NewRepository()
 		fipes = fipeMemory.NewRepository()
+		deviceTokens = notifMemory.NewRepository()
+	}
+
+	pushSender, err := fcmInfra.NewSender(ctx, fcmInfra.Config{
+		CredentialsJSON: cfg.FirebaseCredentialsJSON,
+		CredentialsFile: cfg.FirebaseCredentialsFile,
+	})
+	if err != nil {
+		if mongoClient != nil {
+			_ = mongoClient.Disconnect(ctx)
+		}
+		return nil, fmt.Errorf("failed to initialize fcm push sender: %w", err)
 	}
 
 	fipeService := fipeusecase.NewService(fipes, fipeClient)
+	notificationService := notificationusecase.NewService(deviceTokens, pushSender, cars, maintenances)
 	googleValidator := googleinfra.NewValidator(cfg.GoogleClientID)
-	handler := rest.NewRouter(cfg, users, hasher, tokens, emailSender, cars, maintenances, fuelings, fipeService, googleValidator)
+	handler := rest.NewRouter(cfg, users, hasher, tokens, emailSender, cars, maintenances, fuelings, fipeService, notificationService, googleValidator)
 	return &App{
 		handler:     handler,
 		mongoClient: mongoClient,

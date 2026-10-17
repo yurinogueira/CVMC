@@ -14,7 +14,9 @@ import (
 	fipeusecase "cvmc/internal/application/usecase/fipe"
 	fuelusecase "cvmc/internal/application/usecase/fuel"
 	maintusecase "cvmc/internal/application/usecase/maintenance"
+	notificationusecase "cvmc/internal/application/usecase/notification"
 	"cvmc/internal/config"
+	notifMemory "cvmc/internal/infrastructure/notification/memory"
 	"cvmc/internal/interfaces/rest/handlers"
 	"cvmc/internal/shared/httpx"
 	"cvmc/internal/shared/middleware"
@@ -26,8 +28,11 @@ type Router struct {
 	handler http.Handler
 }
 
-func NewRouter(cfg config.Config, users userport.Repository, hasher portauth.PasswordHasher, tokens portauth.TokenService, emailSender emailport.Sender, cars carport.Repository, maintenances maintport.Repository, fuelings fuelport.Repository, fipeService *fipeusecase.Service, googleValidator ...portauth.GoogleTokenValidator) *Router {
+func NewRouter(cfg config.Config, users userport.Repository, hasher portauth.PasswordHasher, tokens portauth.TokenService, emailSender emailport.Sender, cars carport.Repository, maintenances maintport.Repository, fuelings fuelport.Repository, fipeService *fipeusecase.Service, notificationService *notificationusecase.Service, googleValidator ...portauth.GoogleTokenValidator) *Router {
 	mux := http.NewServeMux()
+	if notificationService == nil {
+		notificationService = notificationusecase.NewService(notifMemory.NewRepository(), nil, cars, maintenances)
+	}
 	healthHandler := handlers.NewHealthHandler()
 	authHandler := handlers.NewAuthHandler(users, hasher, tokens, emailSender, cfg.CookieDomain, cfg.CookieSecure, googleValidator...)
 	userHandler := handlers.NewUserHandler(users, cars, hasher, tokens, googleValidator...)
@@ -35,6 +40,7 @@ func NewRouter(cfg config.Config, users userport.Repository, hasher portauth.Pas
 	maintenanceHandler := handlers.NewMaintenanceHandler(maintusecase.NewService(maintenances, cars), tokens)
 	fuelHandler := handlers.NewFuelHandler(fuelusecase.NewService(fuelings, cars), tokens)
 	fipeHandler := handlers.NewFipeHandler(fipeService, tokens)
+	notificationHandler := handlers.NewNotificationHandler(notificationService, tokens)
 
 	// Rate limiters
 	globalLimiter := middleware.NewRateLimiter(100.0/60.0, 100, cfg.TrustedProxies...) // 100 req/min burst 100
@@ -110,6 +116,11 @@ func NewRouter(cfg config.Config, users userport.Repository, hasher portauth.Pas
 	mux.Handle("GET /api/v1/fipe/{vehicleType}/brands/{brandId}/models", middleware.Chain(http.HandlerFunc(fipeHandler.ListModels), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
 	mux.Handle("GET /api/v1/fipe/{vehicleType}/brands/{brandId}/models/{modelId}/years", middleware.Chain(http.HandlerFunc(fipeHandler.ListYears), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
 	mux.Handle("GET /api/v1/fipe/{vehicleType}/brands/{brandId}/models/{modelId}/years/{yearId}", middleware.Chain(http.HandlerFunc(fipeHandler.GetVehicleDetail), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
+
+	// Push Notification & Device Token endpoints
+	mux.Handle("POST /api/v1/devices/token", middleware.Chain(http.HandlerFunc(notificationHandler.RegisterDeviceToken), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
+	mux.Handle("DELETE /api/v1/devices/token", middleware.Chain(http.HandlerFunc(notificationHandler.UnregisterDeviceToken), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
+	mux.Handle("POST /api/v1/notifications/test", strictChain(notificationHandler.SendTestNotification))
 
 	// Apply global middleware: Security Headers → CORS → Rate Limit → Body Limit → Mux
 	handler := middleware.SecurityHeaders(
