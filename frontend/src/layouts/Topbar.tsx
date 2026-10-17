@@ -19,6 +19,7 @@ import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
 import DirectionsCarRoundedIcon from "@mui/icons-material/DirectionsCarRounded";
 import { useAuthStore } from "../features/auth/state/auth.store";
 import { authService } from "../features/auth/services/auth.service";
+import { pushNotificationService } from "../services/notifications/push.service";
 
 interface TopbarProps {
   onDrawerToggle: () => void;
@@ -49,6 +50,8 @@ export function Topbar({ onDrawerToggle }: TopbarProps) {
 
   const handleLogout = async () => {
     handleMenuClose();
+    await pushNotificationService.unregisterTokenFromBackend();
+    await pushNotificationService.cleanup();
     try {
       await authService.logout();
     } catch {

@@ -140,6 +140,15 @@ definitions:
         example: senha12345
         type: string
     type: object
+  handlers.RegisterDeviceTokenRequest:
+    properties:
+      platform:
+        example: android
+        type: string
+      token:
+        example: fcm_device_token_string_123
+        type: string
+    type: object
   handlers.RegisterRequest:
     properties:
       email:
@@ -171,6 +180,12 @@ definitions:
     properties:
       email:
         example: co-motorista@cvmc.com
+        type: string
+    type: object
+  handlers.UnregisterDeviceTokenRequest:
+    properties:
+      token:
+        example: fcm_device_token_string_123
         type: string
     type: object
   handlers.UpdateCarRequest:
@@ -939,6 +954,70 @@ paths:
       summary: Remover compartilhamento
       tags:
       - Cars
+  /api/v1/devices/token:
+    delete:
+      consumes:
+      - application/json
+      description: Desvincula o token push FCM do aparelho ao efetuar logout
+      parameters:
+      - description: Token do dispositivo a remover
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UnregisterDeviceTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Remover token FCM do dispositivo
+      tags:
+      - Notifications
+    post:
+      consumes:
+      - application/json
+      description: Vincula ou atualiza o token push FCM do aparelho para o usuário
+        autenticado
+      parameters:
+      - description: Token e plataforma do dispositivo
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.RegisterDeviceTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Registrar token FCM do dispositivo
+      tags:
+      - Notifications
   /api/v1/fipe/{vehicleType}/brands:
     get:
       description: Retorna a lista de marcas para um tipo de veículo com cache multinível
@@ -1323,6 +1402,34 @@ paths:
       summary: Atualizar manutenção
       tags:
       - Maintenances
+  /api/v1/notifications/test:
+    post:
+      description: Envia uma notificação push de teste e verifica alertas preventivos
+        para os dispositivos registrados do usuário autenticado
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Disparar notificação push de teste
+      tags:
+      - Notifications
   /api/v1/user/auth-providers:
     get:
       description: Retorna o status dos provedores de login vinculados à conta do

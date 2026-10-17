@@ -34,6 +34,8 @@ Para navegação geral, retorne ao [Catálogo Canônico](../index.md).
 | `ALLOWED_ORIGINS` | Lista de origens permitidas para CORS (web e mobile) | `http://localhost:5173,https://localhost,capacitor://localhost` | Sim (`https://cvmc.yurinogueira.dev.br,https://localhost,capacitor://localhost`) |
 | `GOOGLE_CLIENT_ID` | OAuth 2.0 Client ID do Google Cloud para validação backend | - | Sim (em produção com login Google) |
 | `VITE_GOOGLE_CLIENT_ID` | OAuth 2.0 Client ID do Google Cloud para GIS frontend | - | Sim (em produção com login Google) |
+| `FIREBASE_CREDENTIALS_JSON` | JSON da conta de serviço do Firebase para envio push FCM v1 | - | Opcional (opera em no-op se omitido) |
+| `FIREBASE_CREDENTIALS_FILE` | Caminho alternativo do arquivo JSON da conta de serviço do Firebase | - | Opcional (opera em no-op se omitido) |
 
 
 ---
