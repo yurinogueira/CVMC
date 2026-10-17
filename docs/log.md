@@ -6,14 +6,19 @@ tags:
   - log
   - audit
   - history
-timestamp: 2026-10-11
+timestamp: 2026-10-16
 ---
 
 # 🕒 Diário de Bordo & Histórico Cronológico — CVMC
 
-Este documento funciona como o índice mestre de todas as mudanças de engenharia aplicadas ao projeto **CVMC (Como Vai Meu Carro)**. Cada entrada detalhada reside em um arquivo diário específico na pasta [docs/logs/2026-10-10.md](logs/2026-10-10.md), garantindo economia de tokens e histórico auditável.
+Este documento funciona como o índice mestre de todas as mudanças de engenharia aplicadas ao projeto **CVMC (Como Vai Meu Carro)**. Cada entrada detalhada reside em um arquivo diário específico na pasta [docs/logs/2026-10-16.md](logs/2026-10-16.md), garantindo economia de tokens e histórico auditável.
 
 Para navegação geral, retorne ao [Catálogo Canônico](index.md).
+
+## 📅 [2026-10-16](logs/2026-10-16.md) — Prevenção de Vazamento de Tokens em LocalStorage
+- **Isolamento de Tokens no Frontend**: Refatoração do `safeStorage.setSecureItem` e `useAuthStore` para impedir terminantemente o salvamento ou leitura de tokens JWT (`cvmc.access_token` e `cvmc.refresh_token`) no `localStorage` de navegadores web.
+- **Isolamento de Runtime Mobile**: Restrição de persistência segura via `@capacitor/preferences` estritamente ao ambiente nativo (`Capacitor.isNativePlatform()`), assegurando que na web a aplicação opera exclusivamente com cookies `HttpOnly` conforme a [ADR 0002](adrs/0002-httponly-cookie-sessions.md).
+- **Testes de Segurança**: Adicionada suíte de testes em `src/services/storage/storage.test.ts` validando isolamento de armazenamento local na web.
 
 ## 📅 [2026-10-11](logs/2026-10-11.md) — Empacotamento Android com Capacitor e Configuração de Build (#92)
 - **Capacitor 8 no Frontend**: Configuração do `capacitor.config.ts` com `appId: com.cvmc.app`, inicialização do projeto `frontend/android` e scripts `cap:sync`, `cap:open` e `cap:build`.

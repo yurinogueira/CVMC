@@ -1,3 +1,4 @@
+import { Capacitor } from "@capacitor/core";
 import { Preferences } from "@capacitor/preferences";
 
 export const safeStorage = {
@@ -26,19 +27,24 @@ export const safeStorage = {
     }
   },
 
-  // Asynchronous token storage using Capacitor Preferences for native mobile persistence
+  // Asynchronous token storage using Capacitor Preferences strictly for native mobile persistence.
+  // On web browsers, tokens are never stored in localStorage to preserve HttpOnly cookie isolation (ADR 0002).
   async getSecureItem(key: string): Promise<string | null> {
+    if (!Capacitor.isNativePlatform()) {
+      return null;
+    }
     try {
       const { value } = await Preferences.get({ key });
-      if (value !== null) return value;
+      return value;
     } catch {
-      // fallback to safeStorage.getItem
+      return null;
     }
-    return this.getItem(key);
   },
 
   async setSecureItem(key: string, value: string): Promise<void> {
-    this.setItem(key, value);
+    if (!Capacitor.isNativePlatform()) {
+      return;
+    }
     try {
       await Preferences.set({ key, value });
     } catch {
@@ -47,7 +53,10 @@ export const safeStorage = {
   },
 
   async removeSecureItem(key: string): Promise<void> {
-    this.removeItem(key);
+    if (!Capacitor.isNativePlatform()) {
+      this.removeItem(key);
+      return;
+    }
     try {
       await Preferences.remove({ key });
     } catch {

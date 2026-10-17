@@ -4,6 +4,7 @@ import { Capacitor } from "@capacitor/core";
 import { App as CapApp } from "@capacitor/app";
 import { StatusBar, Style } from "@capacitor/status-bar";
 import { SplashScreen } from "@capacitor/splash-screen";
+import { initMobileAuthSession } from "./features/auth/state/auth.store";
 import { AppRoutes } from "./routes";
 
 function MobileAppBridge() {
@@ -14,6 +15,8 @@ function MobileAppBridge() {
     if (!Capacitor.isNativePlatform()) {
       return;
     }
+
+    void initMobileAuthSession();
 
     // Configure Status Bar (Light background with dark icons for optimal contrast)
     void (async () => {
