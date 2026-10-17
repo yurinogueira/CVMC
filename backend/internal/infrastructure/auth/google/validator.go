@@ -11,10 +11,12 @@ import (
 )
 
 var (
-	ErrInvalidToken        = errors.New("invalid google id token")
-	ErrEmailNotVerified    = errors.New("google email is not verified")
-	ErrMissingSubjectClaim = errors.New("google token missing subject claim")
-	ErrMissingEmailClaim   = errors.New("google token missing email claim")
+	ErrInvalidToken            = errors.New("invalid google id token")
+	ErrEmailNotVerified        = errors.New("google email is not verified")
+	ErrMissingSubjectClaim     = errors.New("google token missing subject claim")
+	ErrMissingEmailClaim       = errors.New("google token missing email claim")
+	ErrGoogleAuthNotConfigured = errors.New("google authentication client id is not configured")
+	ErrAudienceMismatch        = errors.New("google token audience mismatch")
 )
 
 type Validator struct {
@@ -28,6 +30,10 @@ func NewValidator(clientID string) *Validator {
 }
 
 func (v *Validator) Validate(ctx context.Context, token string) (*portauth.GoogleTokenPayload, error) {
+	if v.clientID == "" {
+		return nil, ErrGoogleAuthNotConfigured
+	}
+
 	cleanToken := strings.TrimSpace(token)
 	if cleanToken == "" {
 		return nil, ErrInvalidToken
@@ -36,6 +42,10 @@ func (v *Validator) Validate(ctx context.Context, token string) (*portauth.Googl
 	payload, err := idtoken.Validate(ctx, cleanToken, v.clientID)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrInvalidToken, err)
+	}
+
+	if payload.Audience != v.clientID {
+		return nil, ErrAudienceMismatch
 	}
 
 	if payload.Subject == "" {
