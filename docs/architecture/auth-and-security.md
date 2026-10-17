@@ -27,9 +27,10 @@ Para navegação geral, retorne ao [Catálogo Canônico](../index.md).
     - `Secure: true` (obrigatório em produção / conexões HTTPS).
     - `SameSite: Lax` (proteção nativa contra CSRF em requisições de terceiros).
     - `Domain`: configurado para permitir navegação transparente em subdomínios em produção (`.cvmc.yurinogueira.dev.br`).
-- **Zero Tokens no LocalStorage**:
-  - O frontend React nunca armazena tokens JWT em `localStorage` ou `sessionStorage`.
+- **Zero Tokens no LocalStorage (Web)**:
+  - No navegador web, o frontend React nunca armazena tokens JWT em `localStorage` ou `sessionStorage`, prevenindo roubo de credenciais via ataques XSS.
   - Apenas metadados não sensíveis de perfil (como nome e preferências visuais) são cacheados na store Zustand.
+  - No ambiente móvel nativo (Android via Capacitor), os tokens são mantidos com isolamento em `@capacitor/preferences` (SharedPreferences nativo criptografado pelo OS) e inicializados estritamente quando `Capacitor.isNativePlatform()` é verdadeiro.
 
 ---
 

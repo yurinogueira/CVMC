@@ -37,8 +37,9 @@ Adotamos o transporte exclusivo de tokens de autenticação via cookies com flag
 ## ⚖️ Consequências
 
 ### Positivas:
-- **Proteção Completa contra XSS**: Tokens tornam-se inacessíveis para qualquer código JavaScript malicioso em execução no cliente.
+- **Proteção Completa contra XSS**: Tokens tornam-se inacessíveis para qualquer código JavaScript malicioso em execução no cliente web, pois nunca são persistidos em `window.localStorage`.
 - **Sincronia Automática**: Requisições para o backend enviam credenciais automaticamente via cookies.
+- **Suporte Mobile Controlado**: Na aplicação nativa móvel (Capacitor), tokens são persistidos isoladamente via `@capacitor/preferences` (sandbox do sistema operacional móvel), sem vazar para o storage do navegador web.
 
 ---
 

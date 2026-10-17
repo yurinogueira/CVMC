@@ -31,14 +31,12 @@ const getStoredUser = (): User | null => {
 
 export const useAuthStore = create<AuthState>((set) => {
   const user = getStoredUser();
-  const accessToken = safeStorage.getItem("cvmc.access_token");
-  const refreshToken = safeStorage.getItem("cvmc.refresh_token");
 
   return {
     user,
     isAuthenticated: Boolean(user),
-    accessToken,
-    refreshToken,
+    accessToken: null,
+    refreshToken: null,
     setUser: (user) => {
       safeStorage.setItem("cvmc.user", JSON.stringify(user));
       set({ user, isAuthenticated: true });
@@ -81,3 +79,14 @@ export const useAuthStore = create<AuthState>((set) => {
     },
   };
 });
+
+export const initMobileAuthSession = async (): Promise<void> => {
+  const accessToken = await safeStorage.getSecureItem("cvmc.access_token");
+  const refreshToken = await safeStorage.getSecureItem("cvmc.refresh_token");
+  if (accessToken) {
+    useAuthStore.getState().setTokens({
+      accessToken,
+      refreshToken: refreshToken ?? undefined,
+    });
+  }
+};
