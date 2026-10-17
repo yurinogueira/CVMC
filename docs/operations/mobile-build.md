@@ -170,6 +170,23 @@ No mesmo projeto do Google Cloud onde reside o Client ID Web (`ID do cliente par
 
 ---
 
+## 🔔 Notificações Push com Firebase Cloud Messaging (FCM)
+
+O aplicativo mobile integra o plugin oficial `@capacitor/push-notifications` conectado à API **Firebase Cloud Messaging HTTP v1** no backend Go:
+
+1. **Permissões Android 13+ (API 33+)**:
+   - O `AndroidManifest.xml` declara `android.permission.POST_NOTIFICATIONS` e o canal padrão `cvmc_alerts`.
+   - Ao autenticar no aplicativo nativo, o `pushNotificationService` cria o canal `cvmc_alerts` (importância máxima, som e vibração ativos) e solicita permissão em tempo de execução.
+2. **Ciclo de Vida do Device Token**:
+   - No login/inicialização, o token FCM obtido é registrado em `POST /api/v1/devices/token` (`platform: "android"`).
+   - No logout (`Topbar.tsx`), o token é imediatamente desvinculado via `DELETE /api/v1/devices/token` para evitar notificações para outra conta no mesmo aparelho.
+   - Tokens desinstalados ou expirados (`UNREGISTERED`) são limpos automaticamente pelo backend no momento do disparo.
+3. **Configuração do `google-services.json`**:
+   - Copie `frontend/android/app/google-services.json.example` para `frontend/android/app/google-services.json` (ignorado pelo Git) com as credenciais do projeto Firebase associado ao pacote `com.cvmc.app`.
+   - No backend, configure `FIREBASE_CREDENTIALS_JSON` ou `FIREBASE_CREDENTIALS_FILE` com a chave da conta de serviço do Firebase.
+
+---
+
 ## 🧪 Validação e Checklist Pré-Publicação
 
 Antes de submeter uma nova versão à Google Play:
@@ -178,4 +195,5 @@ Antes de submeter uma nova versão à Google Play:
 - [ ] Validar a navegação via hardware back button no dispositivo físico ou emulador Android.
 - [ ] Validar autenticação e silent refresh funcionando via conexão externa HTTPS.
 - [ ] Validar login e vínculo com conta Google via Credential Manager nativo.
+- [ ] Validar permissão `POST_NOTIFICATIONS`, recebimento de push e navegação via *deep-link*.
 - [ ] Testar Safe Area Insets em aparelhos com entalhe/camera cutout e barra de gestos.
