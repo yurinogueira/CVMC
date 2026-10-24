@@ -29,6 +29,7 @@ import TwoWheelerRoundedIcon from "@mui/icons-material/TwoWheelerRounded";
 import LocalShippingRoundedIcon from "@mui/icons-material/LocalShippingRounded";
 import HistoryRoundedIcon from "@mui/icons-material/HistoryRounded";
 import EventRepeatRoundedIcon from "@mui/icons-material/EventRepeatRounded";
+import TuneRoundedIcon from "@mui/icons-material/TuneRounded";
 import { useDocumentTitle } from "../../shared";
 import { brandColors } from "../../../styles/theme";
 import { carService } from "../../cars/services/car.service";
@@ -42,6 +43,7 @@ import {
 import { UpcomingMaintenanceCard } from "../components/UpcomingMaintenanceCard";
 import { MaintenanceCard } from "../components/MaintenanceCard";
 import { AddMaintenanceDialog } from "../components/AddMaintenanceDialog";
+import { MaintenanceIntervalsDialog } from "../components/MaintenanceIntervalsDialog";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -82,6 +84,7 @@ export function MaintenancePage() {
     useState<Maintenance | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [intervalsDialogOpen, setIntervalsDialogOpen] = useState(false);
 
   const refreshData = useCallback(
     async (targetCarId?: string) => {
@@ -514,27 +517,59 @@ export function MaintenancePage() {
           {selectedUpcoming && selectedUpcoming.items.length > 0 && (
             <Box sx={{ mb: 5 }}>
               <Stack
-                direction="row"
-                spacing={1}
-                sx={{ alignItems: "center", mb: 2 }}
+                direction={{ xs: "column", sm: "row" }}
+                spacing={1.5}
+                sx={{
+                  alignItems: { xs: "flex-start", sm: "center" },
+                  justifyContent: "space-between",
+                  mb: 2,
+                }}
               >
-                <EventRepeatRoundedIcon color="primary" />
-                <Box>
-                  <Typography
-                    component="h2"
-                    variant="h6"
-                    sx={{ fontWeight: 800, lineHeight: 1.2 }}
-                  >
-                    Próximas Manutenções Preventivas
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    sx={{ color: "text.secondary" }}
-                  >
-                    Monitoramento automático por quilometragem ou 12 meses para{" "}
-                    <strong>{selectedUpcoming.carName}</strong>
-                  </Typography>
-                </Box>
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  sx={{ alignItems: "center" }}
+                >
+                  <EventRepeatRoundedIcon color="primary" />
+                  <Box>
+                    <Typography
+                      component="h2"
+                      variant="h6"
+                      sx={{ fontWeight: 800, lineHeight: 1.2 }}
+                    >
+                      Próximas Manutenções Preventivas
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{ color: "text.secondary" }}
+                    >
+                      Monitoramento automático por quilometragem e tempo para{" "}
+                      <strong>{selectedUpcoming.carName}</strong>
+                    </Typography>
+                  </Box>
+                </Stack>
+
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<TuneRoundedIcon />}
+                  onClick={() => setIntervalsDialogOpen(true)}
+                  disabled={!selectedCar}
+                  sx={{
+                    borderRadius: 2,
+                    textTransform: "none",
+                    fontWeight: 700,
+                    borderColor: "#CBD5E1",
+                    color: "text.primary",
+                    "&:hover": {
+                      borderColor: "primary.main",
+                      bgcolor: "rgba(2, 132, 199, 0.04)",
+                      color: "primary.main",
+                    },
+                  }}
+                >
+                  Ajustar Intervalos
+                </Button>
               </Stack>
 
               <Grid container spacing={2.5}>
@@ -734,6 +769,17 @@ export function MaintenancePage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Maintenance Intervals Dialog */}
+      <MaintenanceIntervalsDialog
+        open={intervalsDialogOpen}
+        car={selectedCar}
+        onClose={() => setIntervalsDialogOpen(false)}
+        onSaved={async () => {
+          await refreshData(selectedCarId);
+          setToastMessage("Intervalos de revisão atualizados com sucesso!");
+        }}
+      />
 
       {/* Success Toast */}
       <Snackbar

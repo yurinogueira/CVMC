@@ -34,6 +34,7 @@ import DirectionsCarRoundedIcon from "@mui/icons-material/DirectionsCarRounded";
 import TwoWheelerRoundedIcon from "@mui/icons-material/TwoWheelerRounded";
 import LocalShippingRoundedIcon from "@mui/icons-material/LocalShippingRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
+import TuneRoundedIcon from "@mui/icons-material/TuneRounded";
 
 import { carService } from "../services/car.service";
 import { Car } from "../types/car.types";
@@ -41,6 +42,7 @@ import { VehicleImage } from "../components/VehicleImage";
 import { maintenanceService } from "../../maintenance/services/maintenance.service";
 import { Maintenance } from "../../maintenance/types/maintenance.types";
 import { MaintenanceCard } from "../../maintenance/components/MaintenanceCard";
+import { MaintenanceIntervalsDialog } from "../../maintenance/components/MaintenanceIntervalsDialog";
 import { fuelService } from "../../fuel/services/fuel.service";
 import { Fueling } from "../../fuel/types/fuel.types";
 import { FuelCard } from "../../fuel/components/FuelCard";
@@ -78,6 +80,7 @@ export function VehicleDetailsPage() {
     useState<Maintenance | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [intervalsDialogOpen, setIntervalsDialogOpen] = useState(false);
 
   useDocumentTitle(car ? `${car.name} - Detalhes` : "Detalhes do Veículo");
 
@@ -515,6 +518,29 @@ export function VehicleDetailsPage() {
                       py: 0.5,
                     }}
                   />
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<TuneRoundedIcon sx={{ fontSize: 16 }} />}
+                    onClick={() => setIntervalsDialogOpen(true)}
+                    sx={{
+                      borderRadius: 1.5,
+                      fontWeight: 700,
+                      textTransform: "none",
+                      fontSize: "0.8125rem",
+                      py: 0.5,
+                      px: 1.5,
+                      borderColor: "#CBD5E1",
+                      color: "text.primary",
+                      "&:hover": {
+                        borderColor: "primary.main",
+                        bgcolor: "rgba(2, 132, 199, 0.04)",
+                        color: "primary.main",
+                      },
+                    }}
+                  >
+                    Ajustar Intervalos de Revisão
+                  </Button>
                 </Stack>
 
                 <Divider sx={{ my: 2 }} />
@@ -1052,18 +1078,45 @@ export function VehicleDetailsPage() {
                 />
               )}
             </Stack>
-            <Button
-              variant="contained"
-              size="small"
-              startIcon={<AddRoundedIcon />}
-              onClick={() =>
-                navigate(`/vehicles/${car?.id || id}/maintenance/new`)
-              }
-              disabled={!car}
-              sx={{ borderRadius: 2, width: { xs: "100%", sm: "auto" } }}
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={1}
+              sx={{ width: { xs: "100%", sm: "auto" } }}
             >
-              Registrar Manutenção
-            </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<TuneRoundedIcon />}
+                onClick={() => setIntervalsDialogOpen(true)}
+                disabled={!car}
+                sx={{
+                  borderRadius: 2,
+                  textTransform: "none",
+                  fontWeight: 700,
+                  borderColor: "#CBD5E1",
+                  color: "text.primary",
+                  "&:hover": {
+                    borderColor: "primary.main",
+                    bgcolor: "rgba(2, 132, 199, 0.04)",
+                    color: "primary.main",
+                  },
+                }}
+              >
+                Ajustar Intervalos
+              </Button>
+              <Button
+                variant="contained"
+                size="small"
+                startIcon={<AddRoundedIcon />}
+                onClick={() =>
+                  navigate(`/vehicles/${car?.id || id}/maintenance/new`)
+                }
+                disabled={!car}
+                sx={{ borderRadius: 2 }}
+              >
+                Registrar Manutenção
+              </Button>
+            </Stack>
           </Stack>
 
           {loadingMaintenances ? (
@@ -1304,6 +1357,17 @@ export function VehicleDetailsPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Maintenance Intervals Dialog */}
+      <MaintenanceIntervalsDialog
+        open={intervalsDialogOpen}
+        car={car}
+        onClose={() => setIntervalsDialogOpen(false)}
+        onSaved={(updatedCar) => {
+          setCar(updatedCar);
+          setToastMessage("Intervalos de revisão atualizados com sucesso!");
+        }}
+      />
 
       {/* Success Toast */}
       <Snackbar

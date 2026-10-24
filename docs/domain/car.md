@@ -24,18 +24,30 @@ Para navegação geral, retorne ao [Catálogo Canônico](../index.md).
 Estruturado em `backend/internal/domain/car/car.go`:
 
 ```go
+type MaintenanceIntervalConfig struct {
+    IntervalKm     int `json:"intervalKm" bson:"intervalKm"`
+    IntervalMonths int `json:"intervalMonths" bson:"intervalMonths"`
+}
+
 type Car struct {
-    ID        string    `json:"id"`
-    UserID    string    `json:"userId"`
-    Plate     string    `json:"plate"`
-    Brand     string    `json:"brand"`
-    Model     string    `json:"model"`
-    Year      int       `json:"year"`
-    Color     string    `json:"color"`
-    CurrentKm int       `json:"currentKm"`
-    FipeCode  string    `json:"fipeCode,omitempty"`
-    CreatedAt time.Time `json:"createdAt"`
-    UpdatedAt time.Time `json:"updatedAt,omitempty"`
+    ID                   string                               `json:"id"`
+    OwnerID              string                               `json:"ownerId"`
+    Name                 string                               `json:"name"`
+    Manufacturer         string                               `json:"manufacturer"`
+    Model                string                               `json:"model"`
+    YearManufacture      int                                  `json:"yearManufacture"`
+    YearModel            int                                  `json:"yearModel"`
+    InitialMileage       int                                  `json:"initialMileage,omitempty"`
+    LastMileage          int                                  `json:"lastMileage"`
+    VehicleType          string                               `json:"vehicleType,omitempty"`
+    ImageUrl             string                               `json:"imageUrl,omitempty"`
+    FIPECode             string                               `json:"fipeCode,omitempty"`
+    FIPEPrice            string                               `json:"fipePrice,omitempty"`
+    Fuel                 string                               `json:"fuel,omitempty"`
+    SharedWith           []string                             `json:"sharedWith,omitempty"`
+    MaintenanceIntervals map[string]MaintenanceIntervalConfig `json:"maintenanceIntervals,omitempty"`
+    CreatedAt            time.Time                            `json:"createdAt"`
+    UpdatedAt            time.Time                            `json:"updatedAt"`
 }
 ```
 
@@ -43,14 +55,15 @@ type Car struct {
 
 ## 📋 Regras de Negócio e Validações
 
-1. **Formato e Unicidade da Placa**:
-   - A placa deve ser normalizada em letras maiúsculas e sem pontuação (suporta tanto o padrão antigo brasileiro `ABC1234` quanto o padrão Mercosul `ABC1D23`).
-   - Um usuário não pode cadastrar dois veículos com a mesma placa.
-2. **Atualização Monotônica da Quilometragem**:
-   - Abastecimentos e manutenções podem atualizar o `CurrentKm` do veículo caso a quilometragem informada seja superior à registrada atualmente.
-   - Não é permitido registrar quilometragem inferior à última registrada sem justificativa de troca de painel/odômetro.
-3. **Associação FIPE**:
-   - Cada veículo pode ser vinculado opcionalmente a um código FIPE (`FipeCode`) para cálculo automático do valor de mercado e histórico de depreciação.
+1. **Atualização Monotônica da Quilometragem**:
+   - Abastecimentos e manutenções podem atualizar o `LastMileage` do veículo caso a quilometragem informada seja superior à registrada atualmente.
+   - Não é permitido registrar quilometragem inferior à última registrada sem justificativa.
+2. **Associação FIPE**:
+   - Cada veículo pode ser vinculado opcionalmente a um código FIPE (`FipeCode`) para cálculo automático do valor de referência de mercado.
+3. **Intervalos Personalizados de Revisão Preventiva**:
+   - Cada veículo armazena em `MaintenanceIntervals` suas metas específicas de quilometragem e meses para cada item preventivo (`Óleo de Motor`, filtros, etc.).
+   - Quando não configurado, o sistema adota os valores recomendados de fábrica para a categoria (`cars`, `trucks`, `motorcycles`).
+   - A estrutura é aberta e suporta novos componentes no futuro sem migrações de schema.
 
 ---
 

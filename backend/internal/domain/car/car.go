@@ -2,22 +2,28 @@ package car
 
 import "time"
 
+type MaintenanceIntervalConfig struct {
+	IntervalKm     int `json:"intervalKm" bson:"intervalKm"`
+	IntervalMonths int `json:"intervalMonths" bson:"intervalMonths"`
+}
+
 type Car struct {
-	ID              string    `json:"id"`
-	OwnerID         string    `json:"ownerId"`
-	Name            string    `json:"name"`
-	Manufacturer    string    `json:"manufacturer"`
-	Model           string    `json:"model"`
-	YearManufacture int       `json:"yearManufacture"`
-	YearModel       int       `json:"yearModel"`
-	InitialMileage  int       `json:"initialMileage,omitempty"`
-	LastMileage     int       `json:"lastMileage"`
-	VehicleType     string    `json:"vehicleType,omitempty"`
-	ImageUrl        string    `json:"imageUrl,omitempty"`
-	FIPECode        string    `json:"fipeCode,omitempty"`
-	FIPEPrice       string    `json:"fipePrice,omitempty"`
-	Fuel            string    `json:"fuel,omitempty"`
-	SharedWith      []string  `json:"sharedWith,omitempty"`
-	CreatedAt       time.Time `json:"createdAt"`
-	UpdatedAt       time.Time `json:"updatedAt"`
+	ID                   string                               `json:"id"`
+	OwnerID              string                               `json:"ownerId"`
+	Name                 string                               `json:"name"`
+	Manufacturer         string                               `json:"manufacturer"`
+	Model                string                               `json:"model"`
+	YearManufacture      int                                  `json:"yearManufacture"`
+	YearModel            int                                  `json:"yearModel"`
+	InitialMileage       int                                  `json:"initialMileage,omitempty"`
+	LastMileage          int                                  `json:"lastMileage"`
+	VehicleType          string                               `json:"vehicleType,omitempty"`
+	ImageUrl             string                               `json:"imageUrl,omitempty"`
+	FIPECode             string                               `json:"fipeCode,omitempty"`
+	FIPEPrice            string                               `json:"fipePrice,omitempty"`
+	Fuel                 string                               `json:"fuel,omitempty"`
+	SharedWith           []string                             `json:"sharedWith,omitempty"`
+	MaintenanceIntervals map[string]MaintenanceIntervalConfig `json:"maintenanceIntervals,omitempty"`
+	CreatedAt            time.Time                            `json:"createdAt"`
+	UpdatedAt            time.Time                            `json:"updatedAt"`
 }

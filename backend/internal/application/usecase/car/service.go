@@ -44,17 +44,18 @@ type CreateInput struct {
 }
 
 type UpdateInput struct {
-	Name            string
-	Manufacturer    string
-	Model           string
-	YearManufacture int
-	YearModel       int
-	LastMileage     int
-	VehicleType     string
-	ImageUrl        string
-	FIPECode        string
-	FIPEPrice       string
-	Fuel            string
+	Name                 string
+	Manufacturer         string
+	Model                string
+	YearManufacture      int
+	YearModel            int
+	LastMileage          int
+	VehicleType          string
+	ImageUrl             string
+	FIPECode             string
+	FIPEPrice            string
+	Fuel                 string
+	MaintenanceIntervals map[string]domaincar.MaintenanceIntervalConfig
 }
 
 func NewService(cars carport.Repository, users userport.Repository) *Service {
@@ -180,6 +181,9 @@ func (s *Service) Update(ctx context.Context, actorID, carID string, input Updat
 	}
 	if input.Fuel != "" {
 		car.Fuel = strings.TrimSpace(input.Fuel)
+	}
+	if input.MaintenanceIntervals != nil {
+		car.MaintenanceIntervals = input.MaintenanceIntervals
 	}
 	car.UpdatedAt = s.now().UTC()
 	return s.cars.Update(ctx, car)

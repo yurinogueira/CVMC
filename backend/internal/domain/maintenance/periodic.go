@@ -239,6 +239,19 @@ func CalculateCarUpcoming(car domaincar.Car, maintenances []Maintenance, now tim
 	overdueCount := 0
 
 	for _, rule := range rules {
+		intervalKm := rule.IntervalKm
+		intervalMonths := rule.IntervalMonths
+		if car.MaintenanceIntervals != nil {
+			if custom, exists := car.MaintenanceIntervals[rule.Type]; exists {
+				if custom.IntervalKm > 0 {
+					intervalKm = custom.IntervalKm
+				}
+				if custom.IntervalMonths > 0 {
+					intervalMonths = custom.IntervalMonths
+				}
+			}
+		}
+
 		var (
 			lastMileage     int
 			lastDate        time.Time
@@ -258,8 +271,8 @@ func CalculateCarUpcoming(car domaincar.Car, maintenances []Maintenance, now tim
 			lastDate = baseDate
 		}
 
-		nextDueMileage := lastMileage + rule.IntervalKm
-		nextDueDate := lastDate.AddDate(0, rule.IntervalMonths, 0)
+		nextDueMileage := lastMileage + intervalKm
+		nextDueDate := lastDate.AddDate(0, intervalMonths, 0)
 
 		remainingKm := nextDueMileage - car.LastMileage
 		diffHours := nextDueDate.Sub(now).Hours()
@@ -271,8 +284,8 @@ func CalculateCarUpcoming(car domaincar.Car, maintenances []Maintenance, now tim
 			kmDriven = 0
 		}
 		kmPct := 0
-		if rule.IntervalKm > 0 {
-			kmPct = (kmDriven * 100) / rule.IntervalKm
+		if intervalKm > 0 {
+			kmPct = (kmDriven * 100) / intervalKm
 		}
 
 		totalPeriodDays := int(nextDueDate.Sub(lastDate).Hours() / 24.0)
@@ -315,8 +328,8 @@ func CalculateCarUpcoming(car domaincar.Car, maintenances []Maintenance, now tim
 			Type:            rule.Type,
 			Label:           rule.Label,
 			Status:          status,
-			IntervalKm:      rule.IntervalKm,
-			IntervalMonths:  rule.IntervalMonths,
+			IntervalKm:      intervalKm,
+			IntervalMonths:  intervalMonths,
 			HasHistory:      hasHistory,
 			LastPerformedAt: lastPerformedAt,
 			LastMileage:     lastMileage,

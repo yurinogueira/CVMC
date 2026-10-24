@@ -15,23 +15,24 @@ import (
 )
 
 type carDoc struct {
-	ID              string    `bson:"_id"`
-	OwnerID         string    `bson:"ownerId"`
-	Name            string    `bson:"name"`
-	Manufacturer    string    `bson:"manufacturer"`
-	Model           string    `bson:"model"`
-	YearManufacture int       `bson:"yearManufacture"`
-	YearModel       int       `bson:"yearModel"`
-	InitialMileage  int       `bson:"initialMileage,omitempty"`
-	LastMileage     int       `bson:"lastMileage"`
-	VehicleType     string    `bson:"vehicleType,omitempty"`
-	ImageUrl        string    `bson:"imageUrl,omitempty"`
-	FIPECode        string    `bson:"fipeCode,omitempty"`
-	FIPEPrice       string    `bson:"fipePrice,omitempty"`
-	Fuel            string    `bson:"fuel,omitempty"`
-	SharedWith      []string  `bson:"sharedWith"`
-	CreatedAt       time.Time `bson:"createdAt"`
-	UpdatedAt       time.Time `bson:"updatedAt"`
+	ID                   string                                         `bson:"_id"`
+	OwnerID              string                                         `bson:"ownerId"`
+	Name                 string                                         `bson:"name"`
+	Manufacturer         string                                         `bson:"manufacturer"`
+	Model                string                                         `bson:"model"`
+	YearManufacture      int                                            `bson:"yearManufacture"`
+	YearModel            int                                            `bson:"yearModel"`
+	InitialMileage       int                                            `bson:"initialMileage,omitempty"`
+	LastMileage          int                                            `bson:"lastMileage"`
+	VehicleType          string                                         `bson:"vehicleType,omitempty"`
+	ImageUrl             string                                         `bson:"imageUrl,omitempty"`
+	FIPECode             string                                         `bson:"fipeCode,omitempty"`
+	FIPEPrice            string                                         `bson:"fipePrice,omitempty"`
+	Fuel                 string                                         `bson:"fuel,omitempty"`
+	SharedWith           []string                                       `bson:"sharedWith"`
+	MaintenanceIntervals map[string]domaincar.MaintenanceIntervalConfig `bson:"maintenanceIntervals,omitempty"`
+	CreatedAt            time.Time                                      `bson:"createdAt"`
+	UpdatedAt            time.Time                                      `bson:"updatedAt"`
 }
 
 type Repository struct {
@@ -258,23 +259,24 @@ func toCarDoc(c domaincar.Car) carDoc {
 		shared = []string{}
 	}
 	return carDoc{
-		ID:              c.ID,
-		OwnerID:         c.OwnerID,
-		Name:            strings.TrimSpace(c.Name),
-		Manufacturer:    strings.TrimSpace(c.Manufacturer),
-		Model:           strings.TrimSpace(c.Model),
-		YearManufacture: c.YearManufacture,
-		YearModel:       c.YearModel,
-		InitialMileage:  c.InitialMileage,
-		LastMileage:     c.LastMileage,
-		VehicleType:     strings.TrimSpace(c.VehicleType),
-		ImageUrl:        strings.TrimSpace(c.ImageUrl),
-		FIPECode:        strings.TrimSpace(c.FIPECode),
-		FIPEPrice:       strings.TrimSpace(c.FIPEPrice),
-		Fuel:            strings.TrimSpace(c.Fuel),
-		SharedWith:      shared,
-		CreatedAt:       c.CreatedAt,
-		UpdatedAt:       c.UpdatedAt,
+		ID:                   c.ID,
+		OwnerID:              c.OwnerID,
+		Name:                 strings.TrimSpace(c.Name),
+		Manufacturer:         strings.TrimSpace(c.Manufacturer),
+		Model:                strings.TrimSpace(c.Model),
+		YearManufacture:      c.YearManufacture,
+		YearModel:            c.YearModel,
+		InitialMileage:       c.InitialMileage,
+		LastMileage:          c.LastMileage,
+		VehicleType:          strings.TrimSpace(c.VehicleType),
+		ImageUrl:             strings.TrimSpace(c.ImageUrl),
+		FIPECode:             strings.TrimSpace(c.FIPECode),
+		FIPEPrice:            strings.TrimSpace(c.FIPEPrice),
+		Fuel:                 strings.TrimSpace(c.Fuel),
+		SharedWith:           shared,
+		MaintenanceIntervals: c.MaintenanceIntervals,
+		CreatedAt:            c.CreatedAt,
+		UpdatedAt:            c.UpdatedAt,
 	}
 }
 
@@ -284,22 +286,23 @@ func toDomainCar(d carDoc) domaincar.Car {
 		shared = []string{}
 	}
 	return domaincar.Car{
-		ID:              d.ID,
-		OwnerID:         d.OwnerID,
-		Name:            d.Name,
-		Manufacturer:    d.Manufacturer,
-		Model:           d.Model,
-		YearManufacture: d.YearManufacture,
-		YearModel:       d.YearModel,
-		InitialMileage:  d.InitialMileage,
-		LastMileage:     d.LastMileage,
-		VehicleType:     d.VehicleType,
-		ImageUrl:        d.ImageUrl,
-		FIPECode:        d.FIPECode,
-		FIPEPrice:       d.FIPEPrice,
-		Fuel:            d.Fuel,
-		SharedWith:      shared,
-		CreatedAt:       d.CreatedAt,
-		UpdatedAt:       d.UpdatedAt,
+		ID:                   d.ID,
+		OwnerID:              d.OwnerID,
+		Name:                 d.Name,
+		Manufacturer:         d.Manufacturer,
+		Model:                d.Model,
+		YearManufacture:      d.YearManufacture,
+		YearModel:            d.YearModel,
+		InitialMileage:       d.InitialMileage,
+		LastMileage:          d.LastMileage,
+		VehicleType:          d.VehicleType,
+		ImageUrl:             d.ImageUrl,
+		FIPECode:             d.FIPECode,
+		FIPEPrice:            d.FIPEPrice,
+		Fuel:                 d.Fuel,
+		SharedWith:           shared,
+		MaintenanceIntervals: d.MaintenanceIntervals,
+		CreatedAt:            d.CreatedAt,
+		UpdatedAt:            d.UpdatedAt,
 	}
 }

@@ -134,3 +134,97 @@ func TestService_GetUpcomingByCar_CarAndMotorcycleIntervals(t *testing.T) {
 		t.Errorf("expected ErrMaintenanceForbidden for unauthorized user, got %v", err)
 	}
 }
+
+func TestService_GetUpcomingByCar_CustomIntervals(t *testing.T) {
+	ctx := context.Background()
+	carRepo := carMemory.NewRepository()
+	maintRepo := maintMemory.NewRepository()
+	svc := NewService(maintRepo, carRepo)
+
+	fixedNow := time.Date(2026, 10, 24, 12, 0, 0, 0, time.UTC)
+	svc.now = func() time.Time { return fixedNow }
+
+	// Vehicle with custom intervals: Oil at 5,000 km / 6 months; Fuel filter at 15,000 km / 24 months
+	car, err := carRepo.Create(ctx, domaincar.Car{
+		OwnerID:        "user-1",
+		Name:           "Corollinha Custom",
+		Manufacturer:   "Toyota",
+		Model:          "Corolla",
+		InitialMileage: 50000,
+		LastMileage:    54200, // 4,200 km since baseline
+		VehicleType:    "cars",
+		CreatedAt:      fixedNow.AddDate(0, -5, 0), // 5 months ago
+		MaintenanceIntervals: map[string]domaincar.MaintenanceIntervalConfig{
+			domainmaintenance.TypeEngineOil: {
+				IntervalKm:     5000,
+				IntervalMonths: 6,
+			},
+			domainmaintenance.TypeFuelFilter: {
+				IntervalKm:     15000,
+				IntervalMonths: 24,
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("failed to create car: %v", err)
+	}
+
+	upcoming, err := svc.GetUpcomingByCar(ctx, "user-1", car.ID)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// 1. Engine Oil: custom 5000 km (next at 55000 -> 800 km left -> Upcoming!)
+	var oilItem domainmaintenance.UpcomingMaintenanceItem
+	for _, it := range upcoming.Items {
+		if it.Type == domainmaintenance.TypeEngineOil {
+			oilItem = it
+		}
+	}
+	if oilItem.IntervalKm != 5000 {
+		t.Errorf("expected custom intervalKm 5000, got %d", oilItem.IntervalKm)
+	}
+	if oilItem.IntervalMonths != 6 {
+		t.Errorf("expected custom intervalMonths 6, got %d", oilItem.IntervalMonths)
+	}
+	if oilItem.NextDueMileage != 55000 {
+		t.Errorf("expected nextDueMileage 55000, got %d", oilItem.NextDueMileage)
+	}
+	if oilItem.RemainingKm != 800 {
+		t.Errorf("expected 800 km remaining, got %d", oilItem.RemainingKm)
+	}
+	if oilItem.Status != domainmaintenance.StatusUpcoming {
+		t.Errorf("expected status upcoming, got %q", oilItem.Status)
+	}
+
+	// 2. Oil Filter: not customized, should use default (10000 km, 12 months -> next at 60000 -> 5800 km left -> OK)
+	var filterItem domainmaintenance.UpcomingMaintenanceItem
+	for _, it := range upcoming.Items {
+		if it.Type == domainmaintenance.TypeOilFilter {
+			filterItem = it
+		}
+	}
+	if filterItem.IntervalKm != 10000 {
+		t.Errorf("expected default intervalKm 10000, got %d", filterItem.IntervalKm)
+	}
+	if filterItem.IntervalMonths != 12 {
+		t.Errorf("expected default intervalMonths 12, got %d", filterItem.IntervalMonths)
+	}
+	if filterItem.Status != domainmaintenance.StatusOK {
+		t.Errorf("expected default filter to be ok, got %q", filterItem.Status)
+	}
+
+	// 3. Fuel Filter: custom 15000 km, 24 months
+	var fuelFilterItem domainmaintenance.UpcomingMaintenanceItem
+	for _, it := range upcoming.Items {
+		if it.Type == domainmaintenance.TypeFuelFilter {
+			fuelFilterItem = it
+		}
+	}
+	if fuelFilterItem.IntervalKm != 15000 {
+		t.Errorf("expected custom intervalKm 15000, got %d", fuelFilterItem.IntervalKm)
+	}
+	if fuelFilterItem.IntervalMonths != 24 {
+		t.Errorf("expected custom intervalMonths 24, got %d", fuelFilterItem.IntervalMonths)
+	}
+}

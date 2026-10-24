@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"cvmc/internal/application/usecase/auth"
+	domaincar "cvmc/internal/domain/car"
 	"cvmc/internal/infrastructure/auth/bcrypt"
 	jwtauth "cvmc/internal/infrastructure/auth/jwt"
 	carrepo "cvmc/internal/infrastructure/car/memory"
@@ -216,12 +217,18 @@ func TestCarServiceUpdate(t *testing.T) {
 		YearManufacture: 2020,
 		YearModel:       2021,
 		ImageUrl:        "https://example.com/car-updated.jpg",
+		MaintenanceIntervals: map[string]domaincar.MaintenanceIntervalConfig{
+			"Óleo de Motor": {IntervalKm: 5000, IntervalMonths: 6},
+		},
 	})
 	if err != nil {
 		t.Fatalf("update failed: %v", err)
 	}
 	if updated.Name != "Civic Novo" || updated.LastMileage != 35000 || updated.Manufacturer != "Honda" || updated.ImageUrl != "https://example.com/car-updated.jpg" {
 		t.Fatalf("unexpected updated car values: %+v", updated)
+	}
+	if updated.MaintenanceIntervals == nil || updated.MaintenanceIntervals["Óleo de Motor"].IntervalKm != 5000 || updated.MaintenanceIntervals["Óleo de Motor"].IntervalMonths != 6 {
+		t.Fatalf("unexpected maintenance intervals: %+v", updated.MaintenanceIntervals)
 	}
 
 	// Forbidden update by non-owner

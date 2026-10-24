@@ -140,6 +140,15 @@ definitions:
         example: senha12345
         type: string
     type: object
+  handlers.MaintenanceIntervalRequest:
+    properties:
+      intervalKm:
+        example: 5000
+        type: integer
+      intervalMonths:
+        example: 6
+        type: integer
+    type: object
   handlers.RegisterDeviceTokenRequest:
     properties:
       platform:
@@ -205,6 +214,10 @@ definitions:
       lastMileage:
         example: 35000
         type: integer
+      maintenanceIntervals:
+        additionalProperties:
+          $ref: '#/definitions/handlers.MaintenanceIntervalRequest'
+        type: object
       manufacturer:
         example: Honda
         type: string
