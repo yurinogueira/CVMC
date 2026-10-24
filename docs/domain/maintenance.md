@@ -56,6 +56,28 @@ type Maintenance struct {
    - Ao registrar uma manutenção com `KmAtMaintenance > car.CurrentKm`, o sistema atualiza automaticamente a quilometragem atual do veículo.
 3. **Anexos e Notas Fiscais**:
    - Cada manutenção pode conter múltiplos anexos (comprovantes e ordens de serviço) devidamente higienizados e validados quanto ao tipo MIME.
+4. **Monitoramento de Revisões Periódicas (`periodic.go`)**:
+   - O sistema monitora revisões preventivas por quilometragem ou tempo (**12 meses**, o que ocorrer primeiro) a partir da última troca registrada de cada item ou da quilometragem inicial de cadastro do veículo (`InitialMileage` / marco zero):
+     - **Carros e Caminhonetes (`cars`, `trucks`)**:
+       - `Óleo de Motor` (Troca de óleo): 10.000 km ou 12 meses.
+       - `Filtro do Óleo de Motor` (Troca de filtro de óleo): 10.000 km ou 12 meses.
+       - `Filtro de Ar do Motor` (Troca de filtro de ar): 10.000 km ou 12 meses.
+       - `Filtro do Ar-Condicionado` (Troca do filtro de ar-condicionado): 20.000 km ou 12 meses.
+       - `Filtro de Combustível` (Troca do filtro de combustível): 20.000 km ou 12 meses.
+     - **Motos (`motorcycles`)**:
+       - `Óleo de Motor` (Troca de óleo): 2.500 km ou 12 meses.
+       - `Filtro do Óleo de Motor` (Troca de filtro de óleo): 2.500 km ou 12 meses.
+       - `Filtro de Ar do Motor` (Troca de filtro de ar): 5.000 km ou 12 meses.
+   - **Classificação de Status**:
+     - `ok` (`Em dia`): mais de 1.000 km e mais de 30 dias restantes.
+     - `upcoming` (`Próximo`): faltam ≤ 1.000 km ou ≤ 30 dias.
+     - `overdue` (`Vencido`): quilometragem ou data limite atingida/excedida (`<= 0`).
+   - **Endpoints de Consulta**:
+     - `GET /api/v1/cars/{id}/upcoming-maintenances`: lista detalhada das próximas revisões preventivas do veículo.
+     - `GET /api/v1/maintenances/upcoming`: resumo consolidado de toda a frota do usuário autenticado.
+5. **Cronjob de Alertas e Consolidação Anti-Spam**:
+   - O scheduler em background (`internal/infrastructure/scheduler/maintenance_cron.go`, configurável via `MAINTENANCE_CRON_INTERVAL`) varre periodicamente os veículos de usuários com tokens FCM ativos.
+   - Quando um ou mais itens atingem o limiar de alerta (faltando ≤ 500 km ou ≤ 15 dias, ou vencidos), o serviço de notificações consolida **todos os itens pendentes do veículo em uma única notificação push** (`Revisão Preventiva: {Nome do Veículo}`) apontando para `/maintenance?carId={carId}`, respeitando um *cooldown* de 7 dias (exceto se um novo item se tornar crítico).
 
 ---
 

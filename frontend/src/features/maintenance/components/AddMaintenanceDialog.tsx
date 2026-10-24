@@ -43,6 +43,7 @@ interface AddMaintenanceDialogProps {
   carId: string;
   carName?: string;
   lastMileage?: number;
+  initialTypes?: string[];
   onClose: () => void;
   onMaintenanceCreated: (maintenance: Maintenance) => void;
 }
@@ -160,6 +161,7 @@ export function AddMaintenanceDialog({
   carId,
   carName,
   lastMileage = 0,
+  initialTypes,
   onClose,
   onMaintenanceCreated,
 }: AddMaintenanceDialogProps) {
@@ -171,9 +173,11 @@ export function AddMaintenanceDialog({
     return `${yyyy}-${mm}-${dd}`;
   };
 
-  const [types, setTypes] = useState<string[]>([]);
+  const [types, setTypes] = useState<string[]>(() => initialTypes || []);
   const [customType, setCustomType] = useState("");
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState(() =>
+    initialTypes && initialTypes.length > 0 ? initialTypes.join(", ") : "",
+  );
   const [titleTouched, setTitleTouched] = useState(false);
   const [description, setDescription] = useState("");
   const [date, setDate] = useState(getTodayString());
@@ -185,6 +189,23 @@ export function AddMaintenanceDialog({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    if (open) {
+      setMileage(lastMileage || 0);
+      if (initialTypes && initialTypes.length > 0) {
+        setTypes(initialTypes);
+        setTitle(initialTypes.join(", "));
+        setTitleTouched(false);
+      } else {
+        setTypes([]);
+        setTitle("");
+        setTitleTouched(false);
+      }
+    }
+  }
 
   const resetForm = () => {
     setTypes([]);

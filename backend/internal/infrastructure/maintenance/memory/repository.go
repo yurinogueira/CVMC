@@ -67,6 +67,14 @@ func (r *Repository) ListByCar(ctx context.Context, carID string) ([]domainmaint
 	return items, nil
 }
 
+func (r *Repository) FindLatestByTypes(ctx context.Context, carID string, types []string) (map[string]domainmaintenance.Maintenance, error) {
+	items, err := r.ListByCar(ctx, carID)
+	if err != nil {
+		return nil, err
+	}
+	return domainmaintenance.FindLatestByTypesMap(items, types), nil
+}
+
 func (r *Repository) Update(ctx context.Context, maintenance domainmaintenance.Maintenance) (domainmaintenance.Maintenance, error) {
 	_ = ctx
 	r.mu.Lock()

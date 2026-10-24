@@ -80,6 +80,25 @@ func (r *Repository) ListByUser(_ context.Context, userID string) ([]domainnotif
 	return items, nil
 }
 
+func (r *Repository) ListDistinctUserIDs(_ context.Context) ([]string, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	seen := make(map[string]struct{})
+	var userIDs []string
+	for _, dt := range r.byToken {
+		if dt.UserID == "" {
+			continue
+		}
+		if _, exists := seen[dt.UserID]; !exists {
+			seen[dt.UserID] = struct{}{}
+			userIDs = append(userIDs, dt.UserID)
+		}
+	}
+	sort.Strings(userIDs)
+	return userIDs, nil
+}
+
 func (r *Repository) DeleteByUserAndToken(_ context.Context, userID, token string) error {
 	cleanUserID := strings.TrimSpace(userID)
 	cleanToken := strings.TrimSpace(token)

@@ -6,14 +6,19 @@ tags:
   - log
   - audit
   - history
-timestamp: 2026-10-17
+timestamp: 2026-10-24
 ---
 
 # 🕒 Diário de Bordo & Histórico Cronológico — CVMC
 
-Este documento funciona como o índice mestre de todas as mudanças de engenharia aplicadas ao projeto **CVMC (Como Vai Meu Carro)**. Cada entrada detalhada reside em um arquivo diário específico na pasta [docs/logs/2026-10-17.md](logs/2026-10-17.md), garantindo economia de tokens e histórico auditável.
+Este documento funciona como o índice mestre de todas as mudanças de engenharia aplicadas ao projeto **CVMC (Como Vai Meu Carro)**. Cada entrada detalhada reside em um arquivo diário específico na pasta [docs/logs/2026-10-24.md](logs/2026-10-24.md), garantindo economia de tokens e histórico auditável.
 
 Para navegação geral, retorne ao [Catálogo Canônico](index.md).
+
+## 📅 [2026-10-24](logs/2026-10-24.md) — Monitoramento de Revisões Periódicas Próximas com Cronjob e Notificações Consolidadas (#120)
+- **Motor de Revisões Periódicas por Categoria (`periodic.go`)**: Regras de manutenção preventiva por quilometragem ou 12 meses para carros/caminhonetes (10.000 km / 20.000 km) e motos (2.500 km / 5.000 km), com marco zero referencial (`InitialMileage`) e endpoints `GET /api/v1/cars/{id}/upcoming-maintenances` e `GET /api/v1/maintenances/upcoming`.
+- **Cronjob & Consolidação Anti-Spam de Push**: Scheduler em background (`maintenance_cron.go`, `MAINTENANCE_CRON_INTERVAL`) que agrupa múltiplos itens pendentes do mesmo veículo em uma única notificação push com *cooldown* de 7 dias.
+- **Tela `/maintenance` e Cards Preventivos no Frontend**: Novo componente `UpcomingMaintenanceCard.tsx` com barra de progresso e registro rápido pré-preenchido, seletor de veículos com *deep-link* (`?carId=`), banner dinâmico de status da frota e histórico paginado.
 
 ## 📅 [2026-10-17](logs/2026-10-17.md) — Infraestrutura de Notificações Push com FCM no Backend e App Mobile (#93)
 - **Domínio, Repositórios e FCM HTTP v1 (Go)**: Criação da entidade `DeviceToken`, coleção `device_tokens` no MongoDB com índices otimizados, cliente FCM HTTP v1 com limpeza automática de tokens `UNREGISTERED` e endpoints `POST /api/v1/devices/token`, `DELETE /api/v1/devices/token` e `POST /api/v1/notifications/test`.

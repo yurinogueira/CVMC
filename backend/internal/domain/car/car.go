@@ -10,6 +10,7 @@ type Car struct {
 	Model           string    `json:"model"`
 	YearManufacture int       `json:"yearManufacture"`
 	YearModel       int       `json:"yearModel"`
+	InitialMileage  int       `json:"initialMileage,omitempty"`
 	LastMileage     int       `json:"lastMileage"`
 	VehicleType     string    `json:"vehicleType,omitempty"`
 	ImageUrl        string    `json:"imageUrl,omitempty"`

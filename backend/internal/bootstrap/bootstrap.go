@@ -32,6 +32,7 @@ import (
 	fcmInfra "cvmc/internal/infrastructure/notification/fcm"
 	notifMemory "cvmc/internal/infrastructure/notification/memory"
 	notifMongo "cvmc/internal/infrastructure/notification/mongo"
+	"cvmc/internal/infrastructure/scheduler"
 	userMemory "cvmc/internal/infrastructure/user/memory"
 	userMongo "cvmc/internal/infrastructure/user/mongo"
 	"cvmc/internal/interfaces/rest"
@@ -42,6 +43,7 @@ import (
 type App struct {
 	handler     *rest.Router
 	mongoClient *mongo.Client
+	cron        *scheduler.MaintenanceCron
 }
 
 func New(ctx context.Context, cfg config.Config) (*App, error) {
@@ -133,9 +135,15 @@ func New(ctx context.Context, cfg config.Config) (*App, error) {
 	notificationService := notificationusecase.NewService(deviceTokens, pushSender, cars, maintenances)
 	googleValidator := googleinfra.NewValidator(cfg.GoogleClientID)
 	handler := rest.NewRouter(cfg, users, hasher, tokens, emailSender, cars, maintenances, fuelings, fipeService, notificationService, googleValidator)
+
+	cronInterval := scheduler.ParseCronInterval(cfg.MaintenanceCronInterval)
+	maintCron := scheduler.NewMaintenanceCron(notificationService, cronInterval)
+	maintCron.Start(context.Background())
+
 	return &App{
 		handler:     handler,
 		mongoClient: mongoClient,
+		cron:        maintCron,
 	}, nil
 }
 
@@ -144,6 +152,9 @@ func (a *App) Handler() *rest.Router {
 }
 
 func (a *App) Close(ctx context.Context) error {
+	if a.cron != nil {
+		a.cron.Stop()
+	}
 	if a.mongoClient != nil {
 		return a.mongoClient.Disconnect(ctx)
 	}

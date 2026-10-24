@@ -83,6 +83,7 @@ type Config struct {
 	GoogleClientID          string
 	FirebaseCredentialsJSON string
 	FirebaseCredentialsFile string
+	MaintenanceCronInterval string
 }
 
 func (c Config) Validate() error {
@@ -118,6 +119,7 @@ func Load() Config {
 		GoogleClientID:          getenv("GOOGLE_CLIENT_ID", ""),
 		FirebaseCredentialsJSON: getenv("FIREBASE_CREDENTIALS_JSON", ""),
 		FirebaseCredentialsFile: getenv("FIREBASE_CREDENTIALS_FILE", ""),
+		MaintenanceCronInterval: getenv("MAINTENANCE_CRON_INTERVAL", "24h"),
 	}
 
 	// Unconditionally reject default and low-entropy JWT secrets in all environments.

@@ -103,6 +103,7 @@ func (s *Service) Create(ctx context.Context, ownerID string, input CreateInput)
 		Model:           strings.TrimSpace(input.Model),
 		YearManufacture: input.YearManufacture,
 		YearModel:       input.YearModel,
+		InitialMileage:  input.LastMileage,
 		LastMileage:     input.LastMileage,
 		VehicleType:     strings.TrimSpace(input.VehicleType),
 		ImageUrl:        strings.TrimSpace(input.ImageUrl),

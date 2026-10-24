@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	domaincar "cvmc/internal/domain/car"
 )
@@ -29,6 +30,15 @@ func (r *Repository) Create(ctx context.Context, car domaincar.Car) (domaincar.C
 	defer r.mu.Unlock()
 	r.seq++
 	car.ID = r.makeID()
+	if car.InitialMileage == 0 && car.LastMileage > 0 {
+		car.InitialMileage = car.LastMileage
+	}
+	if car.CreatedAt.IsZero() {
+		car.CreatedAt = time.Now().UTC()
+	}
+	if car.UpdatedAt.IsZero() {
+		car.UpdatedAt = car.CreatedAt
+	}
 	car.SharedWith = append([]string{}, car.SharedWith...)
 	r.byID[car.ID] = car
 	return car, nil

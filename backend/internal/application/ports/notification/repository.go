@@ -15,6 +15,7 @@ var (
 type DeviceTokenRepository interface {
 	Upsert(ctx context.Context, dt domainnotification.DeviceToken) (domainnotification.DeviceToken, error)
 	ListByUser(ctx context.Context, userID string) ([]domainnotification.DeviceToken, error)
+	ListDistinctUserIDs(ctx context.Context) ([]string, error)
 	DeleteByUserAndToken(ctx context.Context, userID, token string) error
 	DeleteByToken(ctx context.Context, token string) error
 }

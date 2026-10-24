@@ -129,6 +129,40 @@ func TestMaintenanceHandlerCRUD(t *testing.T) {
 		}
 	}
 
+	// 3b. List Upcoming Maintenances by Car & Summary
+	{
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/cars/"+carItem.ID+"/upcoming-maintenances", nil)
+		req.SetPathValue("id", carItem.ID)
+		req.AddCookie(&http.Cookie{Name: "cvmc_access_token", Value: ownerReg.AccessToken})
+		rec := httptest.NewRecorder()
+		handler.ListUpcomingByCar(rec, req)
+
+		if rec.Code != http.StatusOK {
+			t.Fatalf("expected 200 OK for ListUpcomingByCar, got %d: %s", rec.Code, rec.Body.String())
+		}
+
+		// Forbidden for other user
+		reqOther := httptest.NewRequest(http.MethodGet, "/api/v1/cars/"+carItem.ID+"/upcoming-maintenances", nil)
+		reqOther.SetPathValue("id", carItem.ID)
+		reqOther.AddCookie(&http.Cookie{Name: "cvmc_access_token", Value: otherReg.AccessToken})
+		recOther := httptest.NewRecorder()
+		handler.ListUpcomingByCar(recOther, reqOther)
+
+		if recOther.Code != http.StatusForbidden {
+			t.Fatalf("expected 403 Forbidden for other user ListUpcomingByCar, got %d", recOther.Code)
+		}
+
+		// Fleet upcoming summary
+		reqSummary := httptest.NewRequest(http.MethodGet, "/api/v1/maintenances/upcoming", nil)
+		reqSummary.AddCookie(&http.Cookie{Name: "cvmc_access_token", Value: ownerReg.AccessToken})
+		recSummary := httptest.NewRecorder()
+		handler.ListUpcomingSummary(recSummary, reqSummary)
+
+		if recSummary.Code != http.StatusOK {
+			t.Fatalf("expected 200 OK for ListUpcomingSummary, got %d: %s", recSummary.Code, recSummary.Body.String())
+		}
+	}
+
 	// 4. Get Maintenance by ID
 	{
 		req := httptest.NewRequest(http.MethodGet, "/api/v1/maintenances/"+maintID, nil)
