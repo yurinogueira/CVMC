@@ -22,10 +22,10 @@ Para navegação geral, retorne ao [Catálogo Canônico](../index.md).
 
 1. **`backend.yml`**:
    - Executa `go vet` e testes automatizados (`go test ./...`).
-   - Compila o binário estático e opcionalmente dispara deploy no OCI.
+   - Compila o binário estático e dispara deploy no OCI, injetando variáveis de ambiente e a credencial `FIREBASE_CREDENTIALS_JSON` (`/etc/cvmc/firebase-credentials.json` com permissão `0640`).
 2. **`frontend.yml`**:
    - Executa checagem de tipos (`tsc`), linter ESLint, formatação Prettier e testes Vitest.
-   - Gera build de produção e publica no GitHub Pages / host estático.
+   - Gera build de produção, publica no GitHub Pages e compila o APK Android (`build-android-apk`) injetando `GOOGLE_SERVICES_JSON` em `frontend/android/app/google-services.json`.
 3. **`terraform.yml`**:
    - Valida a formatação de infraestrutura (`terraform fmt -check`) e sintaxe HCL.
 4. **`docs.yml` (OKF Quality Gate)**:

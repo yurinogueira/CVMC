@@ -19,6 +19,7 @@ Para navegação geral, retorne ao [Catálogo Canônico](index.md).
 - **Domínio, Repositórios e FCM HTTP v1 (Go)**: Criação da entidade `DeviceToken`, coleção `device_tokens` no MongoDB com índices otimizados, cliente FCM HTTP v1 com limpeza automática de tokens `UNREGISTERED` e endpoints `POST /api/v1/devices/token`, `DELETE /api/v1/devices/token` e `POST /api/v1/notifications/test`.
 - **Alertas de Manutenção Preventiva**: Implementação de verificação automática de revisões próximas ou vencidas por quilometragem/data com payload de *deep-link* (`/vehicles/:id`).
 - **App Mobile Android & Capacitor Push**: Integração de `@capacitor/push-notifications`, permissão `POST_NOTIFICATIONS` para Android 13+, canal `cvmc_alerts`, toast em primeiro plano, *deep-linking*, desvínculo seguro no logout e card de teste em `ProfilePage.tsx`.
+- **CI/CD & Deploy Automatizado de Segredos FCM**: Injeção automática de `GOOGLE_SERVICES_JSON` no build do APK Android (`frontend.yml`) e provisionamento de `FIREBASE_CREDENTIALS_JSON` no servidor OCI (`backend.yml`).
 
 ## 📅 [2026-10-16](logs/2026-10-16.md) — Prevenção de Vazamento de Tokens em LocalStorage
 - **Isolamento de Tokens no Frontend**: Refatoração do `safeStorage.setSecureItem` e `useAuthStore` para impedir terminantemente o salvamento ou leitura de tokens JWT (`cvmc.access_token` e `cvmc.refresh_token`) no `localStorage` de navegadores web.

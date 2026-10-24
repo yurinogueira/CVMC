@@ -25,6 +25,9 @@ services:
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
       FIPE_API_TOKEN: ${FIPE_API_TOKEN:-}
       FIPE_BASE_URL: ${FIPE_BASE_URL:-https://fipe.parallelum.com.br/api/v2}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      FIREBASE_CREDENTIALS_JSON: ${FIREBASE_CREDENTIALS_JSON:-}
+      FIREBASE_CREDENTIALS_FILE: ${FIREBASE_CREDENTIALS_FILE:-}
     ports:
       - "8080:8080"
     volumes:
