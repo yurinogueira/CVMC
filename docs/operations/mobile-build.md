@@ -9,12 +9,14 @@ tags:
   - build
   - google-play
   - runbook
-timestamp: 2026-10-11
+timestamp: 2026-10-24
 ---
 
 # 📱 Empacotamento Mobile Android e Guia de Build com Capacitor
 
 Este documento descreve o fluxo canônico de engenharia e operações para desenvolvimento, sincronização e compilação do aplicativo móvel nativo **CVMC (Como Vai Meu Carro)** para a plataforma **Android**, utilizando o ecossistema **Capacitor 8**.
+
+Para navegação geral, retorne ao [Catálogo Canônico](../index.md).
 
 ---
 
@@ -185,6 +187,40 @@ O aplicativo mobile integra o plugin oficial `@capacitor/push-notifications` con
 3. **Configuração do `google-services.json`**:
    - Copie `frontend/android/app/google-services.json.example` para `frontend/android/app/google-services.json` (ignorado pelo Git) com as credenciais do projeto Firebase associado ao pacote `com.cvmc.app`.
    - No backend, configure `FIREBASE_CREDENTIALS_JSON` ou `FIREBASE_CREDENTIALS_FILE` com a chave da conta de serviço do Firebase.
+
+---
+
+## 🎨 Ativos Visuais, Ícones Adaptativos e Google Play Store
+
+Todos os recursos gráficos nativos do Android e os ativos exigidos pelo **Google Play Console** seguem a identidade visual oficial do CVMC (silhueta frontal do veículo em branco sobre azul primário `#0284C7` e gradiente institucional `#0284C7` → `#0369A1` → `#0F766E`):
+
+### 1. Ativos para Submissão no Google Play Console (`frontend/android/playstore-assets/`)
+| Arquivo | Dimensões | Formato | Finalidade no Google Play Console |
+| :--- | :--- | :--- | :--- |
+| `playstore-icon-512.png` | `512 x 512` px | PNG 32-bit RGBA (*full-bleed*, `< 1 MB`) | **Ícone do app em alta resolução** (quadrado completo sem cantos pré-arredondados; a Google Play aplica automaticamente o raio de 30% e sombra). |
+| `feature-graphic-1024x500.png` | `1024 x 500` px | PNG 24-bit RGB (sem canal alfa) | **Gráfico de Recurso (*Feature Graphic*)** exibido no topo da página da loja e em destaques promocionais. |
+
+### 2. Ícones Nativos Android (`frontend/android/app/src/main/res/`)
+- **Launcher Legacy & Round (`ic_launcher.png` e `ic_launcher_round.png`)**:
+  - `mipmap-mdpi`: `48x48` px
+  - `mipmap-hdpi`: `72x72` px
+  - `mipmap-xhdpi`: `96x96` px
+  - `mipmap-xxhdpi`: `144x144` px
+  - `mipmap-xxxhdpi`: `192x192` px
+- **Adaptive Icons (Android 8.0+ / API 26+ e Android 13+ Themed Icons)**:
+  - Camada de primeiro plano (`ic_launcher_foreground.png`) centralizada na zona segura de `66x66 dp` dentro do canvas de `108x108 dp`: `mdpi` (`108x108`), `hdpi` (`162x162`), `xhdpi` (`216x216`), `xxhdpi` (`324x324`), `xxxhdpi` (`432x432`).
+  - Cor de plano de fundo oficial `#0284C7` definida em `values/ic_launcher_background.xml` e `drawable/ic_launcher_background.xml`.
+  - Camada vetorial e monocromática (`<monochrome android:drawable="@drawable/ic_launcher_foreground"/>` em `mipmap-anydpi-v26/ic_launcher.xml` e `ic_launcher_round.xml`, apontando para `drawable-v24/ic_launcher_foreground.xml`).
+- **Ícone de Barra de Status para Notificações Push FCM (`drawable/ic_stat_cvmc.xml`)**:
+  - Vetor monocromático branco (`#FFFFFF`) sobre fundo transparente (`24x24 dp`) referenciado no `AndroidManifest.xml` via `com.google.firebase.messaging.default_notification_icon` com cor de destaque `@color/ic_notification_color` (`#0284C7` em `values/colors.xml`).
+- **Splash Screens Nativas (`splash.png`)**:
+  - 11 variações em `drawable/splash.png`, `drawable-port-{mdpi..xxxhdpi}/splash.png` (`320x480` a `1280x1920`) e `drawable-land-{mdpi..xxxhdpi}/splash.png` (`480x320` a `1920x1280`) com fundo `#0284C7` e emblema centralizado na zona segura de corte (`CENTER_CROP`).
+
+### 3. Ícones PWA, Maskable e Open Graph (`frontend/public/`)
+- `pwa-192x192.png` (`192x192` px, `purpose: "any"`)
+- `pwa-512x512.png` (`512x512` px, `purpose: "any"`)
+- `maskable-icon-512x512.png` (`512x512` px, `purpose: "maskable"` com zona segura W3C de 80%)
+- `og-image.png` (`1200x630` px para compartilhamento social Open Graph / Twitter Card)
 
 ---
 

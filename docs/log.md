@@ -15,7 +15,8 @@ Este documento funciona como o índice mestre de todas as mudanças de engenhari
 
 Para navegação geral, retorne ao [Catálogo Canônico](index.md).
 
-## 📅 [2026-10-24](logs/2026-10-24.md) — Monitoramento de Revisões Periódicas Próximas com Cronjob e Notificações Consolidadas (#120)
+## 📅 [2026-10-24](logs/2026-10-24.md) — Monitoramento de Revisões Periódicas Próximas (#120) & Ícones e Assets da Google Play Store (#122)
+- **Ícones Adaptativos Android, Splash Screens e Assets da Google Play Store (#122)**: Substituição de todos os ícones `mipmap-*` (`ic_launcher`, `ic_launcher_round`, `ic_launcher_foreground`), suporte a Adaptive Icons e `<monochrome>` (Android 13+), criação do ícone de notificação push FCM (`ic_stat_cvmc.xml`), geração das 11 telas de Splash Screen (`#0284C7`), criação dos ativos do Google Play Console (`playstore-icon-512.png` e `feature-graphic-1024x500.png`) e ícones PWA/Maskable/Open Graph (`pwa-192x192.png`, `pwa-512x512.png`, `maskable-icon-512x512.png`, `og-image.png`).
 - **Motor de Revisões Periódicas por Categoria (`periodic.go`)**: Regras de manutenção preventiva por quilometragem ou 12 meses para carros/caminhonetes (10.000 km / 20.000 km) e motos (2.500 km / 5.000 km), com marco zero referencial (`InitialMileage`) e endpoints `GET /api/v1/cars/{id}/upcoming-maintenances` e `GET /api/v1/maintenances/upcoming`.
 - **Cronjob & Consolidação Anti-Spam de Push**: Scheduler em background (`maintenance_cron.go`, `MAINTENANCE_CRON_INTERVAL`) que agrupa múltiplos itens pendentes do mesmo veículo em uma única notificação push com *cooldown* de 7 dias.
 - **Tela `/maintenance` e Cards Preventivos no Frontend**: Novo componente `UpcomingMaintenanceCard.tsx` com barra de progresso e registro rápido pré-preenchido, seletor de veículos com *deep-link* (`?carId=`), banner dinâmico de status da frota e histórico paginado.
