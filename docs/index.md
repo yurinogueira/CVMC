@@ -35,8 +35,8 @@ Para garantir máxima eficiência no consumo de tokens e prevenir alucinações 
 ```mermaid
 flowchart TD
     subgraph Core["Plataforma CVMC"]
-        API["Backend REST (Go 1.25)<br>Clean Architecture + DDD"]
-        SPA["Frontend SPA (React 19)<br>Vite + MUI v6 + Zustand"]
+        API["Backend REST (Go 1.26)<br>Clean Architecture + DDD"]
+        SPA["Frontend SPA (React 19)<br>Vite + MUI v9 + Zustand"]
         DB[(MongoDB / Atlas<br>Segregação por Usuário)]
         S3["Storage de Comprovantes<br>Local / OCI Object Storage"]
         FIPE["Integração Tabela FIPE<br>API Paralela + Cache"]
@@ -82,7 +82,7 @@ Especificações detalhadas de regras de negócio, agregações e fluxos de cada
 Padrões de desenvolvimento para a SPA React 19:
 - [Gerenciamento de Estado com Zustand](frontend/state-management.md): Stores centralizadas, sincronização de perfil e proteção de autenticação.
 - [Roteamento e Controle de Acesso (RBAC)](frontend/routing-and-rbac.md): React Router v7, proteção declarativa com `ProtectedRoute` e menus da aplicação.
-- [Componentes UI e Design System](frontend/ui-components.md): Material UI v6, paleta análoga azul/cyan/esmeralda, acessibilidade (WCAG AA), regras de padding e headings.
+- [Componentes UI e Design System](frontend/ui-components.md): Material UI v9, paleta análoga azul/cyan/esmeralda, acessibilidade (WCAG AA), regras de padding e headings.
 
 ### 4. ⚙️ Operações, Infraestrutura & Runbooks (`operations/`)
 Manuais operacionais, infraestrutura como código e automação de entrega contínua:

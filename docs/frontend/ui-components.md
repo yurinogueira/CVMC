@@ -1,7 +1,7 @@
 ---
 type: frontend
 title: "Componentes UI e Design System — CVMC"
-description: "Padrões visuais do Material UI v6, paleta análoga de cores, tipografia, regras de padding e acessibilidade (a11y)."
+description: "Padrões visuais do Material UI v9, paleta análoga de cores, tipografia, regras de padding e acessibilidade (a11y)."
 tags:
   - frontend
   - ui
@@ -13,7 +13,7 @@ timestamp: 2026-10-10
 
 # 🎨 Componentes UI e Design System — CVMC
 
-O frontend do **CVMC** é desenvolvido sobre **Material UI v6** e **React 19**, priorizando consistência estética, alto contraste (WCAG AA/AAA) e alinhamento de layout.
+O frontend do **CVMC** é desenvolvido sobre **Material UI v9** e **React 19**, priorizando consistência estética, alto contraste (WCAG AA/AAA) e alinhamento de layout.
 
 Para navegação geral, retorne ao [Catálogo Canônico](../index.md).
 
