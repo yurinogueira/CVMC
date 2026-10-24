@@ -84,6 +84,8 @@ Para prevenir estouro horizontal (*horizontal overflow*) e garantir adaptação 
   - Títulos de seções utilizam `<h2>` e cards utilizam `<h3>`.
 - **Prevenção de Erros de Hidratação em Diálogos**:
   - `<DialogTitle>` renderiza uma tag `<h2>` por padrão. Para aninhar `<Typography>` em modais, use explicitamente `component="div"` ou `component="span"`.
+- **Cards de Próximas Manutenções (`UpcomingMaintenanceCard.tsx` e `MaintenancePage.tsx`)**:
+  - Exibem indicadores semânticos de status (`Em dia` em verde, `Próximo` em âmbar e `Vencido` em vermelho), barra de progresso (`LinearProgress`) proporcional ao desgaste por quilometragem/tempo e botão de ação rápida que abre o `AddMaintenanceDialog` com o tipo de manutenção e a quilometragem atual do veículo pré-selecionados.
 
 ---
 

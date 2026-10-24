@@ -4,6 +4,8 @@ import {
   Maintenance,
   CreateMaintenancePayload,
   UpdateMaintenancePayload,
+  CarUpcomingMaintenances,
+  FleetUpcomingSummary,
 } from "../types/maintenance.types";
 
 export const maintenanceService = {
@@ -12,6 +14,20 @@ export const maintenanceService = {
       `/cars/${carId}/maintenances`,
     );
     return response.data.data || [];
+  },
+
+  async getUpcomingByCar(carId: string): Promise<CarUpcomingMaintenances> {
+    const response = await apiClient.get<ApiEnvelope<CarUpcomingMaintenances>>(
+      `/cars/${carId}/upcoming-maintenances`,
+    );
+    return response.data.data;
+  },
+
+  async getUpcomingSummary(): Promise<FleetUpcomingSummary> {
+    const response = await apiClient.get<ApiEnvelope<FleetUpcomingSummary>>(
+      `/maintenances/upcoming`,
+    );
+    return response.data.data;
   },
 
   async get(maintenanceId: string): Promise<Maintenance> {

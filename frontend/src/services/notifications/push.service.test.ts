@@ -40,6 +40,15 @@ describe("pushNotificationService", () => {
         "/vehicles/car_42",
       );
     });
+
+    it("appends carId query param when route is /maintenance", () => {
+      expect(
+        resolveNotificationDeepLink({
+          route: "/maintenance",
+          carId: "car_99",
+        }),
+      ).toBe("/maintenance?carId=car_99");
+    });
   });
 
   it("registers device token on backend and stores it locally", async () => {

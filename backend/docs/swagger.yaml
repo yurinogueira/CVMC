@@ -954,6 +954,40 @@ paths:
       summary: Remover compartilhamento
       tags:
       - Cars
+  /api/v1/cars/{id}/upcoming-maintenances:
+    get:
+      description: Calcula e retorna os status, quilometragem restante e datas limites
+        das revisões periódicas do veículo especificado
+      parameters:
+      - description: ID do veículo
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Listar próximas manutenções preventivas do veículo
+      tags:
+      - Maintenances
   /api/v1/devices/token:
     delete:
       consumes:
@@ -1400,6 +1434,26 @@ paths:
       security:
       - BearerAuth: []
       summary: Atualizar manutenção
+      tags:
+      - Maintenances
+  /api/v1/maintenances/upcoming:
+    get:
+      description: Retorna o status consolidado e os itens de revisão preventiva de
+        todos os veículos do usuário autenticado
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Resumo consolidado de próximas manutenções da frota
       tags:
       - Maintenances
   /api/v1/notifications/test:

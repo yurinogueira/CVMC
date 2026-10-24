@@ -978,6 +978,58 @@
                 }
             }
         },
+        "/api/v1/cars/{id}/upcoming-maintenances": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Calcula e retorna os status, quilometragem restante e datas limites das revisões periódicas do veículo especificado",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Maintenances"
+                ],
+                "summary": "Listar próximas manutenções preventivas do veículo",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID do veículo",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.SuccessEnvelope"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorEnvelope"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorEnvelope"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorEnvelope"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/devices/token": {
             "post": {
                 "security": [
@@ -1491,6 +1543,37 @@
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorEnvelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/maintenances/upcoming": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna o status consolidado e os itens de revisão preventiva de todos os veículos do usuário autenticado",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Maintenances"
+                ],
+                "summary": "Resumo consolidado de próximas manutenções da frota",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.SuccessEnvelope"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/httpx.ErrorEnvelope"
                         }

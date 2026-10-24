@@ -41,12 +41,17 @@ export function resolveNotificationDeepLink(
     return undefined;
   }
   const rawRoute = typeof data.route === "string" ? data.route.trim() : "";
+  const carId = typeof data.carId === "string" ? data.carId.trim() : "";
+  const validCarId = carId && /^[a-zA-Z0-9_-]+$/.test(carId) ? carId : "";
+
   if (rawRoute.startsWith("/") && !rawRoute.startsWith("//")) {
+    if (rawRoute === "/maintenance" && validCarId) {
+      return `/maintenance?carId=${validCarId}`;
+    }
     return rawRoute;
   }
-  const carId = typeof data.carId === "string" ? data.carId.trim() : "";
-  if (carId && /^[a-zA-Z0-9_-]+$/.test(carId)) {
-    return `/vehicles/${carId}`;
+  if (validCarId) {
+    return `/vehicles/${validCarId}`;
   }
   return undefined;
 }

@@ -22,6 +22,7 @@ type carDoc struct {
 	Model           string    `bson:"model"`
 	YearManufacture int       `bson:"yearManufacture"`
 	YearModel       int       `bson:"yearModel"`
+	InitialMileage  int       `bson:"initialMileage,omitempty"`
 	LastMileage     int       `bson:"lastMileage"`
 	VehicleType     string    `bson:"vehicleType,omitempty"`
 	ImageUrl        string    `bson:"imageUrl,omitempty"`
@@ -264,6 +265,7 @@ func toCarDoc(c domaincar.Car) carDoc {
 		Model:           strings.TrimSpace(c.Model),
 		YearManufacture: c.YearManufacture,
 		YearModel:       c.YearModel,
+		InitialMileage:  c.InitialMileage,
 		LastMileage:     c.LastMileage,
 		VehicleType:     strings.TrimSpace(c.VehicleType),
 		ImageUrl:        strings.TrimSpace(c.ImageUrl),
@@ -289,6 +291,7 @@ func toDomainCar(d carDoc) domaincar.Car {
 		Model:           d.Model,
 		YearManufacture: d.YearManufacture,
 		YearModel:       d.YearModel,
+		InitialMileage:  d.InitialMileage,
 		LastMileage:     d.LastMileage,
 		VehicleType:     d.VehicleType,
 		ImageUrl:        d.ImageUrl,

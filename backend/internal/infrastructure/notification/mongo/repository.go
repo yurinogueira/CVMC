@@ -123,6 +123,20 @@ func (r *Repository) ListByUser(ctx context.Context, userID string) ([]domainnot
 	return items, nil
 }
 
+func (r *Repository) ListDistinctUserIDs(ctx context.Context) ([]string, error) {
+	var rawIDs []string
+	if err := r.coll.Distinct(ctx, "userId", bson.D{}).Decode(&rawIDs); err != nil {
+		return nil, err
+	}
+	userIDs := make([]string, 0, len(rawIDs))
+	for _, id := range rawIDs {
+		if cleanID, err := mongoinfra.SanitizeID(id); err == nil && cleanID != "" {
+			userIDs = append(userIDs, cleanID)
+		}
+	}
+	return userIDs, nil
+}
+
 func (r *Repository) DeleteByUserAndToken(ctx context.Context, userID, token string) error {
 	cleanUserID, err := mongoinfra.SanitizeID(userID)
 	if err != nil {

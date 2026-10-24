@@ -158,6 +158,56 @@ func (h *MaintenanceHandler) List(w http.ResponseWriter, r *http.Request) {
 	httpx.Success(w, maintenances)
 }
 
+// ListUpcomingByCar godoc
+// @Summary      Listar próximas manutenções preventivas do veículo
+// @Description  Calcula e retorna os status, quilometragem restante e datas limites das revisões periódicas do veículo especificado
+// @Tags         Maintenances
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id path string true "ID do veículo"
+// @Success      200 {object} httpx.SuccessEnvelope
+// @Failure      401 {object} httpx.ErrorEnvelope
+// @Failure      403 {object} httpx.ErrorEnvelope
+// @Failure      404 {object} httpx.ErrorEnvelope
+// @Router       /api/v1/cars/{id}/upcoming-maintenances [get]
+func (h *MaintenanceHandler) ListUpcomingByCar(w http.ResponseWriter, r *http.Request) {
+	actorID := h.extractUserID(r)
+	if actorID == "" {
+		httpx.Error(w, http.StatusUnauthorized, "Unauthorized", nil)
+		return
+	}
+	carID := r.PathValue("id")
+	upcoming, err := h.service.GetUpcomingByCar(r.Context(), actorID, carID)
+	if err != nil {
+		handleMaintenanceError(w, err)
+		return
+	}
+	httpx.Success(w, upcoming)
+}
+
+// ListUpcomingSummary godoc
+// @Summary      Resumo consolidado de próximas manutenções da frota
+// @Description  Retorna o status consolidado e os itens de revisão preventiva de todos os veículos do usuário autenticado
+// @Tags         Maintenances
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200 {object} httpx.SuccessEnvelope
+// @Failure      401 {object} httpx.ErrorEnvelope
+// @Router       /api/v1/maintenances/upcoming [get]
+func (h *MaintenanceHandler) ListUpcomingSummary(w http.ResponseWriter, r *http.Request) {
+	actorID := h.extractUserID(r)
+	if actorID == "" {
+		httpx.Error(w, http.StatusUnauthorized, "Unauthorized", nil)
+		return
+	}
+	summary, err := h.service.GetUpcomingSummary(r.Context(), actorID)
+	if err != nil {
+		handleMaintenanceError(w, err)
+		return
+	}
+	httpx.Success(w, summary)
+}
+
 // Get godoc
 // @Summary      Obter detalhes de uma manutenção
 // @Description  Retorna os detalhes de uma manutenção específica por ID
