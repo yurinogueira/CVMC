@@ -52,8 +52,8 @@ check_frontend() {
   fi
 
   # 2. Lint
-  if ! output=$(cd "$frontend_dir" && "$bin_dir/eslint" . 2>&1); then
-    echo "❌ [Frontend] ESLint failed:"
+  if ! output=$(cd "$frontend_dir" && "$bin_dir/oxlint" --deny-warnings . 2>&1); then
+    echo "❌ [Frontend] Oxlint failed:"
     echo "$output"
     return 1
   fi

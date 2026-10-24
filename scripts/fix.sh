@@ -10,7 +10,7 @@ echo "🔧 Auto-formatting & lint-fixing frontend..."
 if [ ! -d "$PROJECT_ROOT/frontend/node_modules" ]; then
   (cd "$PROJECT_ROOT/frontend" && npm ci)
 fi
-(cd "$PROJECT_ROOT/frontend" && ./node_modules/.bin/prettier --write . --log-level warn && ./node_modules/.bin/eslint . --fix)
+(cd "$PROJECT_ROOT/frontend" && ./node_modules/.bin/oxlint --fix . && ./node_modules/.bin/prettier --write . --log-level warn)
 
 if command -v terraform &> /dev/null; then
   echo "🔧 Auto-formatting terraform..."

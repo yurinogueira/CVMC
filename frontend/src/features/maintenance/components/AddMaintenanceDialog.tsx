@@ -156,6 +156,14 @@ async function processFile(file: File): Promise<MaintenanceAttachment> {
   });
 }
 
+function getTodayString(): string {
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, "0");
+  const dd = String(today.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 export function AddMaintenanceDialog({
   open,
   carId,
@@ -165,14 +173,6 @@ export function AddMaintenanceDialog({
   onClose,
   onMaintenanceCreated,
 }: AddMaintenanceDialogProps) {
-  const getTodayString = () => {
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, "0");
-    const dd = String(today.getDate()).padStart(2, "0");
-    return `${yyyy}-${mm}-${dd}`;
-  };
-
   const [types, setTypes] = useState<string[]>(() => initialTypes || []);
   const [customType, setCustomType] = useState("");
   const [title, setTitle] = useState(() =>
@@ -180,7 +180,7 @@ export function AddMaintenanceDialog({
   );
   const [titleTouched, setTitleTouched] = useState(false);
   const [description, setDescription] = useState("");
-  const [date, setDate] = useState(getTodayString());
+  const [date, setDate] = useState(getTodayString);
   const [mileage, setMileage] = useState<number | string>(lastMileage);
   const [cost, setCost] = useState<string>("");
   const [attachments, setAttachments] = useState<MaintenanceAttachment[]>([]);

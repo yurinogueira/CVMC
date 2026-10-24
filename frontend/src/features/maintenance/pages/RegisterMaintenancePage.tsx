@@ -170,6 +170,14 @@ function getCategoryIcon(categoryId: string) {
   }
 }
 
+function getTodayString(): string {
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, "0");
+  const dd = String(today.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 export function RegisterMaintenancePage() {
   const { id, maintenanceId } = useParams<{
     id: string;
@@ -177,14 +185,6 @@ export function RegisterMaintenancePage() {
   }>();
   const isEdit = Boolean(maintenanceId);
   const navigate = useNavigate();
-
-  const getTodayString = () => {
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, "0");
-    const dd = String(today.getDate()).padStart(2, "0");
-    return `${yyyy}-${mm}-${dd}`;
-  };
 
   const [car, setCar] = useState<Car | null>(null);
   const [loadingCar, setLoadingCar] = useState(true);
@@ -194,7 +194,7 @@ export function RegisterMaintenancePage() {
   const [customType, setCustomType] = useState("");
   const [title, setTitle] = useState("");
   const [titleTouched, setTitleTouched] = useState(false);
-  const [date, setDate] = useState(getTodayString());
+  const [date, setDate] = useState(getTodayString);
   const [mileage, setMileage] = useState<number | string>(0);
   const [cost, setCost] = useState("");
   const [description, setDescription] = useState("");

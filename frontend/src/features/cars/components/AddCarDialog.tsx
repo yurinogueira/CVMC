@@ -46,12 +46,13 @@ interface AddCarDialogProps {
   onCarCreated: (car: Car) => void;
 }
 
+const currentYear = new Date().getFullYear();
+
 export function AddCarDialog({
   open,
   onClose,
   onCarCreated,
 }: AddCarDialogProps) {
-  const currentYear = new Date().getFullYear();
   const { user } = useAuthStore();
   const navigate = useNavigate();
 
@@ -276,7 +277,7 @@ export function AddCarDialog({
     return () => {
       isMounted = false;
     };
-  }, [selectedBrand, selectedModel, selectedYear, vehicleType, currentYear]);
+  }, [selectedBrand, selectedModel, selectedYear, vehicleType]);
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
