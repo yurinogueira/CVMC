@@ -30,3 +30,10 @@ crash.log
 */terraform.tfvars*
 */backend.hcl*
 release-apk/
+
+# Firebase / Push Notifications Secrets
+frontend/android/app/google-services.json
+!frontend/android/app/google-services.json.example
+*firebase-adminsdk*.json
+firebase-credentials*.json
+

@@ -88,6 +88,8 @@ Para garantir consultas instantâneas e prevenção de duplicações:
    - `{ userId: 1, carId: 1, maintenanceDate: -1 }` (otimizado para timeline de manutenções).
 4. **`fuelings`**:
    - `{ userId: 1, carId: 1, fuelingDate: -1 }` (otimizado para relatórios de consumo médio e gráfico de abastecimentos).
+5. **`device_tokens`**:
+   - `{ token: 1 }` (único para impedir registros duplicados do mesmo aparelho) e `{ userId: 1, updatedAt: -1 }` (otimizado para busca de dispositivos ativos do usuário no disparo push FCM).
 
 ---
 

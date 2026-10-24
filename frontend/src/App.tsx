@@ -1,22 +1,28 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { BrowserRouter, useNavigate, useLocation } from "react-router-dom";
+import { Alert, Button, Snackbar } from "@mui/material";
 import { Capacitor } from "@capacitor/core";
 import { App as CapApp } from "@capacitor/app";
 import { StatusBar, Style } from "@capacitor/status-bar";
 import { SplashScreen } from "@capacitor/splash-screen";
-import { initMobileAuthSession } from "./features/auth/state/auth.store";
 import { AppRoutes } from "./routes";
+import { useAuthStore } from "./features/auth/state/auth.store";
+import {
+  pushNotificationService,
+  ForegroundNotificationPayload,
+} from "./services/notifications/push.service";
 
 function MobileAppBridge() {
   const navigate = useNavigate();
   const location = useLocation();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const [foregroundPush, setForegroundPush] =
+    useState<ForegroundNotificationPayload | null>(null);
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) {
       return;
     }
-
-    void initMobileAuthSession();
 
     // Configure Status Bar (Light background with dark icons for optimal contrast)
     void (async () => {
@@ -60,7 +66,59 @@ function MobileAppBridge() {
     };
   }, [location.pathname, navigate]);
 
-  return <AppRoutes />;
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform() || !isAuthenticated) {
+      return;
+    }
+
+    void pushNotificationService.init({
+      onForegroundNotification: (payload) => {
+        setForegroundPush(payload);
+      },
+      onNavigate: (targetRoute) => {
+        navigate(targetRoute);
+      },
+    });
+  }, [isAuthenticated, navigate]);
+
+  return (
+    <>
+      <AppRoutes />
+      <Snackbar
+        open={Boolean(foregroundPush)}
+        autoHideDuration={6000}
+        onClose={() => setForegroundPush(null)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setForegroundPush(null)}
+          severity="info"
+          variant="filled"
+          sx={{ width: "100%", alignItems: "center" }}
+          action={
+            foregroundPush?.route ? (
+              <Button
+                color="inherit"
+                size="small"
+                onClick={() => {
+                  const route = foregroundPush.route;
+                  setForegroundPush(null);
+                  if (route) {
+                    navigate(route);
+                  }
+                }}
+              >
+                Abrir
+              </Button>
+            ) : undefined
+          }
+        >
+          <strong>{foregroundPush?.title}</strong>
+          {foregroundPush?.body ? ` — ${foregroundPush.body}` : ""}
+        </Alert>
+      </Snackbar>
+    </>
+  );
 }
 
 export function App() {

@@ -157,6 +157,7 @@ jobs:
         env:
           HOST: ${{ secrets.OCI_HOST }}
           USER: ${{ secrets.OCI_USERNAME }}
+          FIREBASE_CREDENTIALS_JSON: ${{ secrets.FIREBASE_CREDENTIALS_JSON }}
         run: |
           ssh "$USER@$HOST" "mkdir -p /tmp/cvmc-deploy/dist \
             /tmp/cvmc-deploy/deploy/caddy /tmp/cvmc-deploy/deploy/systemd"
@@ -165,6 +166,9 @@ jobs:
             "$USER@$HOST:/tmp/cvmc-deploy/deploy/systemd/"
           scp deploy/caddy/Caddyfile \
             "$USER@$HOST:/tmp/cvmc-deploy/deploy/caddy/"
+          if [ -n "$FIREBASE_CREDENTIALS_JSON" ]; then
+            printf '%s\n' "$FIREBASE_CREDENTIALS_JSON" | ssh "$USER@$HOST" "cat > /tmp/cvmc-deploy/firebase-credentials.json"
+          fi
 
       - name: Apply updates and restart services on OCI
         env:
@@ -207,8 +211,15 @@ jobs:
             sudo chown root:cvmc /etc/cvmc/backend.env
             sudo chmod 640 /etc/cvmc/backend.env
 
-            # Injetar ou atualizar FIPE, SMTP, Google Auth e CORS Origins
-            for VAR in FIPE_API_TOKEN FIPE_BASE_URL SMTP_HOST SMTP_PORT SMTP_USER SMTP_PASS EMAIL_FROM APP_BASE_URL GOOGLE_CLIENT_ID ALLOWED_ORIGINS; do
+            # Configurar credenciais do Firebase (FCM HTTP v1) se enviadas
+            if [ -f /tmp/cvmc-deploy/firebase-credentials.json ]; then
+              sudo install -m 640 -o root -g cvmc \
+                /tmp/cvmc-deploy/firebase-credentials.json /etc/cvmc/firebase-credentials.json
+              FIREBASE_CREDENTIALS_FILE="/etc/cvmc/firebase-credentials.json"
+            fi
+
+            # Injetar ou atualizar FIPE, SMTP, Google Auth, Firebase e CORS Origins
+            for VAR in FIPE_API_TOKEN FIPE_BASE_URL SMTP_HOST SMTP_PORT SMTP_USER SMTP_PASS EMAIL_FROM APP_BASE_URL GOOGLE_CLIENT_ID ALLOWED_ORIGINS FIREBASE_CREDENTIALS_FILE; do
               VAL="${!VAR:-}"
               if [ -n "$VAL" ]; then
                 if sudo grep -q "^${VAR}=" /etc/cvmc/backend.env; then
