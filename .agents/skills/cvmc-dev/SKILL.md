@@ -28,12 +28,12 @@ Esta skill define as diretrizes de arquitetura, fluxos de edição, documentaç�
 
 | Tarefa | Comando Verboso (Evitar) | Comando Compacto (Usar) | Redução de Tokens |
 | :--- | :--- | :--- | :--- |
-| **Checagem Geral** | `docs + go vet + go test + tsc + eslint + prettier + vitest + terraform` | `./scripts/check.sh all` | **~85% menos tokens** |
+| **Checagem Geral** | `docs + go vet + go test + tsc + oxlint + prettier + vitest + terraform` | `./scripts/check.sh all` | **~85% menos tokens** |
 | **Checar Docs** | `manual check` | `./scripts/check.sh docs` | Retorna 1 linha em sucesso |
 | **Checar Backend** | `cd backend && go vet ./... && go test ./...` | `./scripts/check.sh backend` | Retorna 1 linha em sucesso |
 | **Checar Frontend** | `cd frontend && npx tsc -b && npm run lint && ...` | `./scripts/check.sh frontend` | Retorna 1 linha em sucesso |
 | **Checar Terraform**| `cd terraform && terraform fmt -check` | `./scripts/check.sh terraform` | Retorna 1 linha em sucesso |
-| **Auto-Formatar** | `go fmt + prettier --write + eslint --fix + terraform fmt` | `./scripts/fix.sh` | Retorno limpo e direto |
+| **Auto-Formatar** | `go fmt + prettier --write + oxlint --fix + terraform fmt` | `./scripts/fix.sh` | Retorno limpo e direto |
 | **Regenerar Swagger**| `cd backend && swag init ...` | `./scripts/swagger.sh` | Retorno direto e limpo |
 | **Subir Stack** | `docker compose up -d` | `./scripts/dev.sh start` | Formata tabela limpa |
 | **Status Containers** | `docker compose ps` | `./scripts/dev.sh status` | Resumo de portas e status |

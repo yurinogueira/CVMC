@@ -7,7 +7,7 @@ tags:
   - ci-cd
   - github-actions
   - automation
-timestamp: 2026-10-10
+timestamp: 2026-10-24
 ---
 
 # 🤖 Pipelines de CI/CD — CVMC
@@ -24,7 +24,7 @@ Para navegação geral, retorne ao [Catálogo Canônico](../index.md).
    - Executa `go vet` e testes automatizados (`go test ./...`).
    - Compila o binário estático e dispara deploy no OCI, injetando variáveis de ambiente e a credencial `FIREBASE_CREDENTIALS_JSON` (`/etc/cvmc/firebase-credentials.json` com permissão `0640`).
 2. **`frontend.yml`**:
-   - Executa checagem de tipos (`tsc`), linter ESLint, formatação Prettier e testes Vitest.
+   - Executa checagem de tipos (`tsc -b` com TypeScript 7), linter Oxlint em modo estrito (`oxlint --deny-warnings .`), formatação Prettier e testes Vitest.
    - Gera build de produção, publica no GitHub Pages e compila o APK Android (`build-android-apk`) injetando `GOOGLE_SERVICES_JSON` em `frontend/android/app/google-services.json`.
 3. **`terraform.yml`**:
    - Valida a formatação de infraestrutura (`terraform fmt -check`) e sintaxe HCL.

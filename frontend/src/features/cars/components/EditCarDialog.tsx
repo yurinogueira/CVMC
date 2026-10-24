@@ -38,9 +38,9 @@ interface EditCarFormProps {
   onCarUpdated: (car: Car) => void;
 }
 
-function EditCarForm({ car, onClose, onCarUpdated }: EditCarFormProps) {
-  const currentYear = new Date().getFullYear();
+const currentYear = new Date().getFullYear();
 
+function EditCarForm({ car, onClose, onCarUpdated }: EditCarFormProps) {
   const [name, setName] = useState(car.name || "");
   const [lastMileage, setLastMileage] = useState<number>(car.lastMileage || 0);
   const [yearManufacture, setYearManufacture] = useState<number>(

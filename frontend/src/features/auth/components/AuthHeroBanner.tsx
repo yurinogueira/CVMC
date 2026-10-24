@@ -5,6 +5,8 @@ import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import { brandColors } from "../../../styles/theme";
 import { BrandLogo } from "../../../components/brand/BrandLogo";
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 export function AuthHeroBanner() {
   return (
     <Box
@@ -167,7 +169,7 @@ export function AuthHeroBanner() {
           variant="caption"
           sx={{ opacity: 0.8, color: "rgba(255, 255, 255, 0.8)" }}
         >
-          © {new Date().getFullYear()} CVMC. Todos os direitos reservados.
+          © {CURRENT_YEAR} CVMC. Todos os direitos reservados.
         </Typography>
       </Box>
     </Box>

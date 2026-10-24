@@ -47,7 +47,7 @@ jobs:
 
       - name: Lint
         working-directory: ./frontend
-        run: npx eslint .
+        run: npx oxlint --deny-warnings .
 
       - name: Format check
         working-directory: ./frontend
