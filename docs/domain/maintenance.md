@@ -57,7 +57,8 @@ type Maintenance struct {
 3. **Anexos e Notas Fiscais**:
    - Cada manutenção pode conter múltiplos anexos (comprovantes e ordens de serviço) devidamente higienizados e validados quanto ao tipo MIME.
 4. **Monitoramento de Revisões Periódicas (`periodic.go`)**:
-   - O sistema monitora revisões preventivas por quilometragem ou tempo (**12 meses**, o que ocorrer primeiro) a partir da última troca registrada de cada item ou da quilometragem inicial de cadastro do veículo (`InitialMileage` / marco zero):
+   - O sistema monitora revisões preventivas por quilometragem ou tempo a partir da última troca registrada de cada item ou da quilometragem inicial de cadastro do veículo (`InitialMileage` / marco zero).
+   - **Intervalos Padrão de Fábrica (Fallback)**:
      - **Carros e Caminhonetes (`cars`, `trucks`)**:
        - `Óleo de Motor` (Troca de óleo): 10.000 km ou 12 meses.
        - `Filtro do Óleo de Motor` (Troca de filtro de óleo): 10.000 km ou 12 meses.
@@ -68,6 +69,13 @@ type Maintenance struct {
        - `Óleo de Motor` (Troca de óleo): 2.500 km ou 12 meses.
        - `Filtro do Óleo de Motor` (Troca de filtro de óleo): 2.500 km ou 12 meses.
        - `Filtro de Ar do Motor` (Troca de filtro de ar): 5.000 km ou 12 meses.
+   - **Intervalos Personalizáveis por Veículo (`car.MaintenanceIntervals`)**:
+     - Cada proprietário pode configurar individualmente os intervalos desejados de cada item preventivo diretamente pelo painel do veículo ou pela tela de manutenções.
+     - As opções são estritamente pré-definidas para garantir integridade:
+       - Carros: 5.000, 7.500, 10.000, 15.000, 20.000, 30.000 km; 3, 6, 12, 18, 24 meses.
+       - Motos: 1.000, 2.500, 5.000, 10.000 km; 3, 6, 12, 18, 24 meses.
+     - A arquitetura orientada a dicionário (`map[string]MaintenanceIntervalConfig`) é aberta e preparada para suportar a adição de novos itens preventivos no futuro sem alterações estruturais no banco de dados.
+     - Um botão de restauração permite reverter todos os itens para os padrões recomendados a qualquer momento.
    - **Classificação de Status**:
      - `ok` (`Em dia`): mais de 1.000 km e mais de 30 dias restantes.
      - `upcoming` (`Próximo`): faltam ≤ 1.000 km ou ≤ 30 dias.

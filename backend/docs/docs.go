@@ -2377,6 +2377,19 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.MaintenanceIntervalRequest": {
+            "type": "object",
+            "properties": {
+                "intervalKm": {
+                    "type": "integer",
+                    "example": 5000
+                },
+                "intervalMonths": {
+                    "type": "integer",
+                    "example": 6
+                }
+            }
+        },
         "handlers.RegisterDeviceTokenRequest": {
             "type": "object",
             "properties": {
@@ -2469,6 +2482,12 @@ const docTemplate = `{
                 "lastMileage": {
                     "type": "integer",
                     "example": 35000
+                },
+                "maintenanceIntervals": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/handlers.MaintenanceIntervalRequest"
+                    }
                 },
                 "manufacturer": {
                     "type": "string",

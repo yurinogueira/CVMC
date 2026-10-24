@@ -8,6 +8,7 @@ import (
 
 	portauth "cvmc/internal/application/ports/auth"
 	carusecase "cvmc/internal/application/usecase/car"
+	domaincar "cvmc/internal/domain/car"
 	"cvmc/internal/shared/httpx"
 )
 
@@ -38,18 +39,24 @@ type CreateCarRequest struct {
 	Fuel            string `json:"fuel,omitempty" example:"Gasolina"`
 }
 
+type MaintenanceIntervalRequest struct {
+	IntervalKm     int `json:"intervalKm" example:"5000"`
+	IntervalMonths int `json:"intervalMonths" example:"6"`
+}
+
 type UpdateCarRequest struct {
-	Name            string `json:"name" example:"Meu Civic"`
-	Manufacturer    string `json:"manufacturer" example:"Honda"`
-	Model           string `json:"model" example:"Civic Touring"`
-	YearManufacture int    `json:"yearManufacture" example:"2023"`
-	YearModel       int    `json:"yearModel" example:"2024"`
-	LastMileage     int    `json:"lastMileage" example:"35000"`
-	VehicleType     string `json:"vehicleType,omitempty" example:"cars"`
-	ImageUrl        string `json:"imageUrl,omitempty" example:"https://images.unsplash.com/photo-1590362891988-39cb01f6ec08"`
-	FIPECode        string `json:"fipeCode,omitempty" example:"005487-9"`
-	FIPEPrice       string `json:"fipePrice,omitempty" example:"R$ 150.000,00"`
-	Fuel            string `json:"fuel,omitempty" example:"Gasolina"`
+	Name                 string                                `json:"name" example:"Meu Civic"`
+	Manufacturer         string                                `json:"manufacturer" example:"Honda"`
+	Model                string                                `json:"model" example:"Civic Touring"`
+	YearManufacture      int                                   `json:"yearManufacture" example:"2023"`
+	YearModel            int                                   `json:"yearModel" example:"2024"`
+	LastMileage          int                                   `json:"lastMileage" example:"35000"`
+	VehicleType          string                                `json:"vehicleType,omitempty" example:"cars"`
+	ImageUrl             string                                `json:"imageUrl,omitempty" example:"https://images.unsplash.com/photo-1590362891988-39cb01f6ec08"`
+	FIPECode             string                                `json:"fipeCode,omitempty" example:"005487-9"`
+	FIPEPrice            string                                `json:"fipePrice,omitempty" example:"R$ 150.000,00"`
+	Fuel                 string                                `json:"fuel,omitempty" example:"Gasolina"`
+	MaintenanceIntervals map[string]MaintenanceIntervalRequest `json:"maintenanceIntervals,omitempty"`
 }
 
 type ShareCarRequest struct {
@@ -198,18 +205,30 @@ func (h *CarHandler) Update(w http.ResponseWriter, r *http.Request) {
 		handleCarError(w, err)
 		return
 	}
+	var intervals map[string]domaincar.MaintenanceIntervalConfig
+	if input.MaintenanceIntervals != nil {
+		intervals = make(map[string]domaincar.MaintenanceIntervalConfig, len(input.MaintenanceIntervals))
+		for k, v := range input.MaintenanceIntervals {
+			intervals[k] = domaincar.MaintenanceIntervalConfig{
+				IntervalKm:     v.IntervalKm,
+				IntervalMonths: v.IntervalMonths,
+			}
+		}
+	}
+
 	car, err := h.service.Update(r.Context(), actorID, carID, carusecase.UpdateInput{
-		Name:            input.Name,
-		Manufacturer:    input.Manufacturer,
-		Model:           input.Model,
-		YearManufacture: input.YearManufacture,
-		YearModel:       input.YearModel,
-		LastMileage:     input.LastMileage,
-		VehicleType:     input.VehicleType,
-		ImageUrl:        input.ImageUrl,
-		FIPECode:        input.FIPECode,
-		FIPEPrice:       input.FIPEPrice,
-		Fuel:            input.Fuel,
+		Name:                 input.Name,
+		Manufacturer:         input.Manufacturer,
+		Model:                input.Model,
+		YearManufacture:      input.YearManufacture,
+		YearModel:            input.YearModel,
+		LastMileage:          input.LastMileage,
+		VehicleType:          input.VehicleType,
+		ImageUrl:             input.ImageUrl,
+		FIPECode:             input.FIPECode,
+		FIPEPrice:            input.FIPEPrice,
+		Fuel:                 input.Fuel,
+		MaintenanceIntervals: intervals,
 	})
 	if err != nil {
 		handleCarError(w, err)

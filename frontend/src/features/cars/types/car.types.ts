@@ -1,3 +1,8 @@
+export interface MaintenanceIntervalConfig {
+  intervalKm: number;
+  intervalMonths: number;
+}
+
 export interface Car {
   id: string;
   name: string;
@@ -13,6 +18,7 @@ export interface Car {
   fuel?: string;
   ownerId: string;
   sharedWith?: string[];
+  maintenanceIntervals?: Record<string, MaintenanceIntervalConfig>;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -29,6 +35,7 @@ export interface CreateCarPayload {
   fipeCode?: string;
   fipePrice?: string;
   fuel?: string;
+  maintenanceIntervals?: Record<string, MaintenanceIntervalConfig>;
 }
 
 export interface UpdateCarPayload {
@@ -43,4 +50,5 @@ export interface UpdateCarPayload {
   fipeCode?: string;
   fipePrice?: string;
   fuel?: string;
+  maintenanceIntervals?: Record<string, MaintenanceIntervalConfig>;
 }
