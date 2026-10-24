@@ -50,10 +50,10 @@ flowchart TD
 
 ---
 
-## 🖥️ Frontend (SPA React 19 + MUI v6)
+## 🖥️ Frontend (SPA React 19 + MUI v9)
 
 - Desenvolvido em **React 19**, **Vite** e **TypeScript**.
-- Estilização construída com **Material UI v6** seguindo regras análogas de design (azul, ciano e esmeralda).
+- Estilização construída com **Material UI v9** seguindo regras análogas de design (azul, ciano e esmeralda).
 - Estado global gerenciado com **Zustand** para autenticação e perfil.
 - Roteamento declarativo com **React Router v7** e controle de permissões via componente `ProtectedRoute`.
 

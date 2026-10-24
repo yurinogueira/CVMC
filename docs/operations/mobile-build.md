@@ -27,7 +27,7 @@ O aplicativo Android do CVMC opera através de um shell nativo leve acoplado à 
 ```mermaid
 flowchart TD
     subgraph Frontend["SPA React 19 (/frontend)"]
-        UI["Interface Material UI v6<br>Safe Area Insets & Responsive"]
+        UI["Interface Material UI v9<br>Safe Area Insets & Responsive"]
         BRIDGE["MobileAppBridge<br>(StatusBar, SplashScreen, BackButton)"]
         API["apiClient (Axios)<br>Detecção Nativa + Bearer Fallback"]
         STORE["Zustand useAuthStore<br>@capacitor/preferences"]
