@@ -156,7 +156,11 @@ export function UpcomingMaintenanceCard({
               mb: 2,
             }}
           >
-            <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+            <Stack
+              direction="row"
+              spacing={1.5}
+              sx={{ alignItems: "center", minWidth: 0, flex: 1, mr: 1 }}
+            >
               <Box
                 sx={{
                   width: 40,
@@ -172,7 +176,7 @@ export function UpcomingMaintenanceCard({
               >
                 {getItemIcon(item.type)}
               </Box>
-              <Box>
+              <Box sx={{ minWidth: 0 }}>
                 <Typography
                   variant="subtitle1"
                   component="h3"
@@ -180,11 +184,15 @@ export function UpcomingMaintenanceCard({
                     fontWeight: 800,
                     color: "text.primary",
                     lineHeight: 1.25,
+                    overflowWrap: "break-word",
                   }}
                 >
                   {item.label}
                 </Typography>
-                <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                <Typography
+                  variant="caption"
+                  sx={{ color: "text.secondary", display: "block" }}
+                >
                   A cada {item.intervalKm.toLocaleString("pt-BR")} km ou{" "}
                   {item.intervalMonths} meses
                 </Typography>
@@ -273,17 +281,28 @@ export function UpcomingMaintenanceCard({
 
             <Stack
               direction="row"
-              sx={{ justifyContent: "space-between", alignItems: "center" }}
+              sx={{
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: 1,
+              }}
             >
               <Stack
                 direction="row"
                 spacing={0.75}
-                sx={{ alignItems: "center", color: "text.secondary" }}
+                sx={{
+                  alignItems: "center",
+                  color: "text.secondary",
+                  flexShrink: 0,
+                }}
               >
                 <CalendarMonthRoundedIcon sx={{ fontSize: 16 }} />
                 <Typography variant="caption">Data limite:</Typography>
               </Stack>
-              <Typography variant="caption" sx={{ fontWeight: 700 }}>
+              <Typography
+                variant="caption"
+                sx={{ fontWeight: 700, textAlign: "right" }}
+              >
                 {formatDate(item.nextDueDate)} ({formatRemainingDays()})
               </Typography>
             </Stack>
@@ -319,6 +338,8 @@ export function UpcomingMaintenanceCard({
               textTransform: "none",
               fontWeight: 700,
               py: 0.8,
+              whiteSpace: "normal",
+              lineHeight: 1.3,
             }}
           >
             Registrar {item.label.toLowerCase()}

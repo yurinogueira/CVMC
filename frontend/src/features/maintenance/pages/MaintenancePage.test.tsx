@@ -123,4 +123,93 @@ describe("MaintenancePage", () => {
       ).toBeGreaterThanOrEqual(1);
     });
   });
+
+  it("renders preventive cards inside responsive grid layout", async () => {
+    vi.mocked(carService.list).mockResolvedValue([
+      {
+        id: "car-1",
+        ownerId: "user-1",
+        name: "Honda Civic",
+        manufacturer: "Honda",
+        model: "Civic Touring",
+        yearManufacture: 2022,
+        yearModel: 2023,
+        lastMileage: 49500,
+        vehicleType: "cars",
+      },
+    ]);
+
+    vi.mocked(maintenanceService.getUpcomingSummary).mockResolvedValue({
+      totalVehicles: 1,
+      status: "upcoming",
+      okCount: 2,
+      upcomingCount: 1,
+      overdueCount: 0,
+      vehicles: [
+        {
+          carId: "car-1",
+          carName: "Honda Civic",
+          manufacturer: "Honda",
+          model: "Civic Touring",
+          vehicleType: "cars",
+          currentKm: 49500,
+          status: "upcoming",
+          okCount: 2,
+          upcomingCount: 1,
+          overdueCount: 0,
+          items: [
+            {
+              type: "Óleo de Motor",
+              label: "Troca de óleo",
+              status: "upcoming",
+              intervalKm: 10000,
+              intervalMonths: 12,
+              hasHistory: true,
+              lastPerformedAt: "2026-03-10T00:00:00Z",
+              lastMileage: 40000,
+              nextDueMileage: 50000,
+              nextDueDate: "2027-03-10T00:00:00Z",
+              remainingKm: 500,
+              remainingDays: 140,
+              progressPercent: 95,
+              alertEligible: true,
+            },
+            {
+              type: "Filtro do Óleo de Motor",
+              label: "Troca de filtro de óleo",
+              status: "ok",
+              intervalKm: 10000,
+              intervalMonths: 12,
+              hasHistory: true,
+              lastPerformedAt: "2026-03-10T00:00:00Z",
+              lastMileage: 40000,
+              nextDueMileage: 50000,
+              nextDueDate: "2027-03-10T00:00:00Z",
+              remainingKm: 500,
+              remainingDays: 140,
+              progressPercent: 95,
+              alertEligible: false,
+            },
+          ],
+        },
+      ],
+    });
+
+    vi.mocked(maintenanceService.listByCar).mockResolvedValue([]);
+
+    render(
+      <MemoryRouter initialEntries={["/maintenance?carId=car-1"]}>
+        <MaintenancePage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("Próximas Manutenções Preventivas"),
+      ).toBeInTheDocument();
+    });
+
+    expect(screen.getByText("Troca de óleo")).toBeInTheDocument();
+    expect(screen.getByText("Troca de filtro de óleo")).toBeInTheDocument();
+  });
 });

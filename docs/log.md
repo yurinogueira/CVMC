@@ -6,14 +6,17 @@ tags:
   - log
   - audit
   - history
-timestamp: 2026-10-24
+timestamp: 2026-10-25
 ---
 
 # 🕒 Diário de Bordo & Histórico Cronológico — CVMC
 
-Este documento funciona como o índice mestre de todas as mudanças de engenharia aplicadas ao projeto **CVMC (Como Vai Meu Carro)**. Cada entrada detalhada reside em um arquivo diário específico na pasta [docs/logs/2026-10-24.md](logs/2026-10-24.md), garantindo economia de tokens e histórico auditável.
+Este documento funciona como o índice mestre de todas as mudanças de engenharia aplicadas ao projeto **CVMC (Como Vai Meu Carro)**. Cada entrada detalhada reside em um arquivo diário específico na pasta [docs/logs/2026-10-25.md](logs/2026-10-25.md), garantindo economia de tokens e histórico auditável.
 
 Para navegação geral, retorne ao [Catálogo Canônico](index.md).
+
+## 📅 [2026-10-25](logs/2026-10-25.md) — Grid Responsivo de Manutenções Preventivas em Telas Verticais (#129)
+- **Ajuste de Grid e Responsividade dos Cards Preventivos (#129)**: Transição adaptativa da seção "Próximas Manutenções Preventivas" na tela `MaintenancePage.tsx` para `size={{ xs: 12, sm: 6, md: 6, lg: 4 }}`, garantindo 2 cards por linha no breakpoint `md` (900px a 1199px) para eliminar compressão excessiva em monitores verticais ou intermediários (como 1000x1800 com sidebar persistente de 260px), aliada a proteções de confinamento com `minWidth: 0`, `overflowWrap: "break-word"` e quebra suave de ações no `UpcomingMaintenanceCard.tsx`.
 
 ## 📅 [2026-10-24](logs/2026-10-24.md) — Intervalos Personalizáveis de Revisão (#127), Atualização do README (#125), Revisões Periódicas (#120), Ícones Play Store (#122) & Oxlint + TypeScript 7
 - **Intervalos Personalizáveis de Revisão Preventiva por Veículo (#127)**: Configuração independente de metas de quilometragem e tempo (meses) para trocas de óleo e filtros no painel do veículo (`VehicleDetailsPage`) e na tela de manutenções (`MaintenancePage`), com seletores pré-definidos para carros e motos, botão de restauração dos padrões de fábrica e arquitetura orientada a mapa extensível para novos itens futuros sem migrações de banco.
