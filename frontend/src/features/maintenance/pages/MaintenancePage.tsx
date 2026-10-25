@@ -385,9 +385,9 @@ export function MaintenancePage() {
       </Card>
 
       {loadingInitial ? (
-        <Grid container spacing={3}>
+        <Grid container spacing={2.5}>
           {[1, 2, 3].map((idx) => (
-            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={idx}>
+            <Grid size={{ xs: 12, sm: 6, md: 6, lg: 4 }} key={idx}>
               <Card
                 elevation={0}
                 sx={{ p: 2.5, border: "1px solid #E2E8F0", borderRadius: 2.5 }}
@@ -574,7 +574,7 @@ export function MaintenancePage() {
 
               <Grid container spacing={2.5}>
                 {selectedUpcoming.items.map((item) => (
-                  <Grid size={{ xs: 12, sm: 6, md: 4 }} key={item.type}>
+                  <Grid size={{ xs: 12, sm: 6, md: 6, lg: 4 }} key={item.type}>
                     <UpcomingMaintenanceCard
                       item={item}
                       onQuickRegister={(type) => handleOpenNewMaintenance(type)}

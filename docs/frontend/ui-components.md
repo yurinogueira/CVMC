@@ -74,6 +74,9 @@ Para prevenir estouro horizontal (*horizontal overflow*) e garantir adaptação 
    - O Drawer temporário para dispositivos móveis deve obrigatoriamente declarar `pt: "env(safe-area-inset-top, 0px)"` e `pb: "env(safe-area-inset-bottom, 0px)"` em seu container (`& .MuiDrawer-paper`). Como o Drawer é renderizado em um portal com `position: fixed; top: 0`, ele não herda o padding do `body`. A aplicação de safe area insets previne que o logotipo e cabeçalho colidam com a barra de status do sistema (relógio, bateria, etc.) e que a seção de usuário encavale na barra de gestos do Android/iOS.
 7. **Alto Contraste da Barra de Status Nativa**:
    - Em aplicações com tema visual claro (`mode: "light"`), a barra de status do celular deve operar com ícones e textos escuros (`Style.Light` no Capacitor, `android:windowLightStatusBar="true"` no Android nativo e `<meta name="theme-color" content="#FFFFFF">` no HTML), assegurando contraste nítido e legibilidade perfeita do relógio e indicadores sobre os cabeçalhos claros do app.
+8. **Grid Responsivo em Resoluções Intermediárias e Monitores Verticais (`MaintenancePage.tsx`)**:
+   - Em grids com alta densidade de métricas e ações (como os cards de `UpcomingMaintenanceCard.tsx`), a presença do drawer lateral persistente de 260px (`DRAWER_WIDTH`) a partir de `md` (900px) reduz a largura útil do container para ~690px em resoluções como 1000x1800.
+   - Para evitar achatamento visual, truncamento de badges de status e quebras descompensadas de texto, o grid preventivo adota a proporção adaptativa `size={{ xs: 12, sm: 6, md: 6, lg: 4 }}` (renderizando 2 colunas no breakpoint `md` e reservando 3 colunas para larguras amplas `lg` >= 1200px), associado a confinamento interno com `minWidth: 0` e `overflowWrap: "break-word"`.
 
 ---
 
