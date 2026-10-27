@@ -21,8 +21,11 @@ type User struct {
 	PasswordResetTokenHash     string     `json:"-"`
 	PasswordResetExpiresAt     *time.Time `json:"-"`
 	MaxVehicles                int        `json:"maxVehicles"`
+	FilesCount                 int        `json:"filesCount"`
 	MaxFiles                   int        `json:"maxFiles"`
+	StorageUsedBytes           int64      `json:"storageUsedBytes"`
 	MaxStorageBytes            int64      `json:"maxStorageBytes"`
+	StorageQuotaSynced         bool       `json:"-"`
 	CreatedAt                  time.Time  `json:"createdAt"`
 	UpdatedAt                  time.Time  `json:"updatedAt,omitempty"`
 }

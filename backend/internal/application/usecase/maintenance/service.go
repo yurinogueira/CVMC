@@ -10,6 +10,7 @@ import (
 	carport "cvmc/internal/application/ports/car"
 	maintenanceport "cvmc/internal/application/ports/maintenance"
 	userport "cvmc/internal/application/ports/user"
+	"cvmc/internal/application/usecase/storagequota"
 	domaincar "cvmc/internal/domain/car"
 	domainmaintenance "cvmc/internal/domain/maintenance"
 	domainuser "cvmc/internal/domain/user"
@@ -20,7 +21,7 @@ var (
 	ErrMaintenanceNotFound  = errors.New("maintenance not found")
 	ErrMaintenanceForbidden = errors.New("forbidden")
 	ErrMaintenanceInvalid   = errors.New("invalid payload")
-	ErrStorageQuotaExceeded = errors.New("limite de cota de arquivos atingido (máx. 100 arquivos ou 100 MB)")
+	ErrStorageQuotaExceeded = storagequota.ErrStorageQuotaExceeded
 )
 
 type Service struct {
@@ -60,23 +61,12 @@ func (s *Service) SetSecurityDependencies(users userport.Repository, cipher *fil
 	s.cipher = cipher
 }
 
-func (s *Service) normalizeAndEncryptAttachments(ctx context.Context, ownerID, excludeMaintID string, incoming []domainmaintenance.Attachment) ([]domainmaintenance.Attachment, error) {
+func (s *Service) prepareAndEncryptAttachments(ownerID string, incoming []domainmaintenance.Attachment) ([]domainmaintenance.Attachment, int, int64, error) {
 	if len(incoming) == 0 {
-		return incoming, nil
+		return incoming, 0, 0, nil
 	}
 
-	maxFiles := domainuser.DefaultMaxFiles
-	maxStorage := domainuser.DefaultMaxStorageBytes
-	if s.users != nil {
-		if u, err := s.users.FindByID(ctx, ownerID); err == nil {
-			maxFiles = u.EffectiveMaxFiles()
-			maxStorage = u.EffectiveMaxStorageBytes()
-		}
-	}
-
-	filesCount := len(incoming)
-	var storageUsed int64
-
+	var totalBytes int64
 	prepared := make([]domainmaintenance.Attachment, len(incoming))
 	for i, att := range incoming {
 		realSize := filecipher.EstimateDecodedBytes(att.DataUrl)
@@ -84,46 +74,9 @@ func (s *Service) normalizeAndEncryptAttachments(ctx context.Context, ownerID, e
 			att.Size = realSize
 		}
 		if att.Size > 0 {
-			storageUsed += att.Size
+			totalBytes += att.Size
 		}
 		prepared[i] = att
-	}
-
-	if s.cars != nil {
-		userCars, err := s.cars.ListByUser(ctx, ownerID)
-		if err == nil {
-			for _, c := range userCars {
-				if c.OwnerID != ownerID {
-					continue
-				}
-				if filecipher.IsInlineFileData(c.ImageUrl) {
-					filesCount++
-					storageUsed += filecipher.EstimateDecodedBytes(c.ImageUrl)
-				}
-				items, err := s.maintenances.ListByCar(ctx, c.ID)
-				if err == nil {
-					for _, m := range items {
-						if m.ID == excludeMaintID {
-							continue
-						}
-						for _, att := range m.Attachments {
-							filesCount++
-							sz := att.Size
-							if est := filecipher.EstimateDecodedBytes(att.DataUrl); est > sz {
-								sz = est
-							}
-							if sz > 0 {
-								storageUsed += sz
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-
-	if filesCount > maxFiles || storageUsed > maxStorage {
-		return nil, ErrStorageQuotaExceeded
 	}
 
 	if s.cipher != nil {
@@ -131,14 +84,14 @@ func (s *Service) normalizeAndEncryptAttachments(ctx context.Context, ownerID, e
 			if prepared[i].DataUrl != "" {
 				enc, err := s.cipher.EncryptForOwner(ownerID, prepared[i].DataUrl)
 				if err != nil {
-					return nil, err
+					return nil, 0, 0, err
 				}
 				prepared[i].DataUrl = enc
 			}
 		}
 	}
 
-	return prepared, nil
+	return prepared, len(prepared), totalBytes, nil
 }
 
 func (s *Service) decryptMaintenance(ownerID string, m domainmaintenance.Maintenance) domainmaintenance.Maintenance {
@@ -169,10 +122,26 @@ func (s *Service) Create(ctx context.Context, actorID, carID string, input Creat
 	if strings.TrimSpace(input.Title) == "" {
 		return domainmaintenance.Maintenance{}, ErrMaintenanceInvalid
 	}
-	preparedAttachments, err := s.normalizeAndEncryptAttachments(ctx, car.OwnerID, "", input.Attachments)
+	preparedAttachments, newFiles, newBytes, err := s.prepareAndEncryptAttachments(car.OwnerID, input.Attachments)
 	if err != nil {
 		return domainmaintenance.Maintenance{}, err
 	}
+
+	var syncedUser domainuser.User
+	var hasSyncedUser bool
+	if s.users != nil {
+		if u, err := s.users.FindByID(ctx, car.OwnerID); err == nil {
+			u, _ = storagequota.EnsureSynced(ctx, u, s.users, s.cars, s.maintenances, s.cipher)
+			if err := storagequota.CheckDelta(u, newFiles, newBytes); err != nil {
+				return domainmaintenance.Maintenance{}, ErrStorageQuotaExceeded
+			}
+			syncedUser = u
+			hasSyncedUser = true
+		}
+	} else if newFiles > domainuser.DefaultMaxFiles || newBytes > domainuser.DefaultMaxStorageBytes {
+		return domainmaintenance.Maintenance{}, ErrStorageQuotaExceeded
+	}
+
 	when := input.Date
 	if when.IsZero() {
 		when = s.now().UTC()
@@ -192,6 +161,9 @@ func (s *Service) Create(ctx context.Context, actorID, carID string, input Creat
 	created, err := s.maintenances.Create(ctx, maintenance)
 	if err != nil {
 		return domainmaintenance.Maintenance{}, err
+	}
+	if hasSyncedUser && (newFiles != 0 || newBytes != 0) {
+		_, _ = storagequota.CommitDelta(ctx, syncedUser, s.users, newFiles, newBytes)
 	}
 	if input.Mileage > car.LastMileage {
 		car.LastMileage = input.Mileage
@@ -250,10 +222,30 @@ func (s *Service) Update(ctx context.Context, actorID, maintenanceID string, inp
 	if strings.TrimSpace(input.Title) == "" {
 		return domainmaintenance.Maintenance{}, ErrMaintenanceInvalid
 	}
-	preparedAttachments, err := s.normalizeAndEncryptAttachments(ctx, car.OwnerID, maintenanceID, input.Attachments)
+
+	oldFiles, oldBytes := storagequota.AttachmentMetrics(item.Attachments)
+	preparedAttachments, newFiles, newBytes, err := s.prepareAndEncryptAttachments(car.OwnerID, input.Attachments)
 	if err != nil {
 		return domainmaintenance.Maintenance{}, err
 	}
+	deltaFiles := newFiles - oldFiles
+	deltaBytes := newBytes - oldBytes
+
+	var syncedUser domainuser.User
+	var hasSyncedUser bool
+	if s.users != nil {
+		if u, err := s.users.FindByID(ctx, car.OwnerID); err == nil {
+			u, _ = storagequota.EnsureSynced(ctx, u, s.users, s.cars, s.maintenances, s.cipher)
+			if err := storagequota.CheckDelta(u, deltaFiles, deltaBytes); err != nil {
+				return domainmaintenance.Maintenance{}, ErrStorageQuotaExceeded
+			}
+			syncedUser = u
+			hasSyncedUser = true
+		}
+	} else if newFiles > domainuser.DefaultMaxFiles || newBytes > domainuser.DefaultMaxStorageBytes {
+		return domainmaintenance.Maintenance{}, ErrStorageQuotaExceeded
+	}
+
 	item.Title = strings.TrimSpace(input.Title)
 	item.Description = strings.TrimSpace(input.Description)
 	if !input.Date.IsZero() {
@@ -267,6 +259,9 @@ func (s *Service) Update(ctx context.Context, actorID, maintenanceID string, inp
 	updated, err := s.maintenances.Update(ctx, item)
 	if err != nil {
 		return domainmaintenance.Maintenance{}, err
+	}
+	if hasSyncedUser && (deltaFiles != 0 || deltaBytes != 0) {
+		_, _ = storagequota.CommitDelta(ctx, syncedUser, s.users, deltaFiles, deltaBytes)
 	}
 	if item.Mileage > car.LastMileage {
 		car.LastMileage = item.Mileage
@@ -288,7 +283,25 @@ func (s *Service) Delete(ctx context.Context, actorID, maintenanceID string) err
 	if car.OwnerID != actorID {
 		return ErrMaintenanceForbidden
 	}
-	return s.maintenances.Delete(ctx, maintenanceID)
+
+	var syncedUser domainuser.User
+	var hasSyncedUser bool
+	if s.users != nil {
+		if u, err := s.users.FindByID(ctx, car.OwnerID); err == nil {
+			u, _ = storagequota.EnsureSynced(ctx, u, s.users, s.cars, s.maintenances, s.cipher)
+			syncedUser = u
+			hasSyncedUser = true
+		}
+	}
+	oldFiles, oldBytes := storagequota.AttachmentMetrics(item.Attachments)
+
+	if err := s.maintenances.Delete(ctx, maintenanceID); err != nil {
+		return err
+	}
+	if hasSyncedUser && (oldFiles != 0 || oldBytes != 0) {
+		_, _ = storagequota.CommitDelta(ctx, syncedUser, s.users, -oldFiles, -oldBytes)
+	}
+	return nil
 }
 
 func accessible(actorID string, car domaincar.Car) bool {

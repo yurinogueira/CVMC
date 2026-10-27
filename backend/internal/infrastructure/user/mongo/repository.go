@@ -29,6 +29,9 @@ type userDoc struct {
 	MaxVehicles                int        `bson:"maxVehicles"`
 	MaxFiles                   int        `bson:"maxFiles,omitempty"`
 	MaxStorageBytes            int64      `bson:"maxStorageBytes,omitempty"`
+	FilesCount                 int        `bson:"filesCount,omitempty"`
+	StorageUsedBytes           int64      `bson:"storageUsedBytes,omitempty"`
+	StorageQuotaSynced         bool       `bson:"storageQuotaSynced,omitempty"`
 	CreatedAt                  time.Time  `bson:"createdAt"`
 	UpdatedAt                  time.Time  `bson:"updatedAt,omitempty"`
 }
@@ -61,6 +64,9 @@ func (d userDoc) toDomain() domainuser.User {
 		MaxVehicles:                maxVehicles,
 		MaxFiles:                   maxFiles,
 		MaxStorageBytes:            maxStorage,
+		FilesCount:                 d.FilesCount,
+		StorageUsedBytes:           d.StorageUsedBytes,
+		StorageQuotaSynced:         d.StorageQuotaSynced,
 		CreatedAt:                  d.CreatedAt,
 		UpdatedAt:                  d.UpdatedAt,
 	}
@@ -141,8 +147,11 @@ func (r *Repository) Create(ctx context.Context, user domainuser.User) (domainus
 		PasswordResetTokenHash:     user.PasswordResetTokenHash,
 		PasswordResetExpiresAt:     user.PasswordResetExpiresAt,
 		MaxVehicles:                user.MaxVehicles,
+		FilesCount:                 user.FilesCount,
 		MaxFiles:                   user.MaxFiles,
+		StorageUsedBytes:           user.StorageUsedBytes,
 		MaxStorageBytes:            user.MaxStorageBytes,
+		StorageQuotaSynced:         user.StorageQuotaSynced,
 		CreatedAt:                  user.CreatedAt,
 		UpdatedAt:                  user.UpdatedAt,
 	}
@@ -187,8 +196,11 @@ func (r *Repository) Update(ctx context.Context, user domainuser.User) (domainus
 			"passwordResetTokenHash":     user.PasswordResetTokenHash,
 			"passwordResetExpiresAt":     user.PasswordResetExpiresAt,
 			"maxVehicles":                user.MaxVehicles,
+			"filesCount":                 user.FilesCount,
 			"maxFiles":                   user.MaxFiles,
+			"storageUsedBytes":           user.StorageUsedBytes,
 			"maxStorageBytes":            user.MaxStorageBytes,
+			"storageQuotaSynced":         user.StorageQuotaSynced,
 			"updatedAt":                  user.UpdatedAt,
 		},
 	}

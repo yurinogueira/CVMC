@@ -15,6 +15,7 @@ import (
 	maintport "cvmc/internal/application/ports/maintenance"
 	userport "cvmc/internal/application/ports/user"
 	userusecase "cvmc/internal/application/usecase/user"
+	"cvmc/internal/shared/filecipher"
 	"cvmc/internal/shared/httpx"
 )
 
@@ -41,8 +42,9 @@ func (h *UserHandler) SetCascadeDependencies(
 	maintenances maintport.Repository,
 	fuelings fuelport.Repository,
 	cleanupTokens func(ctx context.Context, userID string) error,
+	cipher ...*filecipher.FileCipher,
 ) {
-	h.service.SetCascadeDependencies(maintenances, fuelings, cleanupTokens)
+	h.service.SetCascadeDependencies(maintenances, fuelings, cleanupTokens, cipher...)
 }
 
 type UpdateProfileRequest struct {

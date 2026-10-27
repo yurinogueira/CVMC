@@ -10,7 +10,9 @@ import (
 	carport "cvmc/internal/application/ports/car"
 	maintenanceport "cvmc/internal/application/ports/maintenance"
 	userport "cvmc/internal/application/ports/user"
+	"cvmc/internal/application/usecase/storagequota"
 	domaincar "cvmc/internal/domain/car"
+	domainuser "cvmc/internal/domain/user"
 	memoryuser "cvmc/internal/infrastructure/user/memory"
 	"cvmc/internal/shared/filecipher"
 )
@@ -23,7 +25,7 @@ var (
 	ErrShareNotFound        = errors.New("share target not found")
 	ErrEmailNotVerified     = errors.New("valide seu e-mail para cadastrar veículos")
 	ErrVehicleLimitReached  = errors.New("limite de veículos atingido")
-	ErrStorageQuotaExceeded = errors.New("limite de cota de arquivos atingido (máx. 100 arquivos ou 100 MB)")
+	ErrStorageQuotaExceeded = storagequota.ErrStorageQuotaExceeded
 )
 
 type Service struct {
@@ -72,49 +74,6 @@ func (s *Service) SetSecurityDependencies(maintenances maintenanceport.Repositor
 	s.cipher = cipher
 }
 
-func (s *Service) checkImageQuota(ctx context.Context, user interface {
-	EffectiveMaxFiles() int
-	EffectiveMaxStorageBytes() int64
-}, ownerID, excludeCarID, newImageUrl string, userCars []domaincar.Car) error {
-	if !filecipher.IsInlineFileData(newImageUrl) {
-		return nil
-	}
-	filesCount := 1
-	storageUsed := filecipher.EstimateDecodedBytes(newImageUrl)
-
-	for _, c := range userCars {
-		if c.OwnerID != ownerID {
-			continue
-		}
-		if c.ID != excludeCarID && filecipher.IsInlineFileData(c.ImageUrl) {
-			filesCount++
-			storageUsed += filecipher.EstimateDecodedBytes(c.ImageUrl)
-		}
-		if s.maintenances != nil {
-			items, err := s.maintenances.ListByCar(ctx, c.ID)
-			if err == nil {
-				for _, m := range items {
-					for _, att := range m.Attachments {
-						filesCount++
-						sz := att.Size
-						if est := filecipher.EstimateDecodedBytes(att.DataUrl); est > sz {
-							sz = est
-						}
-						if sz > 0 {
-							storageUsed += sz
-						}
-					}
-				}
-			}
-		}
-	}
-
-	if filesCount > user.EffectiveMaxFiles() || storageUsed > user.EffectiveMaxStorageBytes() {
-		return ErrStorageQuotaExceeded
-	}
-	return nil
-}
-
 func (s *Service) decryptCar(car domaincar.Car) domaincar.Car {
 	if s.cipher != nil && car.ImageUrl != "" {
 		if plain, err := s.cipher.DecryptForOwner(car.OwnerID, car.ImageUrl); err == nil {
@@ -138,6 +97,8 @@ func (s *Service) Create(ctx context.Context, ownerID string, input CreateInput)
 		return domaincar.Car{}, ErrEmailNotVerified
 	}
 
+	user, _ = storagequota.EnsureSynced(ctx, user, s.users, s.cars, s.maintenances, s.cipher)
+
 	userCars, err := s.cars.ListByUser(ctx, ownerID)
 	if err != nil {
 		return domaincar.Car{}, err
@@ -160,8 +121,9 @@ func (s *Service) Create(ctx context.Context, ownerID string, input CreateInput)
 	}
 
 	trimmedImg := strings.TrimSpace(input.ImageUrl)
-	if err := s.checkImageQuota(ctx, user, ownerID, "", trimmedImg, userCars); err != nil {
-		return domaincar.Car{}, err
+	deltaFiles, deltaBytes := storagequota.ImageMetrics(trimmedImg)
+	if err := storagequota.CheckDelta(user, deltaFiles, deltaBytes); err != nil {
+		return domaincar.Car{}, ErrStorageQuotaExceeded
 	}
 	storedImg := trimmedImg
 	if s.cipher != nil && storedImg != "" {
@@ -194,6 +156,9 @@ func (s *Service) Create(ctx context.Context, ownerID string, input CreateInput)
 	if err != nil {
 		return domaincar.Car{}, err
 	}
+	if deltaFiles != 0 || deltaBytes != 0 {
+		_, _ = storagequota.CommitDelta(ctx, user, s.users, deltaFiles, deltaBytes)
+	}
 	return s.decryptCar(created), nil
 }
 
@@ -209,6 +174,11 @@ func (s *Service) Get(ctx context.Context, actorID, carID string) (domaincar.Car
 }
 
 func (s *Service) List(ctx context.Context, actorID string) ([]domaincar.Car, error) {
+	if s.users != nil {
+		if user, err := s.users.FindByID(ctx, actorID); err == nil && !user.StorageQuotaSynced {
+			_, _ = storagequota.EnsureSynced(ctx, user, s.users, s.cars, s.maintenances, s.cipher)
+		}
+	}
 	items, err := s.cars.ListByUser(ctx, actorID)
 	if err != nil {
 		return nil, err
@@ -252,15 +222,27 @@ func (s *Service) Update(ctx context.Context, actorID, carID string, input Updat
 	if input.VehicleType != "" {
 		car.VehicleType = strings.TrimSpace(input.VehicleType)
 	}
+
+	var deltaFiles int
+	var deltaBytes int64
+	var syncedUser domainuser.User
+	var hasSyncedUser bool
+
 	if input.ImageUrl != "" {
 		trimmedImg := strings.TrimSpace(input.ImageUrl)
-		if filecipher.IsInlineFileData(trimmedImg) {
-			user, err := s.users.FindByID(ctx, actorID)
-			if err == nil {
-				userCars, _ := s.cars.ListByUser(ctx, actorID)
-				if err := s.checkImageQuota(ctx, user, actorID, carID, trimmedImg, userCars); err != nil {
-					return domaincar.Car{}, err
+		oldFiles, oldBytes := storagequota.ImageMetrics(car.ImageUrl)
+		newFiles, newBytes := storagequota.ImageMetrics(trimmedImg)
+		deltaFiles = newFiles - oldFiles
+		deltaBytes = newBytes - oldBytes
+
+		if s.users != nil {
+			if u, err := s.users.FindByID(ctx, actorID); err == nil {
+				u, _ = storagequota.EnsureSynced(ctx, u, s.users, s.cars, s.maintenances, s.cipher)
+				if err := storagequota.CheckDelta(u, deltaFiles, deltaBytes); err != nil {
+					return domaincar.Car{}, ErrStorageQuotaExceeded
 				}
+				syncedUser = u
+				hasSyncedUser = true
 			}
 		}
 		if s.cipher != nil {
@@ -290,6 +272,9 @@ func (s *Service) Update(ctx context.Context, actorID, carID string, input Updat
 	if err != nil {
 		return domaincar.Car{}, err
 	}
+	if hasSyncedUser && (deltaFiles != 0 || deltaBytes != 0) {
+		_, _ = storagequota.CommitDelta(ctx, syncedUser, s.users, deltaFiles, deltaBytes)
+	}
 	return s.decryptCar(updated), nil
 }
 
@@ -301,7 +286,35 @@ func (s *Service) Delete(ctx context.Context, actorID, carID string) error {
 	if car.OwnerID != actorID {
 		return ErrForbidden
 	}
-	return s.cars.Delete(ctx, carID)
+
+	var syncedUser domainuser.User
+	var hasSyncedUser bool
+	if s.users != nil {
+		if u, err := s.users.FindByID(ctx, actorID); err == nil {
+			u, _ = storagequota.EnsureSynced(ctx, u, s.users, s.cars, s.maintenances, s.cipher)
+			syncedUser = u
+			hasSyncedUser = true
+		}
+	}
+
+	removedFiles, removedBytes := storagequota.ImageMetrics(car.ImageUrl)
+	if s.maintenances != nil {
+		if items, err := s.maintenances.ListByCar(ctx, carID); err == nil {
+			for _, m := range items {
+				mf, mb := storagequota.AttachmentMetrics(m.Attachments)
+				removedFiles += mf
+				removedBytes += mb
+			}
+		}
+	}
+
+	if err := s.cars.Delete(ctx, carID); err != nil {
+		return err
+	}
+	if hasSyncedUser && (removedFiles != 0 || removedBytes != 0) {
+		_, _ = storagequota.CommitDelta(ctx, syncedUser, s.users, -removedFiles, -removedBytes)
+	}
+	return nil
 }
 
 func (s *Service) Share(ctx context.Context, actorID, carID, email string) (domaincar.Car, error) {

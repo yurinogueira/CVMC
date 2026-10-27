@@ -12,6 +12,7 @@ import (
 	fuelport "cvmc/internal/application/ports/fuel"
 	maintport "cvmc/internal/application/ports/maintenance"
 	userport "cvmc/internal/application/ports/user"
+	"cvmc/internal/application/usecase/storagequota"
 	domainuser "cvmc/internal/domain/user"
 	"cvmc/internal/shared/filecipher"
 )
@@ -49,6 +50,7 @@ type Service struct {
 	maintenances    maintport.Repository
 	fuelings        fuelport.Repository
 	cleanupTokens   func(ctx context.Context, userID string) error
+	cipher          *filecipher.FileCipher
 	hasher          portauth.PasswordHasher
 	googleValidator portauth.GoogleTokenValidator
 	now             func() time.Time
@@ -85,10 +87,14 @@ func (s *Service) SetCascadeDependencies(
 	maintenances maintport.Repository,
 	fuelings fuelport.Repository,
 	cleanupTokens func(ctx context.Context, userID string) error,
+	cipher ...*filecipher.FileCipher,
 ) {
 	s.maintenances = maintenances
 	s.fuelings = fuelings
 	s.cleanupTokens = cleanupTokens
+	if len(cipher) > 0 {
+		s.cipher = cipher[0]
+	}
 }
 
 func isValidName(name string) bool {
@@ -109,39 +115,17 @@ func (s *Service) GetProfile(ctx context.Context, userID string) (ProfileOutput,
 		return ProfileOutput{}, ErrUserNotFound
 	}
 
+	user, _ = storagequota.EnsureSynced(ctx, user, s.users, s.cars, s.maintenances, s.cipher)
+
 	userCars, err := s.cars.ListByUser(ctx, userID)
 	if err != nil {
 		return ProfileOutput{}, err
 	}
 
 	ownedCount := 0
-	filesCount := 0
-	var storageUsedBytes int64
-
 	for _, c := range userCars {
 		if c.OwnerID == userID {
 			ownedCount++
-			if filecipher.IsInlineFileData(c.ImageUrl) {
-				filesCount++
-				storageUsedBytes += filecipher.EstimateDecodedBytes(c.ImageUrl)
-			}
-			if s.maintenances != nil {
-				items, err := s.maintenances.ListByCar(ctx, c.ID)
-				if err == nil {
-					for _, m := range items {
-						for _, att := range m.Attachments {
-							filesCount++
-							sz := att.Size
-							if estimated := filecipher.EstimateDecodedBytes(att.DataUrl); estimated > sz {
-								sz = estimated
-							}
-							if sz > 0 {
-								storageUsedBytes += sz
-							}
-						}
-					}
-				}
-			}
 		}
 	}
 
@@ -154,9 +138,9 @@ func (s *Service) GetProfile(ctx context.Context, userID string) (ProfileOutput,
 		User:             user,
 		VehiclesCount:    ownedCount,
 		MaxVehicles:      maxVehicles,
-		FilesCount:       filesCount,
+		FilesCount:       user.FilesCount,
 		MaxFiles:         user.EffectiveMaxFiles(),
-		StorageUsedBytes: storageUsedBytes,
+		StorageUsedBytes: user.StorageUsedBytes,
 		MaxStorageBytes:  user.EffectiveMaxStorageBytes(),
 	}, nil
 }

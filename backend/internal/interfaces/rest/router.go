@@ -39,7 +39,7 @@ func NewRouter(cfg config.Config, users userport.Repository, hasher portauth.Pas
 	authHandler := handlers.NewAuthHandler(users, hasher, tokens, emailSender, cfg.CookieDomain, cfg.CookieSecure, googleValidator...)
 	userHandler := handlers.NewUserHandler(users, cars, hasher, tokens, googleValidator...)
 	userHandler.SetCookieConfig(cfg.CookieDomain, cfg.CookieSecure)
-	userHandler.SetCascadeDependencies(maintenances, fuelings, notificationService.DeleteUserDeviceTokens)
+	userHandler.SetCascadeDependencies(maintenances, fuelings, notificationService.DeleteUserDeviceTokens, cipher)
 
 	carService := carusecase.NewService(cars, users)
 	carService.SetSecurityDependencies(maintenances, cipher)

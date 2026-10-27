@@ -47,9 +47,11 @@ type Provider interface {
    - Conforme corrigido no PR #85, qualquer download ou renderização de comprovantes no navegador valida a extensão e MIME type contra uma whitelist rígida (`image/jpeg`, `image/png`, `application/pdf`).
    - Arquivos potencialmente perigosos (como `.svg`, `.html` ou scripts disfarçados) são servidos estritamente com `Content-Disposition: attachment` e cabeçalho `X-Content-Type-Options: nosniff` para impedir execução no contexto da aplicação.
 
-3. **Controle de Tamanho e Cota por Usuário (`100 Arquivos` ou `100 MB`)**:
+3. **Controle de Tamanho e Cota Persistida por Usuário (`100 Arquivos` ou `100 MB`)**:
    - Middleware de limitação de corpo de requisição (`BodyLimit`) restringe o payload HTTP a `15 MB`.
    - Cada conta possui uma cota máxima de **100 arquivos** (`MaxFiles = 100`) e **100 MB** (`MaxStorageBytes = 104857600` bytes), contabilizando todos os comprovantes de manutenção e fotos enviadas de veículos de propriedade do usuário (`car.OwnerID == userID`). O tamanho real em bytes é calculado diretamente a partir do payload Base64 decodificado (`filecipher.EstimateDecodedBytes`) para prevenir falsificação do campo `size`.
+   - Para evitar recálculo em todas as leituras de perfil (`GET /api/v1/user/profile`), os contadores `FilesCount` e `StorageUsedBytes` são **persistidos diretamente no documento `User`** e atualizados incrementalmente (`+delta` / `-delta`) a cada criação, edição ou exclusão de veículo ou manutenção (`storagequota.CommitDelta`).
+   - **Migração Lazy Automática de Arquivos Existentes (`StorageQuotaSynced`)**: Contas pré-existentes (`StorageQuotaSynced == false`) passam automaticamente por uma sincronização única (`storagequota.EnsureSynced`) no primeiro acesso ao perfil ou listagem/operação de veículos, que contabiliza todos os arquivos legados, criptografa in-place quaisquer fotos ou anexos ainda em texto plano (`data:...` -> `enc:v1:...`) e grava `StorageQuotaSynced = true` no registro do usuário. A partir daí, todas as leituras de cota ocorrem em $O(1)$.
 
 4. **Criptografia Autenticada por Usuário em Repouso (`AES-256-GCM` + `HKDF-SHA256`)**:
    - O pacote `backend/internal/shared/filecipher` deriva uma subchave exclusiva de 256 bits (32 bytes) para cada `ownerID` a partir da chave mestra `FILE_ENCRYPTION_KEY` via `HKDF-SHA256`.

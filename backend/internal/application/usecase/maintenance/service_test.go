@@ -7,6 +7,7 @@ import (
 
 	"cvmc/internal/application/usecase/auth"
 	"cvmc/internal/application/usecase/car"
+	domaincar "cvmc/internal/domain/car"
 	domainmaintenance "cvmc/internal/domain/maintenance"
 	"cvmc/internal/infrastructure/auth/bcrypt"
 	jwtauth "cvmc/internal/infrastructure/auth/jwt"
@@ -322,5 +323,92 @@ func TestMaintenanceServiceAttachmentEncryptionAndQuota(t *testing.T) {
 	})
 	if err != ErrStorageQuotaExceeded {
 		t.Fatalf("expected ErrStorageQuotaExceeded when exceeding MaxFiles, got %v", err)
+	}
+
+	// Verify persisted counters on the User record
+	persistedUser, _ := users.FindByID(ctx, owner.User.ID)
+	if !persistedUser.StorageQuotaSynced || persistedUser.FilesCount != 2 || persistedUser.StorageUsedBytes <= 0 {
+		t.Fatalf("expected persisted FilesCount=2 and StorageQuotaSynced=true, got %+v", persistedUser)
+	}
+
+	// Deleting the maintenance frees 1 file in the persisted quota
+	if err := service.Delete(ctx, owner.User.ID, createdMaint.ID); err != nil {
+		t.Fatalf("delete maintenance failed: %v", err)
+	}
+	persistedAfterDelete, _ := users.FindByID(ctx, owner.User.ID)
+	if persistedAfterDelete.FilesCount != 1 {
+		t.Fatalf("expected persisted FilesCount=1 after deleting maintenance, got %d", persistedAfterDelete.FilesCount)
+	}
+}
+
+func TestLegacyFilesLazyMigrationAndPersistedQuota(t *testing.T) {
+	users := memoryuser.NewRepository()
+	hasher := bcrypt.NewHasher()
+	tokens := jwtauth.NewProvider("access-secret-32-chars-long-security", "refresh-secret-32-chars-long-security")
+	authService := auth.NewService(users, hasher, tokens, nil)
+	ctx := context.Background()
+
+	owner, _ := authService.Register(ctx, auth.RegisterInput{Name: "Legacy User", Email: "legacy@example.com", Password: "secret123"})
+	owner.User.EmailVerified = true
+	owner.User.StorageQuotaSynced = false
+	_, _ = users.Update(ctx, owner.User)
+
+	cars := carrepo.NewRepository()
+	maintRepo := maintrepo.NewRepository()
+
+	sampleDataURL := "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+
+	// Pre-populate legacy unencrypted car and maintenance directly in repositories
+	legacyCar, _ := cars.Create(ctx, domaincar.Car{
+		OwnerID:         owner.User.ID,
+		Name:            "Carro Antigo",
+		Manufacturer:    "VW",
+		Model:           "Gol",
+		YearManufacture: 2015,
+		YearModel:       2016,
+		ImageUrl:        sampleDataURL,
+	})
+	legacyMaint, _ := maintRepo.Create(ctx, domainmaintenance.Maintenance{
+		CarID:   legacyCar.ID,
+		Title:   "Manutenção Antiga",
+		Date:    time.Now().UTC(),
+		Mileage: 50000,
+		Attachments: []domainmaintenance.Attachment{
+			{
+				ID:       "legacy-att-1",
+				Name:     "recibo_antigo.png",
+				MimeType: "image/png",
+				DataUrl:  sampleDataURL,
+			},
+		},
+	})
+
+	fc := filecipher.New("master-file-encryption-key-with-32-chars!!")
+	carService := car.NewService(cars, users)
+	carService.SetSecurityDependencies(maintRepo, fc)
+
+	// Calling List triggers one-time lazy sync and in-place encryption of legacy files
+	listedCars, err := carService.List(ctx, owner.User.ID)
+	if err != nil || len(listedCars) != 1 {
+		t.Fatalf("expected 1 listed car, got %v (err: %v)", len(listedCars), err)
+	}
+	if listedCars[0].ImageUrl != sampleDataURL {
+		t.Fatalf("expected decrypted ImageUrl on List, got %q", listedCars[0].ImageUrl)
+	}
+
+	// Verify legacy car and maintenance were encrypted in-place in the repositories
+	storedCar, _ := cars.GetByID(ctx, legacyCar.ID)
+	if !filecipher.IsEncrypted(storedCar.ImageUrl) {
+		t.Fatalf("expected legacy car ImageUrl to be encrypted in-place, got %q", storedCar.ImageUrl)
+	}
+	storedMaint, _ := maintRepo.GetByID(ctx, legacyMaint.ID)
+	if !filecipher.IsEncrypted(storedMaint.Attachments[0].DataUrl) {
+		t.Fatalf("expected legacy attachment DataUrl to be encrypted in-place, got %q", storedMaint.Attachments[0].DataUrl)
+	}
+
+	// Verify user record now has StorageQuotaSynced=true and persisted FilesCount=2
+	syncedUser, _ := users.FindByID(ctx, owner.User.ID)
+	if !syncedUser.StorageQuotaSynced || syncedUser.FilesCount != 2 || syncedUser.StorageUsedBytes <= 0 {
+		t.Fatalf("expected synced user with FilesCount=2, got %+v", syncedUser)
 	}
 }
