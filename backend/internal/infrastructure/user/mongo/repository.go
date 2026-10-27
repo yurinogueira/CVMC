@@ -177,6 +177,23 @@ func (r *Repository) Update(ctx context.Context, user domainuser.User) (domainus
 	return user, nil
 }
 
+func (r *Repository) Delete(ctx context.Context, id string) error {
+	cleanID, err := mongoinfra.SanitizeID(id)
+	if err != nil {
+		return userport.ErrNotFound
+	}
+
+	filter := bson.D{{Key: "_id", Value: cleanID}}
+	res, err := r.coll.DeleteOne(ctx, filter)
+	if err != nil {
+		return err
+	}
+	if res.DeletedCount == 0 {
+		return userport.ErrNotFound
+	}
+	return nil
+}
+
 func (r *Repository) FindByEmail(ctx context.Context, email string) (domainuser.User, error) {
 	cleanEmail, err := mongoinfra.SanitizeEmail(email)
 	if err != nil {

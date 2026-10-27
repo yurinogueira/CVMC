@@ -7,9 +7,14 @@ import (
 
 	portauth "cvmc/internal/application/ports/auth"
 	"cvmc/internal/application/usecase/auth"
+	domaincar "cvmc/internal/domain/car"
+	domainfuel "cvmc/internal/domain/fuel"
+	domainmaintenance "cvmc/internal/domain/maintenance"
 	"cvmc/internal/infrastructure/auth/bcrypt"
 	jwtauth "cvmc/internal/infrastructure/auth/jwt"
 	carrepo "cvmc/internal/infrastructure/car/memory"
+	fuelrepo "cvmc/internal/infrastructure/fuel/memory"
+	maintrepo "cvmc/internal/infrastructure/maintenance/memory"
 	memoryuser "cvmc/internal/infrastructure/user/memory"
 )
 
@@ -243,5 +248,139 @@ func TestUserServiceGoogleOnlyUser_LockoutPreventionAndSetPassword(t *testing.T)
 	err = userService.UnlinkGoogleAccount(ctx, res.User.ID)
 	if err != nil {
 		t.Fatalf("expected unlink to succeed now that password is set, got %v", err)
+	}
+}
+
+func TestUserServiceDeleteAccount_CascadeAndValidation(t *testing.T) {
+	users := memoryuser.NewRepository()
+	cars := carrepo.NewRepository()
+	maintenances := maintrepo.NewRepository()
+	fuelings := fuelrepo.NewRepository()
+	hasher := bcrypt.NewHasher()
+	tokens := jwtauth.NewProvider("access-secret-32-chars-long-security", "refresh-secret-32-chars-long-security")
+	mockValidator := &mockGoogleValidator{
+		payload: &portauth.GoogleTokenPayload{
+			Subject:       "google-id-dave",
+			Email:         "dave@example.com",
+			EmailVerified: true,
+			Name:          "Dave",
+		},
+	}
+
+	authService := auth.NewService(users, hasher, tokens, nil, mockValidator)
+	userService := NewService(users, cars, hasher, mockValidator)
+
+	cleanedTokensForUser := ""
+	userService.SetCascadeDependencies(maintenances, fuelings, func(ctx context.Context, userID string) error {
+		cleanedTokensForUser = userID
+		return nil
+	})
+
+	ctx := context.Background()
+
+	// 1. Register Alice (password user) and Bob (owner of a car shared with Alice)
+	aliceReg, err := authService.Register(ctx, auth.RegisterInput{
+		Name:     "Alice",
+		Email:    "alice@example.com",
+		Password: "alicePassword123",
+	})
+	if err != nil {
+		t.Fatalf("failed to register alice: %v", err)
+	}
+	bobReg, err := authService.Register(ctx, auth.RegisterInput{
+		Name:     "Bob",
+		Email:    "bob@example.com",
+		Password: "bobPassword123",
+	})
+	if err != nil {
+		t.Fatalf("failed to register bob: %v", err)
+	}
+
+	// Alice owns a car with maintenance and fueling
+	aliceCar, err := cars.Create(ctx, domaincar.Car{
+		Name:         "Civic",
+		Manufacturer: "Honda",
+		Model:        "Civic Touring",
+		OwnerID:      aliceReg.User.ID,
+	})
+	if err != nil {
+		t.Fatalf("failed to create alice car: %v", err)
+	}
+	_, _ = maintenances.Create(ctx, domainmaintenance.Maintenance{
+		CarID: aliceCar.ID,
+		Title: "Troca de óleo",
+	})
+	_, _ = fuelings.Create(ctx, domainfuel.Fueling{
+		CarID:  aliceCar.ID,
+		Liters: 40,
+	})
+
+	// Bob owns a car and shares it with Alice
+	bobCar, err := cars.Create(ctx, domaincar.Car{
+		Name:         "Corolla",
+		Manufacturer: "Toyota",
+		Model:        "Corolla XEi",
+		OwnerID:      bobReg.User.ID,
+	})
+	if err != nil {
+		t.Fatalf("failed to create bob car: %v", err)
+	}
+	_, _ = cars.Share(ctx, bobCar.ID, aliceReg.User.ID)
+
+	// Wrong password fails to delete Alice's account
+	err = userService.DeleteAccount(ctx, aliceReg.User.ID, "wrongPassword", "")
+	if !errors.Is(err, ErrInvalidCurrentPassword) {
+		t.Fatalf("expected ErrInvalidCurrentPassword, got %v", err)
+	}
+
+	// Valid password deletes Alice's account and cascades
+	err = userService.DeleteAccount(ctx, aliceReg.User.ID, "alicePassword123", "")
+	if err != nil {
+		t.Fatalf("expected successful account deletion for Alice, got %v", err)
+	}
+
+	// Verify Alice is gone
+	if _, err := users.FindByID(ctx, aliceReg.User.ID); err == nil {
+		t.Fatalf("expected alice user record to be deleted")
+	}
+	// Verify Alice's car, maintenance, and fueling are deleted
+	if _, err := cars.GetByID(ctx, aliceCar.ID); err == nil {
+		t.Fatalf("expected alice owned car to be deleted")
+	}
+	if list, _ := maintenances.ListByCar(ctx, aliceCar.ID); len(list) != 0 {
+		t.Fatalf("expected alice car maintenances to be deleted, got %d", len(list))
+	}
+	if list, _ := fuelings.ListByCar(ctx, aliceCar.ID); len(list) != 0 {
+		t.Fatalf("expected alice car fuelings to be deleted, got %d", len(list))
+	}
+	// Verify Bob's car still exists and Alice is unshared from it
+	updatedBobCar, err := cars.GetByID(ctx, bobCar.ID)
+	if err != nil {
+		t.Fatalf("expected bob car to still exist: %v", err)
+	}
+	if len(updatedBobCar.SharedWith) != 0 {
+		t.Fatalf("expected alice to be unshared from bob car, got %+v", updatedBobCar.SharedWith)
+	}
+	// Verify device token cleanup was called
+	if cleanedTokensForUser != aliceReg.User.ID {
+		t.Fatalf("expected token cleanup for %s, got %s", aliceReg.User.ID, cleanedTokensForUser)
+	}
+
+	// 2. Test Google-only user (Dave) deletion with confirmation keyword
+	daveRes, err := authService.LoginWithGoogle(ctx, "dave-token")
+	if err != nil {
+		t.Fatalf("failed google login for dave: %v", err)
+	}
+
+	// Missing confirmation fails
+	err = userService.DeleteAccount(ctx, daveRes.User.ID, "", "errado")
+	if !errors.Is(err, ErrAccountDeletionConfirmation) {
+		t.Fatalf("expected ErrAccountDeletionConfirmation, got %v", err)
+	}
+
+	// Valid confirmation ("EXCLUIR") deletes Dave's account
+	err = userService.DeleteAccount(ctx, daveRes.User.ID, "", "excluir")
+	if err != nil {
+		t.Fatalf("expected successful account deletion for Dave, got %v", err)
 	}
 }

@@ -96,6 +96,24 @@ func (s *Service) UnregisterDeviceToken(ctx context.Context, userID, token strin
 	return err
 }
 
+func (s *Service) DeleteUserDeviceTokens(ctx context.Context, userID string) error {
+	if s == nil || s.tokens == nil {
+		return nil
+	}
+	cleanUserID := strings.TrimSpace(userID)
+	if cleanUserID == "" {
+		return nil
+	}
+	devices, err := s.tokens.ListByUser(ctx, cleanUserID)
+	if err != nil {
+		return err
+	}
+	for _, dt := range devices {
+		_ = s.tokens.DeleteByUserAndToken(ctx, cleanUserID, dt.Token)
+	}
+	return nil
+}
+
 func (s *Service) SendToUser(ctx context.Context, userID string, msg domainnotification.PushMessage) (int, error) {
 	cleanUserID := strings.TrimSpace(userID)
 	if cleanUserID == "" {

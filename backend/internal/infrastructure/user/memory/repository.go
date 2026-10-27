@@ -69,6 +69,20 @@ func (r *Repository) Update(ctx context.Context, user domainuser.User) (domainus
 	return user, nil
 }
 
+func (r *Repository) Delete(ctx context.Context, id string) error {
+	_ = ctx
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	user, ok := r.byID[id]
+	if !ok {
+		return ErrNotFound
+	}
+	delete(r.byMail, user.Email)
+	delete(r.byID, id)
+	return nil
+}
+
 func (r *Repository) FindByEmail(ctx context.Context, email string) (domainuser.User, error) {
 	_ = ctx
 	r.mu.RLock()

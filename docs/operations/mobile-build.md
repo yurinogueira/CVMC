@@ -234,3 +234,4 @@ Antes de submeter uma nova versão à Google Play:
 - [ ] Validar login e vínculo com conta Google via Credential Manager nativo.
 - [ ] Validar permissão `POST_NOTIFICATIONS`, recebimento de push e navegação via *deep-link*.
 - [ ] Testar Safe Area Insets em aparelhos com entalhe/camera cutout e barra de gestos.
+- [ ] Confirmar que a URL pública de Política de Privacidade (`https://cvmc.yurinogueira.dev.br/privacy`) e a URL de Exclusão de Conta (`https://cvmc.yurinogueira.dev.br/privacy#exclusao-de-conta`) estão preenchidas na seção **Conteúdo do App / Segurança dos Dados** do Google Play Console.

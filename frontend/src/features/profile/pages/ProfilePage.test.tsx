@@ -16,6 +16,7 @@ vi.mock("../services/profile.service", () => ({
     linkGoogle: vi.fn(),
     unlinkGoogle: vi.fn(),
     setPassword: vi.fn(),
+    deleteAccount: vi.fn(),
   },
 }));
 
@@ -163,5 +164,11 @@ describe("ProfilePage", () => {
     ).toBeInTheDocument();
     // Senha Atual should NOT be in the document
     expect(screen.queryByLabelText(/Senha Atual/i)).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Excluir Minha Conta/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /Política de Privacidade/i }),
+    ).toBeInTheDocument();
   });
 });

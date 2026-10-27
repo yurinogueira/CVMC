@@ -27,6 +27,7 @@ function spaPrerenderPlugin(): Plugin {
         const routes = [
           "login",
           "register",
+          "privacy",
           "dashboard",
           "vehicles",
           "maintenance",

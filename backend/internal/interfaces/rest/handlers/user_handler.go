@@ -1,21 +1,28 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	portauth "cvmc/internal/application/ports/auth"
 	carport "cvmc/internal/application/ports/car"
+	fuelport "cvmc/internal/application/ports/fuel"
+	maintport "cvmc/internal/application/ports/maintenance"
 	userport "cvmc/internal/application/ports/user"
 	userusecase "cvmc/internal/application/usecase/user"
 	"cvmc/internal/shared/httpx"
 )
 
 type UserHandler struct {
-	service *userusecase.Service
-	tokens  portauth.TokenService
+	service      *userusecase.Service
+	tokens       portauth.TokenService
+	cookieDomain string
+	cookieSecure bool
 }
 
 func NewUserHandler(users userport.Repository, cars carport.Repository, hasher portauth.PasswordHasher, tokens portauth.TokenService, googleValidator ...portauth.GoogleTokenValidator) *UserHandler {
@@ -23,6 +30,19 @@ func NewUserHandler(users userport.Repository, cars carport.Repository, hasher p
 		service: userusecase.NewService(users, cars, hasher, googleValidator...),
 		tokens:  tokens,
 	}
+}
+
+func (h *UserHandler) SetCookieConfig(domain string, secure bool) {
+	h.cookieDomain = domain
+	h.cookieSecure = secure
+}
+
+func (h *UserHandler) SetCascadeDependencies(
+	maintenances maintport.Repository,
+	fuelings fuelport.Repository,
+	cleanupTokens func(ctx context.Context, userID string) error,
+) {
+	h.service.SetCascadeDependencies(maintenances, fuelings, cleanupTokens)
 }
 
 type UpdateProfileRequest struct {
@@ -40,6 +60,11 @@ type LinkGoogleRequest struct {
 
 type SetPasswordRequest struct {
 	NewPassword string `json:"newPassword" example:"senhaNova12345"`
+}
+
+type DeleteAccountRequest struct {
+	CurrentPassword string `json:"currentPassword,omitempty" example:"senhaAtual123"`
+	Confirmation    string `json:"confirmation,omitempty" example:"EXCLUIR"`
 }
 
 // GetProfile godoc
@@ -267,6 +292,66 @@ func (h *UserHandler) SetPassword(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// DeleteAccount godoc
+// @Summary      Excluir conta permanentemente
+// @Description  Remove permanentemente a conta do usuário autenticado e todos os seus dados vinculados (veículos próprios, manutenções, abastecimentos e tokens de dispositivos)
+// @Tags         User
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        payload body DeleteAccountRequest true "Confirmação de exclusão (senha atual ou palavra EXCLUIR)"
+// @Success      200 {object} httpx.SuccessEnvelope
+// @Failure      400 {object} httpx.ErrorEnvelope
+// @Failure      401 {object} httpx.ErrorEnvelope
+// @Router       /api/v1/user/account [delete]
+func (h *UserHandler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
+	userID := h.extractUserID(r)
+	if userID == "" {
+		httpx.Error(w, http.StatusUnauthorized, "Unauthorized", nil)
+		return
+	}
+	var input DeleteAccountRequest
+	if r.Body != nil {
+		if err := json.NewDecoder(r.Body).Decode(&input); err != nil && !errors.Is(err, io.EOF) {
+			handleUserError(w, userusecase.ErrInvalidInput)
+			return
+		}
+	}
+	if err := h.service.DeleteAccount(r.Context(), userID, input.CurrentPassword, input.Confirmation); err != nil {
+		handleUserError(w, err)
+		return
+	}
+	h.clearTokenCookies(w)
+	httpx.Success(w, map[string]string{
+		"message": "Sua conta e todos os dados vinculados foram excluídos permanentemente.",
+	})
+}
+
+func (h *UserHandler) clearTokenCookies(w http.ResponseWriter) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     "cvmc_access_token",
+		Value:    "",
+		Path:     "/",
+		Domain:   h.cookieDomain,
+		MaxAge:   -1,
+		Expires:  time.Unix(0, 0),
+		HttpOnly: true,
+		Secure:   h.cookieSecure,
+		SameSite: http.SameSiteLaxMode,
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name:     "cvmc_refresh_token",
+		Value:    "",
+		Path:     "/api/v1/auth/refresh",
+		Domain:   h.cookieDomain,
+		MaxAge:   -1,
+		Expires:  time.Unix(0, 0),
+		HttpOnly: true,
+		Secure:   h.cookieSecure,
+		SameSite: http.SameSiteLaxMode,
+	})
+}
+
 func (h *UserHandler) extractUserID(r *http.Request) string {
 	token := ""
 	if cookie, err := r.Cookie("cvmc_access_token"); err == nil && cookie.Value != "" {
@@ -304,6 +389,8 @@ func handleUserError(w http.ResponseWriter, err error) {
 		httpx.Error(w, http.StatusBadRequest, "Você deve cadastrar uma senha antes de desvincular sua conta Google", nil)
 	case errors.Is(err, userusecase.ErrPasswordAlreadySet):
 		httpx.Error(w, http.StatusBadRequest, "Sua conta já possui uma senha. Utilize a alteração de senha", nil)
+	case errors.Is(err, userusecase.ErrAccountDeletionConfirmation):
+		httpx.Error(w, http.StatusBadRequest, "Digite EXCLUIR para confirmar a exclusão permanente da conta", nil)
 	case errors.Is(err, userusecase.ErrUserNotFound):
 		httpx.Error(w, http.StatusNotFound, "Usuário não encontrado", nil)
 	default:

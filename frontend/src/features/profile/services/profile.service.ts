@@ -5,6 +5,7 @@ import {
   User,
 } from "../../auth/types/auth.types";
 import {
+  DeleteAccountPayload,
   ProfileData,
   UpdatePasswordPayload,
   UpdateProfilePayload,
@@ -61,6 +62,16 @@ export const profileService = {
     const response = await apiClient.post<ApiEnvelope<{ message: string }>>(
       "/user/password/set",
       { newPassword },
+    );
+    return response.data.data;
+  },
+
+  async deleteAccount(
+    payload: DeleteAccountPayload,
+  ): Promise<{ message: string }> {
+    const response = await apiClient.delete<ApiEnvelope<{ message: string }>>(
+      "/user/account",
+      { data: payload },
     );
     return response.data.data;
   },
