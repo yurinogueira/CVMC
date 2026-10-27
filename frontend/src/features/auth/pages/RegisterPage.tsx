@@ -377,6 +377,25 @@ export function RegisterPage() {
                   Fazer login
                 </Link>
               </Typography>
+              <Typography
+                variant="caption"
+                sx={{ display: "block", mt: 1.5, color: "text.secondary" }}
+              >
+                Ao criar uma conta, você concorda com nossa{" "}
+                <Link
+                  component={RouterLink}
+                  to="/privacy"
+                  sx={{
+                    color: "text.secondary",
+                    fontWeight: 600,
+                    textDecoration: "underline",
+                    "&:hover": { color: "primary.main" },
+                  }}
+                >
+                  Política de Privacidade
+                </Link>
+                .
+              </Typography>
             </Box>
           </CardContent>
         </Card>

@@ -36,6 +36,8 @@ func NewRouter(cfg config.Config, users userport.Repository, hasher portauth.Pas
 	healthHandler := handlers.NewHealthHandler()
 	authHandler := handlers.NewAuthHandler(users, hasher, tokens, emailSender, cfg.CookieDomain, cfg.CookieSecure, googleValidator...)
 	userHandler := handlers.NewUserHandler(users, cars, hasher, tokens, googleValidator...)
+	userHandler.SetCookieConfig(cfg.CookieDomain, cfg.CookieSecure)
+	userHandler.SetCascadeDependencies(maintenances, fuelings, notificationService.DeleteUserDeviceTokens)
 	carHandler := handlers.NewCarHandler(carusecase.NewService(cars, users), tokens)
 	maintenanceHandler := handlers.NewMaintenanceHandler(maintusecase.NewService(maintenances, cars), tokens)
 	fuelHandler := handlers.NewFuelHandler(fuelusecase.NewService(fuelings, cars), tokens)
@@ -87,6 +89,7 @@ func NewRouter(cfg config.Config, users userport.Repository, hasher portauth.Pas
 	mux.Handle("GET /api/v1/user/auth-providers", middleware.Chain(http.HandlerFunc(userHandler.GetAuthProviders), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
 	mux.Handle("POST /api/v1/user/auth-providers/google/link", middleware.Chain(http.HandlerFunc(userHandler.LinkGoogle), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
 	mux.Handle("POST /api/v1/user/auth-providers/google/unlink", middleware.Chain(http.HandlerFunc(userHandler.UnlinkGoogle), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
+	mux.Handle("DELETE /api/v1/user/account", strictChain(userHandler.DeleteAccount))
 
 	// Cars endpoints
 	mux.Handle("GET /api/v1/cars", middleware.Chain(http.HandlerFunc(carHandler.List), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))

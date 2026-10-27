@@ -14,3 +14,8 @@ export interface UpdatePasswordPayload {
   currentPassword: string;
   newPassword: string;
 }
+
+export interface DeleteAccountPayload {
+  currentPassword?: string;
+  confirmation?: string;
+}

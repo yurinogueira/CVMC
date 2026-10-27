@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
 import {
   Box,
   Card,
@@ -15,6 +16,10 @@ import {
   InputAdornment,
   IconButton,
   CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import VerifiedUserRoundedIcon from "@mui/icons-material/VerifiedUserRounded";
 import GppMaybeRoundedIcon from "@mui/icons-material/GppMaybeRounded";
@@ -29,6 +34,8 @@ import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import LinkRoundedIcon from "@mui/icons-material/LinkRounded";
 import LinkOffRoundedIcon from "@mui/icons-material/LinkOffRounded";
 import NotificationsActiveRoundedIcon from "@mui/icons-material/NotificationsActiveRounded";
+import DeleteForeverRoundedIcon from "@mui/icons-material/DeleteForeverRounded";
+import PolicyRoundedIcon from "@mui/icons-material/PolicyRounded";
 
 import { profileService } from "../services/profile.service";
 import { authService } from "../../auth/services/auth.service";
@@ -44,8 +51,10 @@ import { pushNotificationService } from "../../../services/notifications/push.se
 
 export function ProfilePage() {
   useDocumentTitle("Meu Perfil");
+  const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
+  const clearAuth = useAuthStore((state) => state.clear);
 
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -85,6 +94,13 @@ export function ProfilePage() {
   const [testingPush, setTestingPush] = useState(false);
   const [pushSuccess, setPushSuccess] = useState<string | null>(null);
   const [pushError, setPushError] = useState<string | null>(null);
+
+  // Account deletion state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -298,6 +314,45 @@ export function ProfilePage() {
       );
     } finally {
       setTestingPush(false);
+    }
+  };
+
+  const handleDeleteAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setDeleteError(null);
+
+    const hasPassword = authProviders ? authProviders.hasPassword : true;
+
+    if (hasPassword && !deletePassword) {
+      setDeleteError("Informe sua senha atual para confirmar a exclusão.");
+      return;
+    }
+
+    if (!hasPassword && deleteConfirmation.trim().toUpperCase() !== "EXCLUIR") {
+      setDeleteError("Digite EXCLUIR para confirmar a exclusão da conta.");
+      return;
+    }
+
+    try {
+      setDeletingAccount(true);
+      await pushNotificationService
+        .unregisterTokenFromBackend()
+        .catch(() => undefined);
+      await pushNotificationService.cleanup().catch(() => undefined);
+      await profileService.deleteAccount({
+        currentPassword: hasPassword ? deletePassword : undefined,
+        confirmation: !hasPassword ? deleteConfirmation.trim() : undefined,
+      });
+      clearAuth();
+      navigate("/login", { replace: true });
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { message?: string } } };
+      setDeleteError(
+        errorObj.response?.data?.message ||
+          "Não foi possível excluir a conta. Verifique os dados informados.",
+      );
+    } finally {
+      setDeletingAccount(false);
     }
   };
 
@@ -1014,7 +1069,172 @@ export function ProfilePage() {
             </CardContent>
           </Card>
         </Grid>
+
+        {/* Card 7: Privacidade & Zona de Perigo (Exclusão de Conta) */}
+        <Grid size={{ xs: 12 }}>
+          <Card
+            elevation={0}
+            sx={{
+              borderRadius: 3,
+              border: "1px solid",
+              borderColor: "error.200",
+              p: 1,
+            }}
+          >
+            <CardContent>
+              <Stack
+                direction={{ xs: "column", md: "row" }}
+                spacing={3}
+                sx={{
+                  justifyContent: "space-between",
+                  alignItems: { xs: "stretch", md: "center" },
+                }}
+              >
+                <Box>
+                  <Stack
+                    direction="row"
+                    spacing={1.5}
+                    sx={{ alignItems: "center", mb: 1 }}
+                  >
+                    <DeleteForeverRoundedIcon
+                      sx={{ color: "error.main", fontSize: 28 }}
+                    />
+                    <Typography
+                      variant="h6"
+                      sx={{ fontWeight: 700, color: "error.main" }}
+                    >
+                      Privacidade & Exclusão de Conta
+                    </Typography>
+                  </Stack>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: "text.secondary", maxWidth: 680 }}
+                  >
+                    Em conformidade com a LGPD e as diretrizes da Google Play,
+                    você pode consultar nossa Política de Privacidade ou excluir
+                    permanentemente sua conta e todos os veículos, manutenções e
+                    abastecimentos vinculados.
+                  </Typography>
+                </Box>
+
+                <Stack
+                  direction={{ xs: "column", sm: "row" }}
+                  spacing={1.5}
+                  sx={{ flexShrink: 0 }}
+                >
+                  <Button
+                    component={RouterLink}
+                    to="/privacy"
+                    variant="outlined"
+                    color="primary"
+                    startIcon={<PolicyRoundedIcon />}
+                    sx={{ fontWeight: 600 }}
+                  >
+                    Política de Privacidade
+                  </Button>
+                  <Button
+                    variant="contained"
+                    color="error"
+                    startIcon={<DeleteForeverRoundedIcon />}
+                    data-testid="open-delete-account-btn"
+                    onClick={() => {
+                      setDeleteError(null);
+                      setDeletePassword("");
+                      setDeleteConfirmation("");
+                      setDeleteDialogOpen(true);
+                    }}
+                    sx={{ fontWeight: 700 }}
+                  >
+                    Excluir Minha Conta
+                  </Button>
+                </Stack>
+              </Stack>
+            </CardContent>
+          </Card>
+        </Grid>
       </Grid>
+
+      {/* Modal de Confirmação de Exclusão Permanente de Conta */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => !deletingAccount && setDeleteDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <Box component="form" onSubmit={handleDeleteAccount} noValidate>
+          <DialogTitle sx={{ fontWeight: 800, color: "error.main" }}>
+            Excluir Conta Permanentemente?
+          </DialogTitle>
+          <DialogContent dividers>
+            <Stack spacing={2.5}>
+              <Alert severity="error">
+                <strong>Atenção: Esta ação é imediata e irreversível.</strong>{" "}
+                Todos os seus veículos próprios, históricos de manutenção,
+                registros de abastecimento, compartilhamentos e credenciais de
+                acesso serão apagados permanentemente.
+              </Alert>
+
+              {deleteError && <Alert severity="warning">{deleteError}</Alert>}
+
+              {authProviders?.hasPassword !== false ? (
+                <TextField
+                  fullWidth
+                  label="Confirme sua Senha Atual"
+                  type="password"
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                  disabled={deletingAccount}
+                  required
+                  autoFocus
+                />
+              ) : (
+                <TextField
+                  fullWidth
+                  label="Digite EXCLUIR para confirmar"
+                  placeholder="EXCLUIR"
+                  value={deleteConfirmation}
+                  onChange={(e) => setDeleteConfirmation(e.target.value)}
+                  disabled={deletingAccount}
+                  required
+                  autoFocus
+                />
+              )}
+            </Stack>
+          </DialogContent>
+          <DialogActions sx={{ p: 2.5 }}>
+            <Button
+              onClick={() => setDeleteDialogOpen(false)}
+              disabled={deletingAccount}
+              sx={{ fontWeight: 600 }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              color="error"
+              disabled={
+                deletingAccount ||
+                (authProviders?.hasPassword !== false
+                  ? !deletePassword
+                  : deleteConfirmation.trim().toUpperCase() !== "EXCLUIR")
+              }
+              startIcon={
+                deletingAccount ? (
+                  <CircularProgress size={18} color="inherit" />
+                ) : (
+                  <DeleteForeverRoundedIcon />
+                )
+              }
+              sx={{ fontWeight: 700 }}
+            >
+              {deletingAccount
+                ? "Excluindo..."
+                : "Confirmar Exclusão Permanente"}
+            </Button>
+          </DialogActions>
+        </Box>
+      </Dialog>
     </Box>
   );
 }

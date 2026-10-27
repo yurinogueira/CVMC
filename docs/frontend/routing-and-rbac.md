@@ -25,6 +25,7 @@ Para navegação geral, retorne ao [Catálogo Canônico](../index.md).
   - `/register` — Criação de conta.
   - `/forgot-password` e `/reset-password` — Recuperação de senha.
   - `/verify-email` — Confirmação de e-mail.
+  - `/privacy` — Página pública de Política de Privacidade (LGPD) e instruções de Exclusão de Conta e Dados (`#exclusao-de-conta`), pré-renderizada em `dist/privacy/index.html` pelo `spaPrerenderPlugin` no `vite.config.ts` para retornar HTTP 200 OK direto no GitHub Pages e atender ao verificador do Google Play Console sem exigir login.
 - **Protegidas (`ProtectedRoute`)**:
   - `/dashboard` — Painel geral com KPIs e visão consolidada.
   - `/cars` — Listagem, cadastro e detalhes dos veículos.

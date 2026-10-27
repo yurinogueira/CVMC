@@ -15,6 +15,7 @@ type Repository interface {
 	FindByID(ctx context.Context, id string) (domainuser.User, error)
 	FindByGoogleID(ctx context.Context, googleID string) (domainuser.User, error)
 	Update(ctx context.Context, user domainuser.User) (domainuser.User, error)
+	Delete(ctx context.Context, id string) error
 	FindByEmailVerificationTokenHash(ctx context.Context, hash string) (domainuser.User, error)
 	FindByPasswordResetTokenHash(ctx context.Context, hash string) (domainuser.User, error)
 }

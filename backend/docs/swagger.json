@@ -1794,6 +1794,57 @@
                 }
             }
         },
+        "/api/v1/user/account": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Remove permanentemente a conta do usuário autenticado e todos os seus dados vinculados (veículos próprios, manutenções, abastecimentos e tokens de dispositivos)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Excluir conta permanentemente",
+                "parameters": [
+                    {
+                        "description": "Confirmação de exclusão (senha atual ou palavra EXCLUIR)",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.DeleteAccountRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.SuccessEnvelope"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorEnvelope"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorEnvelope"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/user/auth-providers": {
             "get": {
                 "security": [
@@ -2328,6 +2379,19 @@
                         "[\"Óleo de Motor\"",
                         "\"Filtro do Óleo de Motor\"]"
                     ]
+                }
+            }
+        },
+        "handlers.DeleteAccountRequest": {
+            "type": "object",
+            "properties": {
+                "confirmation": {
+                    "type": "string",
+                    "example": "EXCLUIR"
+                },
+                "currentPassword": {
+                    "type": "string",
+                    "example": "senhaAtual123"
                 }
             }
         },

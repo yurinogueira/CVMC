@@ -63,6 +63,7 @@ O CVMC oferece autenticação via Google Cloud sem uso de intermediários (Googl
 - `POST /api/v1/user/auth-providers/google/link`: Vincula a conta Google ao usuário logado via ID token.
 - `POST /api/v1/user/auth-providers/google/unlink`: Desvincula a conta Google.
 - `POST /api/v1/user/password/set`: Permite que usuários cadastrados exclusivamente via Google definam uma senha local inicial para login convencional.
+- `DELETE /api/v1/user/account`: Exclui permanentemente a conta do usuário autenticado e executa a remoção em cascata de todos os seus dados (veículos próprios, manutenções, abastecimentos, vínculos de compartilhamento em veículos de terceiros e tokens FCM de dispositivos móveis), limpando também os cookies `HttpOnly` de sessão. Exige confirmação da senha atual (`currentPassword`) para contas com senha local ou a palavra-chave `"EXCLUIR"` (`confirmation`) para contas exclusivamente sociais.
 
 ---
 

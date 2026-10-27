@@ -310,6 +310,22 @@ export function LoginPage() {
                   Criar conta gratuita
                 </Link>
               </Typography>
+              <Typography
+                variant="caption"
+                sx={{ display: "block", mt: 1.5, color: "text.secondary" }}
+              >
+                <Link
+                  component={RouterLink}
+                  to="/privacy"
+                  sx={{
+                    color: "text.secondary",
+                    textDecoration: "underline",
+                    "&:hover": { color: "primary.main" },
+                  }}
+                >
+                  Política de Privacidade e Exclusão de Dados
+                </Link>
+              </Typography>
             </Box>
           </CardContent>
         </Card>

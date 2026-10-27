@@ -113,6 +113,15 @@ definitions:
           type: string
         type: array
     type: object
+  handlers.DeleteAccountRequest:
+    properties:
+      confirmation:
+        example: EXCLUIR
+        type: string
+      currentPassword:
+        example: senhaAtual123
+        type: string
+    type: object
   handlers.ForgotPasswordRequest:
     properties:
       email:
@@ -1497,6 +1506,40 @@ paths:
       summary: Disparar notificação push de teste
       tags:
       - Notifications
+  /api/v1/user/account:
+    delete:
+      consumes:
+      - application/json
+      description: Remove permanentemente a conta do usuário autenticado e todos os
+        seus dados vinculados (veículos próprios, manutenções, abastecimentos e tokens
+        de dispositivos)
+      parameters:
+      - description: Confirmação de exclusão (senha atual ou palavra EXCLUIR)
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.DeleteAccountRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Excluir conta permanentemente
+      tags:
+      - User
   /api/v1/user/auth-providers:
     get:
       description: Retorna o status dos provedores de login vinculados à conta do

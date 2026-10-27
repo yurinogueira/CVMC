@@ -9,6 +9,8 @@ import (
 
 	portauth "cvmc/internal/application/ports/auth"
 	carport "cvmc/internal/application/ports/car"
+	fuelport "cvmc/internal/application/ports/fuel"
+	maintport "cvmc/internal/application/ports/maintenance"
 	userport "cvmc/internal/application/ports/user"
 	domainuser "cvmc/internal/domain/user"
 )
@@ -21,16 +23,17 @@ const (
 )
 
 var (
-	ErrUserNotFound           = errors.New("user not found")
-	ErrInvalidInput           = errors.New("invalid input")
-	ErrInvalidCurrentPassword = errors.New("invalid current password")
-	ErrWeakPassword           = errors.New("weak password")
-	ErrGoogleEmailMismatch    = errors.New("google account email does not match profile email")
-	ErrGoogleAlreadyLinked    = errors.New("google account is already linked to another user")
-	ErrGoogleNotLinked        = errors.New("google account is not linked")
-	ErrLockoutPrevented       = errors.New("cannot unlink google account without setting a password first")
-	ErrPasswordAlreadySet     = errors.New("password already set, use update password instead")
-	ErrInvalidGoogleToken     = errors.New("invalid google token")
+	ErrUserNotFound                = errors.New("user not found")
+	ErrInvalidInput                = errors.New("invalid input")
+	ErrInvalidCurrentPassword      = errors.New("invalid current password")
+	ErrWeakPassword                = errors.New("weak password")
+	ErrGoogleEmailMismatch         = errors.New("google account email does not match profile email")
+	ErrGoogleAlreadyLinked         = errors.New("google account is already linked to another user")
+	ErrGoogleNotLinked             = errors.New("google account is not linked")
+	ErrLockoutPrevented            = errors.New("cannot unlink google account without setting a password first")
+	ErrPasswordAlreadySet          = errors.New("password already set, use update password instead")
+	ErrInvalidGoogleToken          = errors.New("invalid google token")
+	ErrAccountDeletionConfirmation = errors.New("account deletion confirmation required")
 )
 
 type AuthProvidersOutput struct {
@@ -42,6 +45,9 @@ type AuthProvidersOutput struct {
 type Service struct {
 	users           userport.Repository
 	cars            carport.Repository
+	maintenances    maintport.Repository
+	fuelings        fuelport.Repository
+	cleanupTokens   func(ctx context.Context, userID string) error
 	hasher          portauth.PasswordHasher
 	googleValidator portauth.GoogleTokenValidator
 	now             func() time.Time
@@ -68,6 +74,16 @@ func NewService(users userport.Repository, cars carport.Repository, hasher porta
 
 func (s *Service) SetGoogleValidator(v portauth.GoogleTokenValidator) {
 	s.googleValidator = v
+}
+
+func (s *Service) SetCascadeDependencies(
+	maintenances maintport.Repository,
+	fuelings fuelport.Repository,
+	cleanupTokens func(ctx context.Context, userID string) error,
+) {
+	s.maintenances = maintenances
+	s.fuelings = fuelings
+	s.cleanupTokens = cleanupTokens
 }
 
 func isValidName(name string) bool {
@@ -257,4 +273,60 @@ func (s *Service) SetPassword(ctx context.Context, userID, newPassword string) e
 
 	_, err = s.users.Update(ctx, user)
 	return err
+}
+
+func (s *Service) DeleteAccount(ctx context.Context, userID, currentPassword, confirmation string) error {
+	user, err := s.users.FindByID(ctx, userID)
+	if err != nil {
+		return ErrUserNotFound
+	}
+
+	if user.PasswordHash != "" {
+		if currentPassword == "" || s.hasher.Compare(user.PasswordHash, currentPassword) != nil {
+			return ErrInvalidCurrentPassword
+		}
+	} else {
+		if !strings.EqualFold(strings.TrimSpace(confirmation), "EXCLUIR") {
+			return ErrAccountDeletionConfirmation
+		}
+	}
+
+	if s.cars != nil {
+		userCars, err := s.cars.ListByUser(ctx, userID)
+		if err != nil {
+			return err
+		}
+		for _, c := range userCars {
+			if c.OwnerID == userID {
+				if s.maintenances != nil {
+					items, err := s.maintenances.ListByCar(ctx, c.ID)
+					if err == nil {
+						for _, m := range items {
+							_ = s.maintenances.Delete(ctx, m.ID)
+						}
+					}
+				}
+				if s.fuelings != nil {
+					items, err := s.fuelings.ListByCar(ctx, c.ID)
+					if err == nil {
+						for _, f := range items {
+							_ = s.fuelings.Delete(ctx, f.ID)
+						}
+					}
+				}
+				_ = s.cars.Delete(ctx, c.ID)
+			} else {
+				_, _ = s.cars.Unshare(ctx, c.ID, userID)
+			}
+		}
+	}
+
+	if s.cleanupTokens != nil {
+		_ = s.cleanupTokens(ctx, userID)
+	}
+
+	if err := s.users.Delete(ctx, userID); err != nil {
+		return ErrUserNotFound
+	}
+	return nil
 }
