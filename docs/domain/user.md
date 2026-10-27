@@ -44,12 +44,15 @@ type User struct {
     EmailVerificationExpiresAt *time.Time `json:"-"`
     PasswordResetTokenHash     string     `json:"-"`
     PasswordResetExpiresAt     *time.Time `json:"-"`
+    MaxVehicles                int        `json:"maxVehicles"`
+    MaxFiles                   int        `json:"maxFiles"`
+    MaxStorageBytes            int64      `json:"maxStorageBytes"`
     CreatedAt                  time.Time  `json:"createdAt"`
     UpdatedAt                  time.Time  `json:"updatedAt,omitempty"`
 }
 ```
 
-O método auxiliar `user.HasPassword()` verifica se o usuário possui senha local cadastrada (`PasswordHash != ""`).
+O método auxiliar `user.HasPassword()` verifica se o usuário possui senha local cadastrada (`PasswordHash != ""`), enquanto `user.EffectiveMaxFiles()` e `user.EffectiveMaxStorageBytes()` retornam os limites da cota de armazenamento do usuário (padrão de **100 arquivos** e **100 MB**).
 
 ---
 

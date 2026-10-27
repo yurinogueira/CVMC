@@ -13,6 +13,7 @@ import (
 	maintport "cvmc/internal/application/ports/maintenance"
 	userport "cvmc/internal/application/ports/user"
 	domainuser "cvmc/internal/domain/user"
+	"cvmc/internal/shared/filecipher"
 )
 
 const (
@@ -54,9 +55,13 @@ type Service struct {
 }
 
 type ProfileOutput struct {
-	User          domainuser.User `json:"user"`
-	VehiclesCount int             `json:"vehiclesCount"`
-	MaxVehicles   int             `json:"maxVehicles"`
+	User             domainuser.User `json:"user"`
+	VehiclesCount    int             `json:"vehiclesCount"`
+	MaxVehicles      int             `json:"maxVehicles"`
+	FilesCount       int             `json:"filesCount"`
+	MaxFiles         int             `json:"maxFiles"`
+	StorageUsedBytes int64           `json:"storageUsedBytes"`
+	MaxStorageBytes  int64           `json:"maxStorageBytes"`
 }
 
 func NewService(users userport.Repository, cars carport.Repository, hasher portauth.PasswordHasher, googleValidator ...portauth.GoogleTokenValidator) *Service {
@@ -110,21 +115,49 @@ func (s *Service) GetProfile(ctx context.Context, userID string) (ProfileOutput,
 	}
 
 	ownedCount := 0
+	filesCount := 0
+	var storageUsedBytes int64
+
 	for _, c := range userCars {
 		if c.OwnerID == userID {
 			ownedCount++
+			if filecipher.IsInlineFileData(c.ImageUrl) {
+				filesCount++
+				storageUsedBytes += filecipher.EstimateDecodedBytes(c.ImageUrl)
+			}
+			if s.maintenances != nil {
+				items, err := s.maintenances.ListByCar(ctx, c.ID)
+				if err == nil {
+					for _, m := range items {
+						for _, att := range m.Attachments {
+							filesCount++
+							sz := att.Size
+							if estimated := filecipher.EstimateDecodedBytes(att.DataUrl); estimated > sz {
+								sz = estimated
+							}
+							if sz > 0 {
+								storageUsedBytes += sz
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 
 	maxVehicles := user.MaxVehicles
 	if maxVehicles <= 0 {
-		maxVehicles = 3
+		maxVehicles = domainuser.DefaultMaxVehicles
 	}
 
 	return ProfileOutput{
-		User:          user,
-		VehiclesCount: ownedCount,
-		MaxVehicles:   maxVehicles,
+		User:             user,
+		VehiclesCount:    ownedCount,
+		MaxVehicles:      maxVehicles,
+		FilesCount:       filesCount,
+		MaxFiles:         user.EffectiveMaxFiles(),
+		StorageUsedBytes: storageUsedBytes,
+		MaxStorageBytes:  user.EffectiveMaxStorageBytes(),
 	}, nil
 }
 

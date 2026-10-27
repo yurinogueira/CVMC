@@ -4,6 +4,10 @@ export interface ProfileData {
   user: User;
   vehiclesCount: number;
   maxVehicles: number;
+  filesCount?: number;
+  maxFiles?: number;
+  storageUsedBytes?: number;
+  maxStorageBytes?: number;
 }
 
 export interface UpdateProfilePayload {

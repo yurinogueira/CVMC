@@ -47,8 +47,14 @@ type Provider interface {
    - Conforme corrigido no PR #85, qualquer download ou renderização de comprovantes no navegador valida a extensão e MIME type contra uma whitelist rígida (`image/jpeg`, `image/png`, `application/pdf`).
    - Arquivos potencialmente perigosos (como `.svg`, `.html` ou scripts disfarçados) são servidos estritamente com `Content-Disposition: attachment` e cabeçalho `X-Content-Type-Options: nosniff` para impedir execução no contexto da aplicação.
 
-3. **Controle de Tamanho**:
-   - Middleware de limitação de corpo de requisição (`BodyLimit`) restringe uploads de anexos a no máximo 10MB por arquivo.
+3. **Controle de Tamanho e Cota por Usuário (`100 Arquivos` ou `100 MB`)**:
+   - Middleware de limitação de corpo de requisição (`BodyLimit`) restringe o payload HTTP a `15 MB`.
+   - Cada conta possui uma cota máxima de **100 arquivos** (`MaxFiles = 100`) e **100 MB** (`MaxStorageBytes = 104857600` bytes), contabilizando todos os comprovantes de manutenção e fotos enviadas de veículos de propriedade do usuário (`car.OwnerID == userID`). O tamanho real em bytes é calculado diretamente a partir do payload Base64 decodificado (`filecipher.EstimateDecodedBytes`) para prevenir falsificação do campo `size`.
+
+4. **Criptografia Autenticada por Usuário em Repouso (`AES-256-GCM` + `HKDF-SHA256`)**:
+   - O pacote `backend/internal/shared/filecipher` deriva uma subchave exclusiva de 256 bits (32 bytes) para cada `ownerID` a partir da chave mestra `FILE_ENCRYPTION_KEY` via `HKDF-SHA256`.
+   - Antes de persistir no banco, `Attachment.DataUrl` e `Car.ImageUrl` (quando em formato Base64 `data:...`) são criptografados com **AES-256-GCM**, `nonce` aleatório de 12 bytes e `AAD = "owner:" + ownerID`, armazenando o prefixo `enc:v1:<base64>`.
+   - A descriptografia ocorre exclusivamente em memória nos casos de uso após verificar que o usuário autenticado é proprietário (`OwnerID`) ou possui acesso compartilhado (`SharedWith`) ao veículo.
 
 ---
 

@@ -18,6 +18,7 @@ import (
 	"cvmc/internal/config"
 	notifMemory "cvmc/internal/infrastructure/notification/memory"
 	"cvmc/internal/interfaces/rest/handlers"
+	"cvmc/internal/shared/filecipher"
 	"cvmc/internal/shared/httpx"
 	"cvmc/internal/shared/middleware"
 
@@ -33,13 +34,20 @@ func NewRouter(cfg config.Config, users userport.Repository, hasher portauth.Pas
 	if notificationService == nil {
 		notificationService = notificationusecase.NewService(notifMemory.NewRepository(), nil, cars, maintenances)
 	}
+	cipher := filecipher.New(cfg.FileEncryptionKey)
 	healthHandler := handlers.NewHealthHandler()
 	authHandler := handlers.NewAuthHandler(users, hasher, tokens, emailSender, cfg.CookieDomain, cfg.CookieSecure, googleValidator...)
 	userHandler := handlers.NewUserHandler(users, cars, hasher, tokens, googleValidator...)
 	userHandler.SetCookieConfig(cfg.CookieDomain, cfg.CookieSecure)
 	userHandler.SetCascadeDependencies(maintenances, fuelings, notificationService.DeleteUserDeviceTokens)
-	carHandler := handlers.NewCarHandler(carusecase.NewService(cars, users), tokens)
-	maintenanceHandler := handlers.NewMaintenanceHandler(maintusecase.NewService(maintenances, cars), tokens)
+
+	carService := carusecase.NewService(cars, users)
+	carService.SetSecurityDependencies(maintenances, cipher)
+	carHandler := handlers.NewCarHandler(carService, tokens)
+
+	maintService := maintusecase.NewService(maintenances, cars)
+	maintService.SetSecurityDependencies(users, cipher)
+	maintenanceHandler := handlers.NewMaintenanceHandler(maintService, tokens)
 	fuelHandler := handlers.NewFuelHandler(fuelusecase.NewService(fuelings, cars), tokens)
 	fipeHandler := handlers.NewFipeHandler(fipeService, tokens)
 	notificationHandler := handlers.NewNotificationHandler(notificationService, tokens)
@@ -131,7 +139,7 @@ func NewRouter(cfg config.Config, users userport.Repository, hasher portauth.Pas
 	handler := middleware.SecurityHeaders(
 		middleware.CORS(
 			globalLimiter.Limit(
-				middleware.BodyLimit(1<<20)(mux), // 1MB body limit
+				middleware.BodyLimit(15<<20)(mux), // 15MB body limit for encrypted file/attachment uploads
 			),
 			cfg.AllowedOrigins,
 		),

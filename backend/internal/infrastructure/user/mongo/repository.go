@@ -27,6 +27,8 @@ type userDoc struct {
 	PasswordResetTokenHash     string     `bson:"passwordResetTokenHash,omitempty"`
 	PasswordResetExpiresAt     *time.Time `bson:"passwordResetExpiresAt,omitempty"`
 	MaxVehicles                int        `bson:"maxVehicles"`
+	MaxFiles                   int        `bson:"maxFiles,omitempty"`
+	MaxStorageBytes            int64      `bson:"maxStorageBytes,omitempty"`
 	CreatedAt                  time.Time  `bson:"createdAt"`
 	UpdatedAt                  time.Time  `bson:"updatedAt,omitempty"`
 }
@@ -34,7 +36,15 @@ type userDoc struct {
 func (d userDoc) toDomain() domainuser.User {
 	maxVehicles := d.MaxVehicles
 	if maxVehicles <= 0 {
-		maxVehicles = 3
+		maxVehicles = domainuser.DefaultMaxVehicles
+	}
+	maxFiles := d.MaxFiles
+	if maxFiles <= 0 {
+		maxFiles = domainuser.DefaultMaxFiles
+	}
+	maxStorage := d.MaxStorageBytes
+	if maxStorage <= 0 {
+		maxStorage = domainuser.DefaultMaxStorageBytes
 	}
 	return domainuser.User{
 		ID:                         d.ID,
@@ -49,6 +59,8 @@ func (d userDoc) toDomain() domainuser.User {
 		PasswordResetTokenHash:     d.PasswordResetTokenHash,
 		PasswordResetExpiresAt:     d.PasswordResetExpiresAt,
 		MaxVehicles:                maxVehicles,
+		MaxFiles:                   maxFiles,
+		MaxStorageBytes:            maxStorage,
 		CreatedAt:                  d.CreatedAt,
 		UpdatedAt:                  d.UpdatedAt,
 	}
@@ -107,7 +119,13 @@ func (r *Repository) Create(ctx context.Context, user domainuser.User) (domainus
 		user.CreatedAt = time.Now().UTC()
 	}
 	if user.MaxVehicles <= 0 {
-		user.MaxVehicles = 3
+		user.MaxVehicles = domainuser.DefaultMaxVehicles
+	}
+	if user.MaxFiles <= 0 {
+		user.MaxFiles = domainuser.DefaultMaxFiles
+	}
+	if user.MaxStorageBytes <= 0 {
+		user.MaxStorageBytes = domainuser.DefaultMaxStorageBytes
 	}
 
 	doc := userDoc{
@@ -123,6 +141,8 @@ func (r *Repository) Create(ctx context.Context, user domainuser.User) (domainus
 		PasswordResetTokenHash:     user.PasswordResetTokenHash,
 		PasswordResetExpiresAt:     user.PasswordResetExpiresAt,
 		MaxVehicles:                user.MaxVehicles,
+		MaxFiles:                   user.MaxFiles,
+		MaxStorageBytes:            user.MaxStorageBytes,
 		CreatedAt:                  user.CreatedAt,
 		UpdatedAt:                  user.UpdatedAt,
 	}
@@ -142,7 +162,13 @@ func (r *Repository) Update(ctx context.Context, user domainuser.User) (domainus
 	user.ID = cleanID
 
 	if user.MaxVehicles <= 0 {
-		user.MaxVehicles = 3
+		user.MaxVehicles = domainuser.DefaultMaxVehicles
+	}
+	if user.MaxFiles <= 0 {
+		user.MaxFiles = domainuser.DefaultMaxFiles
+	}
+	if user.MaxStorageBytes <= 0 {
+		user.MaxStorageBytes = domainuser.DefaultMaxStorageBytes
 	}
 	if user.UpdatedAt.IsZero() {
 		user.UpdatedAt = time.Now().UTC()
@@ -161,6 +187,8 @@ func (r *Repository) Update(ctx context.Context, user domainuser.User) (domainus
 			"passwordResetTokenHash":     user.PasswordResetTokenHash,
 			"passwordResetExpiresAt":     user.PasswordResetExpiresAt,
 			"maxVehicles":                user.MaxVehicles,
+			"maxFiles":                   user.MaxFiles,
+			"maxStorageBytes":            user.MaxStorageBytes,
 			"updatedAt":                  user.UpdatedAt,
 		},
 	}

@@ -96,11 +96,17 @@ func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 			"emailVerified":   profile.User.EmailVerified,
 			"emailVerifiedAt": profile.User.EmailVerifiedAt,
 			"maxVehicles":     profile.User.MaxVehicles,
+			"maxFiles":        profile.MaxFiles,
+			"maxStorageBytes": profile.MaxStorageBytes,
 			"createdAt":       profile.User.CreatedAt,
 			"updatedAt":       profile.User.UpdatedAt,
 		},
-		"vehiclesCount": profile.VehiclesCount,
-		"maxVehicles":   profile.MaxVehicles,
+		"vehiclesCount":    profile.VehiclesCount,
+		"maxVehicles":      profile.MaxVehicles,
+		"filesCount":       profile.FilesCount,
+		"maxFiles":         profile.MaxFiles,
+		"storageUsedBytes": profile.StorageUsedBytes,
+		"maxStorageBytes":  profile.MaxStorageBytes,
 	})
 }
 

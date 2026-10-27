@@ -8,25 +8,30 @@ import (
 	"time"
 
 	carport "cvmc/internal/application/ports/car"
+	maintenanceport "cvmc/internal/application/ports/maintenance"
 	userport "cvmc/internal/application/ports/user"
 	domaincar "cvmc/internal/domain/car"
 	memoryuser "cvmc/internal/infrastructure/user/memory"
+	"cvmc/internal/shared/filecipher"
 )
 
 var (
-	ErrCarNotFound         = errors.New("car not found")
-	ErrForbidden           = errors.New("forbidden")
-	ErrInvalidPayload      = errors.New("invalid payload")
-	ErrUserNotFound        = errors.New("user not found")
-	ErrShareNotFound       = errors.New("share target not found")
-	ErrEmailNotVerified    = errors.New("valide seu e-mail para cadastrar veículos")
-	ErrVehicleLimitReached = errors.New("limite de veículos atingido")
+	ErrCarNotFound          = errors.New("car not found")
+	ErrForbidden            = errors.New("forbidden")
+	ErrInvalidPayload       = errors.New("invalid payload")
+	ErrUserNotFound         = errors.New("user not found")
+	ErrShareNotFound        = errors.New("share target not found")
+	ErrEmailNotVerified     = errors.New("valide seu e-mail para cadastrar veículos")
+	ErrVehicleLimitReached  = errors.New("limite de veículos atingido")
+	ErrStorageQuotaExceeded = errors.New("limite de cota de arquivos atingido (máx. 100 arquivos ou 100 MB)")
 )
 
 type Service struct {
-	cars  carport.Repository
-	users userport.Repository
-	now   func() time.Time
+	cars         carport.Repository
+	users        userport.Repository
+	maintenances maintenanceport.Repository
+	cipher       *filecipher.FileCipher
+	now          func() time.Time
 }
 
 type CreateInput struct {
@@ -60,6 +65,63 @@ type UpdateInput struct {
 
 func NewService(cars carport.Repository, users userport.Repository) *Service {
 	return &Service{cars: cars, users: users, now: time.Now}
+}
+
+func (s *Service) SetSecurityDependencies(maintenances maintenanceport.Repository, cipher *filecipher.FileCipher) {
+	s.maintenances = maintenances
+	s.cipher = cipher
+}
+
+func (s *Service) checkImageQuota(ctx context.Context, user interface {
+	EffectiveMaxFiles() int
+	EffectiveMaxStorageBytes() int64
+}, ownerID, excludeCarID, newImageUrl string, userCars []domaincar.Car) error {
+	if !filecipher.IsInlineFileData(newImageUrl) {
+		return nil
+	}
+	filesCount := 1
+	storageUsed := filecipher.EstimateDecodedBytes(newImageUrl)
+
+	for _, c := range userCars {
+		if c.OwnerID != ownerID {
+			continue
+		}
+		if c.ID != excludeCarID && filecipher.IsInlineFileData(c.ImageUrl) {
+			filesCount++
+			storageUsed += filecipher.EstimateDecodedBytes(c.ImageUrl)
+		}
+		if s.maintenances != nil {
+			items, err := s.maintenances.ListByCar(ctx, c.ID)
+			if err == nil {
+				for _, m := range items {
+					for _, att := range m.Attachments {
+						filesCount++
+						sz := att.Size
+						if est := filecipher.EstimateDecodedBytes(att.DataUrl); est > sz {
+							sz = est
+						}
+						if sz > 0 {
+							storageUsed += sz
+						}
+					}
+				}
+			}
+		}
+	}
+
+	if filesCount > user.EffectiveMaxFiles() || storageUsed > user.EffectiveMaxStorageBytes() {
+		return ErrStorageQuotaExceeded
+	}
+	return nil
+}
+
+func (s *Service) decryptCar(car domaincar.Car) domaincar.Car {
+	if s.cipher != nil && car.ImageUrl != "" {
+		if plain, err := s.cipher.DecryptForOwner(car.OwnerID, car.ImageUrl); err == nil {
+			car.ImageUrl = plain
+		}
+	}
+	return car
 }
 
 func (s *Service) Create(ctx context.Context, ownerID string, input CreateInput) (domaincar.Car, error) {
@@ -97,6 +159,19 @@ func (s *Service) Create(ctx context.Context, ownerID string, input CreateInput)
 		return domaincar.Car{}, ErrVehicleLimitReached
 	}
 
+	trimmedImg := strings.TrimSpace(input.ImageUrl)
+	if err := s.checkImageQuota(ctx, user, ownerID, "", trimmedImg, userCars); err != nil {
+		return domaincar.Car{}, err
+	}
+	storedImg := trimmedImg
+	if s.cipher != nil && storedImg != "" {
+		encImg, err := s.cipher.EncryptForOwner(ownerID, storedImg)
+		if err != nil {
+			return domaincar.Car{}, err
+		}
+		storedImg = encImg
+	}
+
 	car := domaincar.Car{
 		OwnerID:         ownerID,
 		Name:            strings.TrimSpace(input.Name),
@@ -107,7 +182,7 @@ func (s *Service) Create(ctx context.Context, ownerID string, input CreateInput)
 		InitialMileage:  input.LastMileage,
 		LastMileage:     input.LastMileage,
 		VehicleType:     strings.TrimSpace(input.VehicleType),
-		ImageUrl:        strings.TrimSpace(input.ImageUrl),
+		ImageUrl:        storedImg,
 		FIPECode:        strings.TrimSpace(input.FIPECode),
 		FIPEPrice:       strings.TrimSpace(input.FIPEPrice),
 		Fuel:            strings.TrimSpace(input.Fuel),
@@ -115,7 +190,11 @@ func (s *Service) Create(ctx context.Context, ownerID string, input CreateInput)
 		CreatedAt:       s.now().UTC(),
 		UpdatedAt:       s.now().UTC(),
 	}
-	return s.cars.Create(ctx, car)
+	created, err := s.cars.Create(ctx, car)
+	if err != nil {
+		return domaincar.Car{}, err
+	}
+	return s.decryptCar(created), nil
 }
 
 func (s *Service) Get(ctx context.Context, actorID, carID string) (domaincar.Car, error) {
@@ -126,13 +205,16 @@ func (s *Service) Get(ctx context.Context, actorID, carID string) (domaincar.Car
 	if !canAccessCar(actorID, car) {
 		return domaincar.Car{}, ErrForbidden
 	}
-	return car, nil
+	return s.decryptCar(car), nil
 }
 
 func (s *Service) List(ctx context.Context, actorID string) ([]domaincar.Car, error) {
 	items, err := s.cars.ListByUser(ctx, actorID)
 	if err != nil {
 		return nil, err
+	}
+	for i := range items {
+		items[i] = s.decryptCar(items[i])
 	}
 	sort.Slice(items, func(i, j int) bool { return items[i].CreatedAt.After(items[j].CreatedAt) })
 	return items, nil
@@ -171,7 +253,25 @@ func (s *Service) Update(ctx context.Context, actorID, carID string, input Updat
 		car.VehicleType = strings.TrimSpace(input.VehicleType)
 	}
 	if input.ImageUrl != "" {
-		car.ImageUrl = strings.TrimSpace(input.ImageUrl)
+		trimmedImg := strings.TrimSpace(input.ImageUrl)
+		if filecipher.IsInlineFileData(trimmedImg) {
+			user, err := s.users.FindByID(ctx, actorID)
+			if err == nil {
+				userCars, _ := s.cars.ListByUser(ctx, actorID)
+				if err := s.checkImageQuota(ctx, user, actorID, carID, trimmedImg, userCars); err != nil {
+					return domaincar.Car{}, err
+				}
+			}
+		}
+		if s.cipher != nil {
+			encImg, err := s.cipher.EncryptForOwner(car.OwnerID, trimmedImg)
+			if err != nil {
+				return domaincar.Car{}, err
+			}
+			car.ImageUrl = encImg
+		} else {
+			car.ImageUrl = trimmedImg
+		}
 	}
 	if input.FIPECode != "" {
 		car.FIPECode = strings.TrimSpace(input.FIPECode)
@@ -186,7 +286,11 @@ func (s *Service) Update(ctx context.Context, actorID, carID string, input Updat
 		car.MaintenanceIntervals = input.MaintenanceIntervals
 	}
 	car.UpdatedAt = s.now().UTC()
-	return s.cars.Update(ctx, car)
+	updated, err := s.cars.Update(ctx, car)
+	if err != nil {
+		return domaincar.Car{}, err
+	}
+	return s.decryptCar(updated), nil
 }
 
 func (s *Service) Delete(ctx context.Context, actorID, carID string) error {

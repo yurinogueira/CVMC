@@ -45,6 +45,9 @@ type Attachment struct {
 2. **Defesa Contra Stored XSS**:
    - Arquivos `.svg`, `.html` e `.js` são sumariamente rejeitados.
    - Cabeçalho `X-Content-Type-Options: nosniff` é forçado na entrega do binário.
+3. **Criptografia por Proprietário e Cota de Armazenamento**:
+   - Todo `DataUrl` de anexo é criptografado em repouso com `AES-256-GCM` e chave derivada por proprietário via `HKDF-SHA256` (`FILE_ENCRYPTION_KEY` + `ownerID`), utilizando `ownerID` como `AAD`.
+   - O envio de novos anexos valida a cota global do proprietário do veículo (`MaxFiles = 100` arquivos e `MaxStorageBytes = 100 MB`).
 
 ---
 

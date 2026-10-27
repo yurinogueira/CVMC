@@ -9,20 +9,25 @@ import (
 
 	carport "cvmc/internal/application/ports/car"
 	maintenanceport "cvmc/internal/application/ports/maintenance"
-	domainmaintenance "cvmc/internal/domain/maintenance"
-
+	userport "cvmc/internal/application/ports/user"
 	domaincar "cvmc/internal/domain/car"
+	domainmaintenance "cvmc/internal/domain/maintenance"
+	domainuser "cvmc/internal/domain/user"
+	"cvmc/internal/shared/filecipher"
 )
 
 var (
 	ErrMaintenanceNotFound  = errors.New("maintenance not found")
 	ErrMaintenanceForbidden = errors.New("forbidden")
 	ErrMaintenanceInvalid   = errors.New("invalid payload")
+	ErrStorageQuotaExceeded = errors.New("limite de cota de arquivos atingido (máx. 100 arquivos ou 100 MB)")
 )
 
 type Service struct {
 	maintenances maintenanceport.Repository
 	cars         carport.Repository
+	users        userport.Repository
+	cipher       *filecipher.FileCipher
 	now          func() time.Time
 }
 
@@ -50,6 +55,109 @@ func NewService(maintenances maintenanceport.Repository, cars carport.Repository
 	return &Service{maintenances: maintenances, cars: cars, now: time.Now}
 }
 
+func (s *Service) SetSecurityDependencies(users userport.Repository, cipher *filecipher.FileCipher) {
+	s.users = users
+	s.cipher = cipher
+}
+
+func (s *Service) normalizeAndEncryptAttachments(ctx context.Context, ownerID, excludeMaintID string, incoming []domainmaintenance.Attachment) ([]domainmaintenance.Attachment, error) {
+	if len(incoming) == 0 {
+		return incoming, nil
+	}
+
+	maxFiles := domainuser.DefaultMaxFiles
+	maxStorage := domainuser.DefaultMaxStorageBytes
+	if s.users != nil {
+		if u, err := s.users.FindByID(ctx, ownerID); err == nil {
+			maxFiles = u.EffectiveMaxFiles()
+			maxStorage = u.EffectiveMaxStorageBytes()
+		}
+	}
+
+	filesCount := len(incoming)
+	var storageUsed int64
+
+	prepared := make([]domainmaintenance.Attachment, len(incoming))
+	for i, att := range incoming {
+		realSize := filecipher.EstimateDecodedBytes(att.DataUrl)
+		if realSize > att.Size {
+			att.Size = realSize
+		}
+		if att.Size > 0 {
+			storageUsed += att.Size
+		}
+		prepared[i] = att
+	}
+
+	if s.cars != nil {
+		userCars, err := s.cars.ListByUser(ctx, ownerID)
+		if err == nil {
+			for _, c := range userCars {
+				if c.OwnerID != ownerID {
+					continue
+				}
+				if filecipher.IsInlineFileData(c.ImageUrl) {
+					filesCount++
+					storageUsed += filecipher.EstimateDecodedBytes(c.ImageUrl)
+				}
+				items, err := s.maintenances.ListByCar(ctx, c.ID)
+				if err == nil {
+					for _, m := range items {
+						if m.ID == excludeMaintID {
+							continue
+						}
+						for _, att := range m.Attachments {
+							filesCount++
+							sz := att.Size
+							if est := filecipher.EstimateDecodedBytes(att.DataUrl); est > sz {
+								sz = est
+							}
+							if sz > 0 {
+								storageUsed += sz
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	if filesCount > maxFiles || storageUsed > maxStorage {
+		return nil, ErrStorageQuotaExceeded
+	}
+
+	if s.cipher != nil {
+		for i := range prepared {
+			if prepared[i].DataUrl != "" {
+				enc, err := s.cipher.EncryptForOwner(ownerID, prepared[i].DataUrl)
+				if err != nil {
+					return nil, err
+				}
+				prepared[i].DataUrl = enc
+			}
+		}
+	}
+
+	return prepared, nil
+}
+
+func (s *Service) decryptMaintenance(ownerID string, m domainmaintenance.Maintenance) domainmaintenance.Maintenance {
+	if s.cipher == nil || len(m.Attachments) == 0 {
+		return m
+	}
+	decrypted := make([]domainmaintenance.Attachment, len(m.Attachments))
+	copy(decrypted, m.Attachments)
+	for i := range decrypted {
+		if decrypted[i].DataUrl != "" {
+			if plain, err := s.cipher.DecryptForOwner(ownerID, decrypted[i].DataUrl); err == nil {
+				decrypted[i].DataUrl = plain
+			}
+		}
+	}
+	m.Attachments = decrypted
+	return m
+}
+
 func (s *Service) Create(ctx context.Context, actorID, carID string, input CreateInput) (domainmaintenance.Maintenance, error) {
 	car, err := s.cars.GetByID(ctx, carID)
 	if err != nil {
@@ -60,6 +168,10 @@ func (s *Service) Create(ctx context.Context, actorID, carID string, input Creat
 	}
 	if strings.TrimSpace(input.Title) == "" {
 		return domainmaintenance.Maintenance{}, ErrMaintenanceInvalid
+	}
+	preparedAttachments, err := s.normalizeAndEncryptAttachments(ctx, car.OwnerID, "", input.Attachments)
+	if err != nil {
+		return domainmaintenance.Maintenance{}, err
 	}
 	when := input.Date
 	if when.IsZero() {
@@ -73,7 +185,7 @@ func (s *Service) Create(ctx context.Context, actorID, carID string, input Creat
 		Mileage:     input.Mileage,
 		Types:       input.Types,
 		Cost:        input.Cost,
-		Attachments: input.Attachments,
+		Attachments: preparedAttachments,
 		CreatedAt:   s.now().UTC(),
 		UpdatedAt:   s.now().UTC(),
 	}
@@ -86,7 +198,7 @@ func (s *Service) Create(ctx context.Context, actorID, carID string, input Creat
 		car.UpdatedAt = s.now().UTC()
 		_, _ = s.cars.Update(ctx, car)
 	}
-	return created, nil
+	return s.decryptMaintenance(car.OwnerID, created), nil
 }
 
 func (s *Service) List(ctx context.Context, actorID, carID string) ([]domainmaintenance.Maintenance, error) {
@@ -100,6 +212,9 @@ func (s *Service) List(ctx context.Context, actorID, carID string) ([]domainmain
 	items, err := s.maintenances.ListByCar(ctx, carID)
 	if err != nil {
 		return nil, err
+	}
+	for i := range items {
+		items[i] = s.decryptMaintenance(car.OwnerID, items[i])
 	}
 	sort.Slice(items, func(i, j int) bool { return items[i].Date.After(items[j].Date) })
 	return items, nil
@@ -117,7 +232,7 @@ func (s *Service) Get(ctx context.Context, actorID, maintenanceID string) (domai
 	if !accessible(actorID, car) {
 		return domainmaintenance.Maintenance{}, ErrMaintenanceForbidden
 	}
-	return item, nil
+	return s.decryptMaintenance(car.OwnerID, item), nil
 }
 
 func (s *Service) Update(ctx context.Context, actorID, maintenanceID string, input UpdateInput) (domainmaintenance.Maintenance, error) {
@@ -135,6 +250,10 @@ func (s *Service) Update(ctx context.Context, actorID, maintenanceID string, inp
 	if strings.TrimSpace(input.Title) == "" {
 		return domainmaintenance.Maintenance{}, ErrMaintenanceInvalid
 	}
+	preparedAttachments, err := s.normalizeAndEncryptAttachments(ctx, car.OwnerID, maintenanceID, input.Attachments)
+	if err != nil {
+		return domainmaintenance.Maintenance{}, err
+	}
 	item.Title = strings.TrimSpace(input.Title)
 	item.Description = strings.TrimSpace(input.Description)
 	if !input.Date.IsZero() {
@@ -143,7 +262,7 @@ func (s *Service) Update(ctx context.Context, actorID, maintenanceID string, inp
 	item.Mileage = input.Mileage
 	item.Types = input.Types
 	item.Cost = input.Cost
-	item.Attachments = input.Attachments
+	item.Attachments = preparedAttachments
 	item.UpdatedAt = s.now().UTC()
 	updated, err := s.maintenances.Update(ctx, item)
 	if err != nil {
@@ -154,7 +273,7 @@ func (s *Service) Update(ctx context.Context, actorID, maintenanceID string, inp
 		car.UpdatedAt = s.now().UTC()
 		_, _ = s.cars.Update(ctx, car)
 	}
-	return updated, nil
+	return s.decryptMaintenance(car.OwnerID, updated), nil
 }
 
 func (s *Service) Delete(ctx context.Context, actorID, maintenanceID string) error {

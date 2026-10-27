@@ -330,6 +330,8 @@ func handleCarError(w http.ResponseWriter, err error) {
 		httpx.Error(w, http.StatusForbidden, "Valide seu e-mail para cadastrar veículos", nil)
 	case errors.Is(err, carusecase.ErrVehicleLimitReached):
 		httpx.Error(w, http.StatusForbidden, "Limite de veículos atingido", nil)
+	case errors.Is(err, carusecase.ErrStorageQuotaExceeded):
+		httpx.Error(w, http.StatusBadRequest, "Limite de cota de arquivos atingido (máximo de 100 arquivos ou 100 MB por conta)", nil)
 	case errors.Is(err, carusecase.ErrCarNotFound):
 		httpx.Error(w, http.StatusNotFound, "Car not found", nil)
 	case errors.Is(err, carusecase.ErrForbidden):

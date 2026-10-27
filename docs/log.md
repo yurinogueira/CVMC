@@ -15,7 +15,8 @@ Este documento funciona como o índice mestre de todas as mudanças de engenhari
 
 Para navegação geral, retorne ao [Catálogo Canônico](index.md).
 
-## 📅 [2026-10-27](logs/2026-10-27.md) — Exclusão Permanente de Conta e Página Pública de Política de Privacidade (#134)
+## 📅 [2026-10-27](logs/2026-10-27.md) — Criptografia de Arquivos por Usuário & Cota de 100 MB (#136) e Política de Privacidade & Exclusão de Conta (#134)
+- **Criptografia Autenticada de Arquivos por Usuário e Cota de 100 MB / 100 Arquivos (#136)**: Implementação do pacote `filecipher` com derivação de chave por proprietário via `HKDF-SHA256` (`FILE_ENCRYPTION_KEY` injetada pelo GitHub Secrets) e cifragem `AES-256-GCM` com vínculo `AAD` para comprovantes de manutenção e fotos de veículos, além de imposição e exibição da cota de até 100 arquivos ou 100 MB no backend e no painel `ProfilePage.tsx`.
 - **Exclusão Permanente de Conta em Cascata e Política de Privacidade Pública (#134)**: Implementação do endpoint `DELETE /api/v1/user/account` com remoção em cascata de veículos próprios, manutenções, abastecimentos, vínculos de compartilhamento e tokens FCM, card e modal de exclusão em `ProfilePage.tsx`, e criação da página pública `/privacy` (`PrivacyPolicyPage.tsx`) acessível sem login e pré-renderizada em `dist/privacy/index.html` (HTTP 200 OK) para conformidade com a LGPD e o Google Play Console.
 
 ## 📅 [2026-10-25](logs/2026-10-25.md) — Grid Responsivo de Manutenções Preventivas em Telas Verticais (#129)

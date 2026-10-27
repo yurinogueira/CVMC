@@ -7,11 +7,13 @@ import (
 
 	"cvmc/internal/application/usecase/auth"
 	"cvmc/internal/application/usecase/car"
+	domainmaintenance "cvmc/internal/domain/maintenance"
 	"cvmc/internal/infrastructure/auth/bcrypt"
 	jwtauth "cvmc/internal/infrastructure/auth/jwt"
 	carrepo "cvmc/internal/infrastructure/car/memory"
 	maintrepo "cvmc/internal/infrastructure/maintenance/memory"
 	memoryuser "cvmc/internal/infrastructure/user/memory"
+	"cvmc/internal/shared/filecipher"
 )
 
 func TestMaintenanceServiceUpdatesMileage(t *testing.T) {
@@ -228,5 +230,97 @@ func TestMaintenanceServiceGet(t *testing.T) {
 	_, err = service.Get(ctx, owner.User.ID, "non-existent")
 	if err != ErrMaintenanceNotFound {
 		t.Fatalf("expected ErrMaintenanceNotFound, got %v", err)
+	}
+}
+
+func TestMaintenanceServiceAttachmentEncryptionAndQuota(t *testing.T) {
+	users := memoryuser.NewRepository()
+	hasher := bcrypt.NewHasher()
+	tokens := jwtauth.NewProvider("access-secret-32-chars-long-security", "refresh-secret-32-chars-long-security")
+	authService := auth.NewService(users, hasher, tokens, nil)
+	ctx := context.Background()
+
+	owner, _ := authService.Register(ctx, auth.RegisterInput{Name: "Owner", Email: "owner5@example.com", Password: "secret123"})
+	owner.User.EmailVerified = true
+	owner.User.MaxFiles = 2
+	owner.User.MaxStorageBytes = 500
+	_, _ = users.Update(ctx, owner.User)
+
+	cars := carrepo.NewRepository()
+	maintRepo := maintrepo.NewRepository()
+	fc := filecipher.New("master-file-encryption-key-with-32-chars!!")
+
+	carService := car.NewService(cars, users)
+	carService.SetSecurityDependencies(maintRepo, fc)
+
+	sampleDataURL := "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+	createdCar, err := carService.Create(ctx, owner.User.ID, car.CreateInput{
+		Name:            "Carro Criptografado",
+		Manufacturer:    "Honda",
+		Model:           "Civic",
+		YearManufacture: 2022,
+		YearModel:       2023,
+		LastMileage:     10000,
+		ImageUrl:        sampleDataURL,
+	})
+	if err != nil {
+		t.Fatalf("create car failed: %v", err)
+	}
+	if createdCar.ImageUrl != sampleDataURL {
+		t.Fatalf("expected decrypted ImageUrl on return, got %q", createdCar.ImageUrl)
+	}
+
+	// Verify stored car image in repo is encrypted at rest
+	rawCar, _ := cars.GetByID(ctx, createdCar.ID)
+	if !filecipher.IsEncrypted(rawCar.ImageUrl) {
+		t.Fatalf("expected car ImageUrl to be encrypted at rest, got %q", rawCar.ImageUrl)
+	}
+
+	service := NewService(maintRepo, cars)
+	service.SetSecurityDependencies(users, fc)
+
+	// 1 file is already used by Car.ImageUrl; adding 1 attachment (total 2 <= MaxFiles 2) succeeds
+	createdMaint, err := service.Create(ctx, owner.User.ID, createdCar.ID, CreateInput{
+		Title:   "Revisão com Nota Fiscal",
+		Date:    time.Now().UTC(),
+		Mileage: 15000,
+		Attachments: []domainmaintenance.Attachment{
+			{
+				ID:       "att-1",
+				Name:     "nota.png",
+				MimeType: "image/png",
+				DataUrl:  sampleDataURL,
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("expected maintenance creation to succeed within quota, got %v", err)
+	}
+	if len(createdMaint.Attachments) != 1 || createdMaint.Attachments[0].DataUrl != sampleDataURL {
+		t.Fatalf("expected decrypted attachment DataUrl on return, got %+v", createdMaint.Attachments)
+	}
+
+	// Verify stored attachment in repository is encrypted at rest
+	rawMaint, _ := maintRepo.GetByID(ctx, createdMaint.ID)
+	if !filecipher.IsEncrypted(rawMaint.Attachments[0].DataUrl) {
+		t.Fatalf("expected attachment DataUrl to be encrypted at rest, got %q", rawMaint.Attachments[0].DataUrl)
+	}
+
+	// Adding another maintenance with 1 attachment exceeds MaxFiles (2 + 1 = 3 > 2)
+	_, err = service.Create(ctx, owner.User.ID, createdCar.ID, CreateInput{
+		Title:   "Excedendo Cota",
+		Date:    time.Now().UTC(),
+		Mileage: 16000,
+		Attachments: []domainmaintenance.Attachment{
+			{
+				ID:       "att-2",
+				Name:     "nota2.png",
+				MimeType: "image/png",
+				DataUrl:  sampleDataURL,
+			},
+		},
+	})
+	if err != ErrStorageQuotaExceeded {
+		t.Fatalf("expected ErrStorageQuotaExceeded when exceeding MaxFiles, got %v", err)
 	}
 }
