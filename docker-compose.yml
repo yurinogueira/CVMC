@@ -28,6 +28,7 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       FIREBASE_CREDENTIALS_JSON: ${FIREBASE_CREDENTIALS_JSON:-}
       FIREBASE_CREDENTIALS_FILE: ${FIREBASE_CREDENTIALS_FILE:-}
+      FILE_ENCRYPTION_KEY: ${FILE_ENCRYPTION_KEY:-cvmc_dev_file_encryption_master_secret_key_32_chars!}
     ports:
       - "8080:8080"
     volumes:

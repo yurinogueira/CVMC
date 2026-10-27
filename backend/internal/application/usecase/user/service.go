@@ -12,7 +12,9 @@ import (
 	fuelport "cvmc/internal/application/ports/fuel"
 	maintport "cvmc/internal/application/ports/maintenance"
 	userport "cvmc/internal/application/ports/user"
+	"cvmc/internal/application/usecase/storagequota"
 	domainuser "cvmc/internal/domain/user"
+	"cvmc/internal/shared/filecipher"
 )
 
 const (
@@ -48,15 +50,20 @@ type Service struct {
 	maintenances    maintport.Repository
 	fuelings        fuelport.Repository
 	cleanupTokens   func(ctx context.Context, userID string) error
+	cipher          *filecipher.FileCipher
 	hasher          portauth.PasswordHasher
 	googleValidator portauth.GoogleTokenValidator
 	now             func() time.Time
 }
 
 type ProfileOutput struct {
-	User          domainuser.User `json:"user"`
-	VehiclesCount int             `json:"vehiclesCount"`
-	MaxVehicles   int             `json:"maxVehicles"`
+	User             domainuser.User `json:"user"`
+	VehiclesCount    int             `json:"vehiclesCount"`
+	MaxVehicles      int             `json:"maxVehicles"`
+	FilesCount       int             `json:"filesCount"`
+	MaxFiles         int             `json:"maxFiles"`
+	StorageUsedBytes int64           `json:"storageUsedBytes"`
+	MaxStorageBytes  int64           `json:"maxStorageBytes"`
 }
 
 func NewService(users userport.Repository, cars carport.Repository, hasher portauth.PasswordHasher, googleValidator ...portauth.GoogleTokenValidator) *Service {
@@ -80,10 +87,14 @@ func (s *Service) SetCascadeDependencies(
 	maintenances maintport.Repository,
 	fuelings fuelport.Repository,
 	cleanupTokens func(ctx context.Context, userID string) error,
+	cipher ...*filecipher.FileCipher,
 ) {
 	s.maintenances = maintenances
 	s.fuelings = fuelings
 	s.cleanupTokens = cleanupTokens
+	if len(cipher) > 0 {
+		s.cipher = cipher[0]
+	}
 }
 
 func isValidName(name string) bool {
@@ -104,6 +115,8 @@ func (s *Service) GetProfile(ctx context.Context, userID string) (ProfileOutput,
 		return ProfileOutput{}, ErrUserNotFound
 	}
 
+	user, _ = storagequota.EnsureSynced(ctx, user, s.users, s.cars, s.maintenances, s.cipher)
+
 	userCars, err := s.cars.ListByUser(ctx, userID)
 	if err != nil {
 		return ProfileOutput{}, err
@@ -118,13 +131,17 @@ func (s *Service) GetProfile(ctx context.Context, userID string) (ProfileOutput,
 
 	maxVehicles := user.MaxVehicles
 	if maxVehicles <= 0 {
-		maxVehicles = 3
+		maxVehicles = domainuser.DefaultMaxVehicles
 	}
 
 	return ProfileOutput{
-		User:          user,
-		VehiclesCount: ownedCount,
-		MaxVehicles:   maxVehicles,
+		User:             user,
+		VehiclesCount:    ownedCount,
+		MaxVehicles:      maxVehicles,
+		FilesCount:       user.FilesCount,
+		MaxFiles:         user.EffectiveMaxFiles(),
+		StorageUsedBytes: user.StorageUsedBytes,
+		MaxStorageBytes:  user.EffectiveMaxStorageBytes(),
 	}, nil
 }
 

@@ -37,6 +37,10 @@ describe("ProfilePage", () => {
       },
       vehiclesCount: 1,
       maxVehicles: 3,
+      filesCount: 4,
+      maxFiles: 100,
+      storageUsedBytes: 5 * 1024 * 1024,
+      maxStorageBytes: 100 * 1024 * 1024,
     });
 
     render(
@@ -53,6 +57,7 @@ describe("ProfilePage", () => {
 
     expect(screen.getByText("E-mail Verificado")).toBeInTheDocument();
     expect(screen.getByText("1 de 3 veículos")).toBeInTheDocument();
+    expect(screen.getByText("4 de 100 arquivos")).toBeInTheDocument();
     expect(screen.getByDisplayValue("Yuri Nogueira")).toBeInTheDocument();
     expect(screen.getByDisplayValue("yuri@cvmc.com")).toBeInTheDocument();
     expect(

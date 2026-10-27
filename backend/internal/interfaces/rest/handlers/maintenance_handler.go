@@ -323,6 +323,8 @@ func handleMaintenanceError(w http.ResponseWriter, err error) {
 		httpx.Error(w, http.StatusForbidden, "Forbidden", nil)
 	case errors.Is(err, maintenusecase.ErrMaintenanceInvalid):
 		httpx.Error(w, http.StatusBadRequest, "Invalid payload", nil)
+	case errors.Is(err, maintenusecase.ErrStorageQuotaExceeded):
+		httpx.Error(w, http.StatusBadRequest, "Limite de cota de arquivos atingido (máximo de 100 arquivos ou 100 MB por conta)", nil)
 	default:
 		httpx.Error(w, http.StatusInternalServerError, "Unexpected error", nil)
 	}

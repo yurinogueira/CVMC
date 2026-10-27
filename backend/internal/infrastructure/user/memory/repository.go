@@ -35,7 +35,13 @@ func (r *Repository) Create(ctx context.Context, user domainuser.User) (domainus
 		user.CreatedAt = time.Now().UTC()
 	}
 	if user.MaxVehicles <= 0 {
-		user.MaxVehicles = 3
+		user.MaxVehicles = domainuser.DefaultMaxVehicles
+	}
+	if user.MaxFiles <= 0 {
+		user.MaxFiles = domainuser.DefaultMaxFiles
+	}
+	if user.MaxStorageBytes <= 0 {
+		user.MaxStorageBytes = domainuser.DefaultMaxStorageBytes
 	}
 	r.byID[user.ID] = user
 	r.byMail[user.Email] = user.ID
@@ -54,7 +60,13 @@ func (r *Repository) Update(ctx context.Context, user domainuser.User) (domainus
 
 	user.Email = strings.ToLower(strings.TrimSpace(user.Email))
 	if user.MaxVehicles <= 0 {
-		user.MaxVehicles = 3
+		user.MaxVehicles = domainuser.DefaultMaxVehicles
+	}
+	if user.MaxFiles <= 0 {
+		user.MaxFiles = domainuser.DefaultMaxFiles
+	}
+	if user.MaxStorageBytes <= 0 {
+		user.MaxStorageBytes = domainuser.DefaultMaxStorageBytes
 	}
 	if user.UpdatedAt.IsZero() {
 		user.UpdatedAt = time.Now().UTC()

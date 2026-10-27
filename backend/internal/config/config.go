@@ -84,10 +84,17 @@ type Config struct {
 	FirebaseCredentialsJSON string
 	FirebaseCredentialsFile string
 	MaintenanceCronInterval string
+	FileEncryptionKey       string
 }
 
 func (c Config) Validate() error {
-	return ValidateJWTSecrets(c.JWTSecret, c.JWTRefreshSecret)
+	if err := ValidateJWTSecrets(c.JWTSecret, c.JWTRefreshSecret); err != nil {
+		return err
+	}
+	if c.FileEncryptionKey != "" && len(c.FileEncryptionKey) < MinJWTSecretLength {
+		return fmt.Errorf("FILE_ENCRYPTION_KEY must be at least %d characters long when provided", MinJWTSecretLength)
+	}
+	return nil
 }
 
 func Load() Config {
@@ -120,6 +127,11 @@ func Load() Config {
 		FirebaseCredentialsJSON: getenv("FIREBASE_CREDENTIALS_JSON", ""),
 		FirebaseCredentialsFile: getenv("FIREBASE_CREDENTIALS_FILE", ""),
 		MaintenanceCronInterval: getenv("MAINTENANCE_CRON_INTERVAL", "24h"),
+		FileEncryptionKey:       getenv("FILE_ENCRYPTION_KEY", ""),
+	}
+
+	if cfg.FileEncryptionKey == "" {
+		cfg.FileEncryptionKey = cfg.JWTSecret + ":cvmc-file-encryption-fallback"
 	}
 
 	// Unconditionally reject default and low-entropy JWT secrets in all environments.

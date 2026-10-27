@@ -367,6 +367,23 @@ export function ProfilePage() {
     Math.round((vehiclesCount / maxVehicles) * 100),
     100,
   );
+  const filesCount = profileData?.filesCount || 0;
+  const maxFiles = profileData?.maxFiles || 100;
+  const filesQuotaPercent = Math.min(
+    Math.round((filesCount / maxFiles) * 100),
+    100,
+  );
+  const storageUsedBytes = profileData?.storageUsedBytes || 0;
+  const maxStorageBytes = profileData?.maxStorageBytes || 100 * 1024 * 1024;
+  const storageQuotaPercent = Math.min(
+    Math.round((storageUsedBytes / maxStorageBytes) * 100),
+    100,
+  );
+  const formatStorageMB = (bytes: number) =>
+    (bytes / (1024 * 1024)).toLocaleString("pt-BR", {
+      minimumFractionDigits: bytes > 0 && bytes < 1024 * 1024 ? 2 : 1,
+      maximumFractionDigits: 2,
+    });
 
   return (
     <Box>
@@ -527,53 +544,139 @@ export function ProfilePage() {
                   sx={{ color: "primary.main", fontSize: 28 }}
                 />
                 <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                  Cota de Veículos
+                  Cota de Veículos & Armazenamento
                 </Typography>
               </Stack>
 
-              <Box sx={{ mb: 3 }}>
-                <Stack
-                  direction="row"
-                  sx={{
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    mb: 1,
-                  }}
-                >
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                    Consumo Atual
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{ fontWeight: 700, color: "primary.main" }}
+              <Stack spacing={2.5} sx={{ mb: 2.5 }}>
+                {/* Cota de Veículos */}
+                <Box>
+                  <Stack
+                    direction="row"
+                    sx={{
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      mb: 0.75,
+                    }}
                   >
-                    {vehiclesCount} de {maxVehicles} veículos
-                  </Typography>
-                </Stack>
-                <LinearProgress
-                  variant="determinate"
-                  value={quotaPercent}
-                  sx={{
-                    height: 10,
-                    borderRadius: 5,
-                    bgcolor: "#E2E8F0",
-                    "& .MuiLinearProgress-bar": {
-                      bgcolor:
-                        quotaPercent >= 100
-                          ? "error.main"
-                          : quotaPercent >= 66
-                            ? "warning.main"
-                            : "primary.main",
-                      borderRadius: 5,
-                    },
-                  }}
-                />
-              </Box>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      Frota Cadastrada
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{ fontWeight: 700, color: "primary.main" }}
+                    >
+                      {vehiclesCount} de {maxVehicles} veículos
+                    </Typography>
+                  </Stack>
+                  <LinearProgress
+                    variant="determinate"
+                    value={quotaPercent}
+                    sx={{
+                      height: 8,
+                      borderRadius: 4,
+                      bgcolor: "#E2E8F0",
+                      "& .MuiLinearProgress-bar": {
+                        bgcolor:
+                          quotaPercent >= 100
+                            ? "error.main"
+                            : quotaPercent >= 66
+                              ? "warning.main"
+                              : "primary.main",
+                        borderRadius: 4,
+                      },
+                    }}
+                  />
+                </Box>
 
-              <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                {vehiclesCount >= maxVehicles
-                  ? "Você atingiu a cota máxima de veículos cadastrados na sua conta. Entre em contato com o suporte caso necessite expandir o limite."
-                  : `Você ainda pode cadastrar mais ${maxVehicles - vehiclesCount} veículo(s) com sua cota atual.`}
+                {/* Cota de Arquivos */}
+                <Box>
+                  <Stack
+                    direction="row"
+                    sx={{
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      mb: 0.75,
+                    }}
+                  >
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      Arquivos Criptografados
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{ fontWeight: 700, color: "primary.main" }}
+                    >
+                      {filesCount} de {maxFiles} arquivos
+                    </Typography>
+                  </Stack>
+                  <LinearProgress
+                    variant="determinate"
+                    value={filesQuotaPercent}
+                    sx={{
+                      height: 8,
+                      borderRadius: 4,
+                      bgcolor: "#E2E8F0",
+                      "& .MuiLinearProgress-bar": {
+                        bgcolor:
+                          filesQuotaPercent >= 100
+                            ? "error.main"
+                            : filesQuotaPercent >= 80
+                              ? "warning.main"
+                              : "primary.main",
+                        borderRadius: 4,
+                      },
+                    }}
+                  />
+                </Box>
+
+                {/* Cota de Espaço (100 MB) */}
+                <Box>
+                  <Stack
+                    direction="row"
+                    sx={{
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      mb: 0.75,
+                    }}
+                  >
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      Espaço Utilizado
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{ fontWeight: 700, color: "primary.main" }}
+                    >
+                      {formatStorageMB(storageUsedBytes)} MB de{" "}
+                      {formatStorageMB(maxStorageBytes)} MB
+                    </Typography>
+                  </Stack>
+                  <LinearProgress
+                    variant="determinate"
+                    value={storageQuotaPercent}
+                    sx={{
+                      height: 8,
+                      borderRadius: 4,
+                      bgcolor: "#E2E8F0",
+                      "& .MuiLinearProgress-bar": {
+                        bgcolor:
+                          storageQuotaPercent >= 100
+                            ? "error.main"
+                            : storageQuotaPercent >= 80
+                              ? "warning.main"
+                              : "primary.main",
+                        borderRadius: 4,
+                      },
+                    }}
+                  />
+                </Box>
+              </Stack>
+
+              <Typography
+                variant="caption"
+                sx={{ color: "text.secondary", display: "block" }}
+              >
+                Todos os seus comprovantes e fotos são protegidos com
+                criptografia autenticada exclusiva por usuário (AES-256-GCM).
               </Typography>
             </CardContent>
           </Card>
