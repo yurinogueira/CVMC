@@ -84,7 +84,9 @@ describe("GoogleSignInButton", () => {
       expect(SocialLogin.initialize).toHaveBeenCalled();
       expect(SocialLogin.login).toHaveBeenCalledWith({
         provider: "google",
-        options: {},
+        options: {
+          filterByAuthorizedAccounts: false,
+        },
       });
       expect(onSuccess).toHaveBeenCalledWith("mocked-native-google-id-token");
       expect(onError).not.toHaveBeenCalled();

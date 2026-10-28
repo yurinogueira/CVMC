@@ -143,12 +143,15 @@ CVMC_RELEASE_KEY_PASSWORD=senha_da_chave
 
 ## 🤖 Compilação Automatizada no GitHub Actions
 
-A pipeline de Frontend (`.github/workflows/frontend.yml`) compila automaticamente o APK de Debug a cada push na branch `main` e em Pull Requests:
+A pipeline de Frontend (`.github/workflows/frontend.yml`) compila automaticamente os pacotes Android (`.aab` e `.apk`) a cada push na branch `main` e em Pull Requests:
 1. Constrói a SPA com as variáveis de produção (`VITE_GOOGLE_CLIENT_ID` e `VITE_API_BASE_URL`).
 2. Injeta automaticamente o `frontend/android/app/google-services.json` a partir da secret `GOOGLE_SERVICES_JSON` (se configurada no GitHub Actions).
 3. Sincroniza os web assets com o projeto nativo via `npx cap sync android`.
-4. Executa o build Gradle `./gradlew assembleDebug`.
-5. Disponibiliza o arquivo `app-debug-apk` na aba **Artifacts** da execução no GitHub Actions para download e teste direto no celular.
+4. Decodifica temporariamente a keystore oficial de release a partir da secret `ANDROID_KEYSTORE_BASE64` (junto com `ANDROID_KEY_ALIAS`, `ANDROID_KEYSTORE_PASSWORD` e `ANDROID_KEY_PASSWORD`) e executa `./gradlew assembleDebug bundleRelease assembleRelease`, removendo a keystore temporária ao término do step.
+5. Disponibiliza na aba **Artifacts** da execução no GitHub Actions:
+   - `app-release-aab` (`app-release.aab` assinado, pronto para upload no Google Play Console);
+   - `app-release-apk` (`app-release.apk` assinado com `SHA-1` oficial fixo para instalação direta no celular);
+   - `app-debug-apk` (`app-debug.apk`).
 
 ---
 
