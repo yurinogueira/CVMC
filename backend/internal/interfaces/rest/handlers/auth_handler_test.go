@@ -55,8 +55,8 @@ func TestAuthHandlerRegisterLoginRefreshLogoutMe(t *testing.T) {
 	if refreshTokenCookie == nil || refreshTokenCookie.Value == "" {
 		t.Fatalf("expected cvmc_refresh_token cookie to be set")
 	}
-	if refreshTokenCookie.MaxAge != 7*24*3600 {
-		t.Fatalf("expected cvmc_refresh_token MaxAge to be 604800 (7d), got %d", refreshTokenCookie.MaxAge)
+	if refreshTokenCookie.MaxAge != 30*24*3600 {
+		t.Fatalf("expected cvmc_refresh_token MaxAge to be 2592000 (30d), got %d", refreshTokenCookie.MaxAge)
 	}
 
 	var regResp struct {
@@ -116,8 +116,8 @@ func TestAuthHandlerRegisterLoginRefreshLogoutMe(t *testing.T) {
 	if newAccessCookie == nil || newAccessCookie.MaxAge != 24*3600 {
 		t.Fatalf("expected new access cookie with 24h MaxAge")
 	}
-	if newRefreshCookie == nil || newRefreshCookie.MaxAge != 7*24*3600 {
-		t.Fatalf("expected new refresh cookie with 7d MaxAge")
+	if newRefreshCookie == nil || newRefreshCookie.MaxAge != 30*24*3600 {
+		t.Fatalf("expected new refresh cookie with 30d MaxAge")
 	}
 
 	// 3.1 Test Refresh with Authorization Bearer header (Mobile fallback)

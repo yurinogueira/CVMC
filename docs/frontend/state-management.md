@@ -21,9 +21,9 @@ Para navegação geral, retorne ao [Catálogo Canônico](../index.md).
 ## 🏛️ Stores Globais
 
 1. **`authStore` (`frontend/src/features/auth/state/auth.store.ts`)**:
-   - Mantém o estado de login (`isAuthenticated`), usuário ativo (`user`) e status de carregamento.
-   - **Zero Tokens**: Nunca guarda tokens JWT. As credenciais trafegam por cookies `HttpOnly` gerenciados pelo navegador.
-   - Ao iniciar a aplicação, a store invoca `/api/v1/users/me` para reconstituir o perfil.
+   - Mantém o estado de login (`isAuthenticated`), prontidão de inicialização (`isInitializing`), usuário ativo (`user`) e status de carregamento.
+   - **Zero Tokens no Web**: No navegador web, nunca guarda tokens JWT em `localStorage`. As credenciais trafegam por cookies `HttpOnly` gerenciados pelo navegador.
+   - **Persistência Mobile Nativa**: No Android/Capacitor, `initAuthSession` restaura de forma assíncrona o usuário e os tokens (`accessToken` e `refreshToken`) persistidos no `@capacitor/preferences`. Enquanto `isInitializing` for verdadeiro, o `ProtectedRoute` exibe o fallback de loading e a SplashScreen nativa permanece ativa para evitar redirecionamentos indesejados.
 
 ---
 

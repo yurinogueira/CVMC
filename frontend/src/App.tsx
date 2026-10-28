@@ -6,7 +6,10 @@ import { App as CapApp } from "@capacitor/app";
 import { StatusBar, Style } from "@capacitor/status-bar";
 import { SplashScreen } from "@capacitor/splash-screen";
 import { AppRoutes } from "./routes";
-import { useAuthStore } from "./features/auth/state/auth.store";
+import {
+  useAuthStore,
+  initAuthSession,
+} from "./features/auth/state/auth.store";
 import {
   pushNotificationService,
   ForegroundNotificationPayload,
@@ -16,8 +19,28 @@ function MobileAppBridge() {
   const navigate = useNavigate();
   const location = useLocation();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isInitializing = useAuthStore((state) => state.isInitializing);
   const [foregroundPush, setForegroundPush] =
     useState<ForegroundNotificationPayload | null>(null);
+
+  useEffect(() => {
+    void initAuthSession();
+  }, []);
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform() || isInitializing) {
+      return;
+    }
+
+    // Hide Splash Screen after session initialization is ready
+    void (async () => {
+      try {
+        await SplashScreen.hide();
+      } catch {
+        // Plugin error fallback
+      }
+    })();
+  }, [isInitializing]);
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) {
@@ -29,15 +52,6 @@ function MobileAppBridge() {
       try {
         await StatusBar.setBackgroundColor({ color: "#FFFFFF" });
         await StatusBar.setStyle({ style: Style.Light });
-      } catch {
-        // Plugin error fallback
-      }
-    })();
-
-    // Hide Splash Screen after app mounted
-    void (async () => {
-      try {
-        await SplashScreen.hide();
       } catch {
         // Plugin error fallback
       }
@@ -67,7 +81,7 @@ function MobileAppBridge() {
   }, [location.pathname, navigate]);
 
   useEffect(() => {
-    if (!Capacitor.isNativePlatform() || !isAuthenticated) {
+    if (!Capacitor.isNativePlatform() || !isAuthenticated || isInitializing) {
       return;
     }
 
@@ -79,7 +93,7 @@ function MobileAppBridge() {
         navigate(targetRoute);
       },
     });
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, isInitializing, navigate]);
 
   return (
     <>

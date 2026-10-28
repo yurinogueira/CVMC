@@ -1,10 +1,12 @@
 import { create } from "zustand";
+import { Capacitor } from "@capacitor/core";
 import { User } from "../types/auth.types";
 import { safeStorage } from "../../../services/storage/storage";
 
-interface AuthState {
+export interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
+  isInitializing: boolean;
   accessToken: string | null;
   refreshToken: string | null;
   setUser: (user: User) => void;
@@ -15,6 +17,7 @@ interface AuthState {
   }) => void;
   setTokens: (tokens: { accessToken: string; refreshToken?: string }) => void;
   clear: () => void;
+  setInitializing: (isInitializing: boolean) => void;
 }
 
 const getStoredUser = (): User | null => {
@@ -35,14 +38,18 @@ export const useAuthStore = create<AuthState>((set) => {
   return {
     user,
     isAuthenticated: Boolean(user),
+    isInitializing: true,
     accessToken: null,
     refreshToken: null,
+    setInitializing: (isInitializing) => set({ isInitializing }),
     setUser: (user) => {
       safeStorage.setItem("cvmc.user", JSON.stringify(user));
+      void safeStorage.setSecureItem("cvmc.user", JSON.stringify(user));
       set({ user, isAuthenticated: true });
     },
     setSession: ({ user, accessToken, refreshToken }) => {
       safeStorage.setItem("cvmc.user", JSON.stringify(user));
+      void safeStorage.setSecureItem("cvmc.user", JSON.stringify(user));
       if (accessToken) {
         void safeStorage.setSecureItem("cvmc.access_token", accessToken);
       }
@@ -68,6 +75,7 @@ export const useAuthStore = create<AuthState>((set) => {
     },
     clear: () => {
       safeStorage.removeItem("cvmc.user");
+      void safeStorage.removeSecureItem("cvmc.user");
       void safeStorage.removeSecureItem("cvmc.access_token");
       void safeStorage.removeSecureItem("cvmc.refresh_token");
       set({
@@ -80,13 +88,78 @@ export const useAuthStore = create<AuthState>((set) => {
   };
 });
 
-export const initMobileAuthSession = async (): Promise<void> => {
-  const accessToken = await safeStorage.getSecureItem("cvmc.access_token");
-  const refreshToken = await safeStorage.getSecureItem("cvmc.refresh_token");
-  if (accessToken) {
-    useAuthStore.getState().setTokens({
-      accessToken,
-      refreshToken: refreshToken ?? undefined,
-    });
+let initPromise: Promise<void> | null = null;
+
+export const initAuthSession = async (): Promise<void> => {
+  if (initPromise) {
+    return initPromise;
   }
+
+  initPromise = (async () => {
+    try {
+      if (Capacitor.isNativePlatform()) {
+        const [storedUserStr, accessToken, refreshToken] = await Promise.all([
+          safeStorage.getSecureItem("cvmc.user"),
+          safeStorage.getSecureItem("cvmc.access_token"),
+          safeStorage.getSecureItem("cvmc.refresh_token"),
+        ]);
+
+        let parsedUser: User | null = null;
+        if (storedUserStr) {
+          try {
+            parsedUser = JSON.parse(storedUserStr);
+          } catch {
+            parsedUser = null;
+          }
+        }
+        if (!parsedUser) {
+          parsedUser = getStoredUser();
+        }
+
+        if (accessToken && parsedUser) {
+          useAuthStore.setState({
+            user: parsedUser,
+            isAuthenticated: true,
+            accessToken,
+            refreshToken: refreshToken ?? null,
+          });
+        } else if (accessToken) {
+          useAuthStore.setState({
+            accessToken,
+            refreshToken: refreshToken ?? null,
+            isAuthenticated: true,
+          });
+        } else {
+          useAuthStore.setState({
+            user: null,
+            isAuthenticated: false,
+            accessToken: null,
+            refreshToken: null,
+          });
+        }
+      } else {
+        const user = getStoredUser();
+        if (user) {
+          useAuthStore.setState({
+            user,
+            isAuthenticated: true,
+          });
+        } else {
+          useAuthStore.setState({
+            user: null,
+            isAuthenticated: false,
+          });
+        }
+      }
+    } catch {
+      // Graceful fallback on initialization error
+    } finally {
+      useAuthStore.setState({ isInitializing: false });
+      initPromise = null;
+    }
+  })();
+
+  return initPromise;
 };
+
+export const initMobileAuthSession = initAuthSession;

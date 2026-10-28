@@ -389,7 +389,7 @@ func (h *AuthHandler) setTokenCookies(w http.ResponseWriter, accessToken, refres
 		Value:    refreshToken,
 		Path:     "/api/v1/auth/refresh",
 		Domain:   h.cookieDomain,
-		MaxAge:   7 * 24 * 3600, // 7 days
+		MaxAge:   30 * 24 * 3600, // 30 days
 		HttpOnly: true,
 		Secure:   h.cookieSecure,
 		SameSite: http.SameSiteLaxMode,

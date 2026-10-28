@@ -56,7 +56,7 @@ flowchart TD
 - **Nome da Aplicação**: `CVMC`
 - **Diretório de Web Assets**: `dist`
 - **Segurança de Rede**: `android:usesCleartextTraffic="false"` no `AndroidManifest.xml`, garantindo tráfego 100% via HTTPS.
-- **Autenticação em WebView**: Detecção automática de ambiente nativo com `Capacitor.isNativePlatform()`. Os tokens de sessão (`accessToken` e `refreshToken`) são persistidos de maneira segura via `@capacitor/preferences` e transmitidos com o cabeçalho `Authorization: Bearer <token>`.
+- **Autenticação em WebView**: Detecção automática de ambiente nativo com `Capacitor.isNativePlatform()`. Os dados do usuário e os tokens de sessão (`accessToken` e `refreshToken`) são persistidos de maneira segura no sandbox nativo via `@capacitor/preferences` e transmitidos com o cabeçalho `Authorization: Bearer <token>`. No bootstrap do aplicativo, `initAuthSession` restaura a sessão assincronamente com controle de prontidão (`isInitializing`), mantendo a SplashScreen ativa até a resolução e garantindo que o login dure 30 dias com silent refresh automático.
 
 ---
 
