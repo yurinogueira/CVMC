@@ -53,8 +53,8 @@ export const safeStorage = {
   },
 
   async removeSecureItem(key: string): Promise<void> {
+    this.removeItem(key);
     if (!Capacitor.isNativePlatform()) {
-      this.removeItem(key);
       return;
     }
     try {

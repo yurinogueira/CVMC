@@ -27,10 +27,13 @@ Para navegação geral, retorne ao [Catálogo Canônico](../index.md).
     - `Secure: true` (obrigatório em produção / conexões HTTPS).
     - `SameSite: Lax` (proteção nativa contra CSRF em requisições de terceiros).
     - `Domain`: configurado para permitir navegação transparente em subdomínios em produção (`.cvmc.yurinogueira.dev.br`).
-- **Zero Tokens no LocalStorage (Web)**:
+- **Ciclo de Vida e Expiração dos Tokens (TTL)**:
+  - `Access Token`: validade de 24 horas (`24*time.Hour`, `MaxAge: 24*3600`).
+  - `Refresh Token`: validade estendida de 30 dias (`30*24*time.Hour`, `MaxAge: 30*24*3600`) com renovação contínua (*rolling refresh*) a cada requisição em `/api/v1/auth/refresh`, garantindo longevidade da sessão móvel e persistência do vínculo de notificações push FCM.
+- **Zero Tokens no LocalStorage (Web) & Persistência Nativa Segura (Mobile)**:
   - No navegador web, o frontend React nunca armazena tokens JWT em `localStorage` ou `sessionStorage`, prevenindo roubo de credenciais via ataques XSS.
   - Apenas metadados não sensíveis de perfil (como nome e preferências visuais) são cacheados na store Zustand.
-  - No ambiente móvel nativo (Android via Capacitor), os tokens são mantidos com isolamento em `@capacitor/preferences` (SharedPreferences nativo criptografado pelo OS) e inicializados estritamente quando `Capacitor.isNativePlatform()` é verdadeiro.
+  - No ambiente móvel nativo (Android via Capacitor), os tokens de sessão (`accessToken`, `refreshToken`) e o perfil do usuário são mantidos com isolamento em `@capacitor/preferences` (sandbox Android `SharedPreferences`), inicializados assincronamente no bootstrap do app via `initAuthSession` com controle de prontidão (`isInitializing`) para evitar condições de corrida em rotas protegidas.
 
 ---
 

@@ -6,14 +6,17 @@ tags:
   - log
   - audit
   - history
-timestamp: 2026-10-27
+timestamp: 2026-10-28
 ---
 
 # 🕒 Diário de Bordo & Histórico Cronológico — CVMC
 
-Este documento funciona como o índice mestre de todas as mudanças de engenharia aplicadas ao projeto **CVMC (Como Vai Meu Carro)**. Cada entrada detalhada reside em um arquivo diário específico na pasta [docs/logs/2026-10-27.md](logs/2026-10-27.md), garantindo economia de tokens e histórico auditável.
+Este documento funciona como o índice mestre de todas as mudanças de engenharia aplicadas ao projeto **CVMC (Como Vai Meu Carro)**. Cada entrada detalhada reside em um arquivo diário específico na pasta [docs/logs/2026-10-28.md](logs/2026-10-28.md), garantindo economia de tokens e histórico auditável.
 
 Para navegação geral, retorne ao [Catálogo Canônico](index.md).
+
+## 📅 [2026-10-28](logs/2026-10-28.md) — Persistência de Sessão Mobile e Extensão de Duração de Refresh Token (#140)
+- **Persistência de Sessão Mobile no Android e Extensão de Refresh Token (#140)**: Resolução de perda de sessão ao fechar e reabrir o aplicativo nativo (Capacitor 8) através da hidratação assíncrona no bootstrap (`initAuthSession`), controle de prontidão (`isInitializing`) no `ProtectedRoute` com renderização de `PageLoadingFallback`, sincronização da `SplashScreen` nativa e persistência de dados de sessão (`user`, `accessToken`, `refreshToken`) no sandbox nativo `@capacitor/preferences`. No backend Go, extensão do TTL do Refresh Token de 7 para 30 dias com rotação contínua e atualização do `MaxAge` do cookie para manter a retenção do usuário e o recebimento ininterrupto de notificações push via FCM.
 
 ## 📅 [2026-10-27](logs/2026-10-27.md) — Criptografia de Arquivos por Usuário & Cota de 100 MB (#136) e Política de Privacidade & Exclusão de Conta (#134)
 - **Criptografia Autenticada de Arquivos por Usuário e Cota de 100 MB / 100 Arquivos (#136)**: Implementação do pacote `filecipher` com derivação de chave por proprietário via `HKDF-SHA256` (`FILE_ENCRYPTION_KEY` injetada pelo GitHub Secrets) e cifragem `AES-256-GCM` com vínculo `AAD` para comprovantes de manutenção e fotos de veículos, além de imposição e exibição da cota de até 100 arquivos ou 100 MB no backend e no painel `ProfilePage.tsx`.
