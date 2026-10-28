@@ -142,11 +142,45 @@ jobs:
       - name: Setup Gradle Cache
         uses: gradle/actions/setup-gradle@v6
 
-      - name: Build Debug APK
-        working-directory: ./frontend/android
-        run: ./gradlew assembleDebug --no-daemon
+      - name: Decode Android Release Keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
+            printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > /tmp/cvmc-release-key.jks
+            echo "Release keystore decoded to /tmp/cvmc-release-key.jks."
+          else
+            echo "ANDROID_KEYSTORE_BASE64 secret not set; release artifacts will remain unsigned."
+          fi
 
-      - name: Upload Android APK
+      - name: Build Android Debug APK & Signed Release AAB/APK
+        working-directory: ./frontend/android
+        env:
+          CVMC_RELEASE_STORE_FILE: /tmp/cvmc-release-key.jks
+          CVMC_RELEASE_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          CVMC_RELEASE_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          CVMC_RELEASE_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew assembleDebug bundleRelease assembleRelease --no-daemon
+
+      - name: Cleanup Release Keystore
+        if: always()
+        run: rm -f /tmp/cvmc-release-key.jks
+
+      - name: Upload Android Release AAB (Google Play Store)
+        uses: actions/upload-artifact@v7
+        with:
+          name: app-release-aab
+          path: frontend/android/app/build/outputs/bundle/release/app-release.aab
+          retention-days: 14
+
+      - name: Upload Android Release APK (Signed Direct Install)
+        uses: actions/upload-artifact@v7
+        with:
+          name: app-release-apk
+          path: frontend/android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 14
+
+      - name: Upload Android Debug APK
         uses: actions/upload-artifact@v7
         with:
           name: app-debug-apk

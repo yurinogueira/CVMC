@@ -161,7 +161,9 @@ export function GoogleSignInButton({
 
       const res = await SocialLogin.login({
         provider: "google",
-        options: {},
+        options: {
+          filterByAuthorizedAccounts: false,
+        },
       });
 
       const result = res?.result as { idToken?: string | null } | undefined;
