@@ -15,7 +15,8 @@ Este documento funciona como o índice mestre de todas as mudanças de engenhari
 
 Para navegação geral, retorne ao [Catálogo Canônico](index.md).
 
-## 📅 [2026-10-28](logs/2026-10-28.md) — Persistência de Sessão Mobile e Extensão de Duração de Refresh Token (#140)
+## 📅 [2026-10-28](logs/2026-10-28.md) — Atualização de Versão para 0.5.1 e Persistência de Sessão Mobile (#140)
+- **Bump da Versão do App para 0.5.1**: Atualização do `versionCode` (de 1 para 2) e `versionName` (de `"0.5"` para `"0.5.1"`) no `frontend/android/app/build.gradle`, alinhando os metadados do pacote com a versão `"0.5.1"` em `frontend/package.json` e `package-lock.json` para suportar releases subsequentes no Google Play Console.
 - **Persistência de Sessão Mobile no Android e Extensão de Refresh Token (#140)**: Resolução de perda de sessão ao fechar e reabrir o aplicativo nativo (Capacitor 8) através da hidratação assíncrona no bootstrap (`initAuthSession`), controle de prontidão (`isInitializing`) no `ProtectedRoute` com renderização de `PageLoadingFallback`, sincronização da `SplashScreen` nativa e persistência de dados de sessão (`user`, `accessToken`, `refreshToken`) no sandbox nativo `@capacitor/preferences`. No backend Go, extensão do TTL do Refresh Token de 7 para 30 dias com rotação contínua e atualização do `MaxAge` do cookie para manter a retenção do usuário e o recebimento ininterrupto de notificações push via FCM.
 
 ## 📅 [2026-10-27](logs/2026-10-27.md) — Criptografia de Arquivos por Usuário & Cota de 100 MB (#136) e Política de Privacidade & Exclusão de Conta (#134)
