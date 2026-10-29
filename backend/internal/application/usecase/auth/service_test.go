@@ -37,6 +37,10 @@ func (m *mockEmailSender) SendPasswordResetEmail(ctx context.Context, toEmail, t
 	return nil
 }
 
+func (m *mockEmailSender) SendReportReadyEmail(ctx context.Context, toEmail, toName, carName, downloadURL string) error {
+	return nil
+}
+
 func TestServiceRegisterLoginRefreshAndMe(t *testing.T) {
 	users := memoryuser.NewRepository()
 	hasher := bcrypt.NewHasher()

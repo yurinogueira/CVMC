@@ -15,10 +15,10 @@ type ListFilter struct {
 }
 
 type ListResult struct {
-	Jobs  []*domain.ReportJob
-	Total int64
-	Page  int
-	Limit int
+	Jobs  []*domain.ReportJob `json:"jobs"`
+	Total int64               `json:"total"`
+	Page  int                 `json:"page"`
+	Limit int                 `json:"limit"`
 }
 
 type Repository interface {

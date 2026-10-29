@@ -27,7 +27,7 @@ def get_val(key, default=""):
 
 ip = get_val("instance_public_ip")
 mongo_uri = get_val("mongodb_uri")
-bucket = get_val("object_storage_bucket", "project-files")
+bucket = get_val("object_storage_bucket", "cvmc-files")
 namespace = get_val("object_storage_namespace", "")
 print(f"{ip}\t{mongo_uri}\t{bucket}\t{namespace}")
 ' <<< "$TF_OUTPUTS")
@@ -63,7 +63,7 @@ JWT_REFRESH_SECRET=$(openssl rand -base64 32)
 ENV_CONTENT="# Configurações de Produção CVMC (Gerado automaticamente)
 PORT=8080
 LOG_LEVEL=info
-STORAGE_PROVIDER=local
+STORAGE_PROVIDER=oci
 UPLOAD_PATH=/opt/cvmc/data/uploads
 
 # Domínios e Segurança
@@ -79,6 +79,7 @@ MONGO_DATABASE=cvmc
 OCI_STORAGE_BUCKET=${BUCKET_NAME}
 OCI_STORAGE_NAMESPACE=${BUCKET_NAMESPACE}
 OCI_STORAGE_REGION=sa-saopaulo-1
+OCI_STORAGE_ENDPOINT=
 
 # JWT Secrets
 JWT_SECRET=${JWT_SECRET}

@@ -164,6 +164,7 @@ func New(ctx context.Context, cfg config.Config) (*App, error) {
 	fipeService := fipeusecase.NewService(fipes, fipeClient)
 	notificationService := notificationusecase.NewService(deviceTokens, pushSender, cars, maintenances)
 	reportService := reportusecase.NewService(reports, cars, maintenances, storageProvider, notificationService, cipher)
+	reportService.WithEmailNotification(users, emailSender, cfg.AppBaseURL)
 	reportService.StartWorker(context.Background())
 
 	googleValidator := googleinfra.NewValidator(cfg.GoogleClientID)

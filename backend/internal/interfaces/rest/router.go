@@ -40,6 +40,7 @@ func NewRouter(cfg config.Config, users userport.Repository, hasher portauth.Pas
 	cipher := filecipher.New(cfg.FileEncryptionKey)
 	if reportService == nil {
 		reportService = reportusecase.NewService(reportMemory.NewRepository(), cars, maintenances, localStorage.New(cfg.UploadPath), notificationService, cipher)
+		reportService.WithEmailNotification(users, emailSender, cfg.AppBaseURL)
 	}
 	healthHandler := handlers.NewHealthHandler()
 	authHandler := handlers.NewAuthHandler(users, hasher, tokens, emailSender, cfg.CookieDomain, cfg.CookieSecure, googleValidator...)

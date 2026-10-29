@@ -114,8 +114,12 @@ export const ExportHistoryTable: React.FC<ExportHistoryTableProps> = ({
           limit,
           carId: carId || undefined,
         });
-        setJobs(res.jobs || []);
-        setTotal(res.total || 0);
+        const jobList =
+          res.jobs || (res as unknown as { Jobs?: ReportJob[] }).Jobs || [];
+        const totalCount =
+          res.total ?? (res as unknown as { Total?: number }).Total ?? 0;
+        setJobs(jobList);
+        setTotal(totalCount);
       } catch (err) {
         if (!isPolling) {
           console.error("Falha ao carregar relatórios:", err);
@@ -137,8 +141,12 @@ export const ExportHistoryTable: React.FC<ExportHistoryTableProps> = ({
       })
       .then((res) => {
         if (isMounted) {
-          setJobs(res.jobs || []);
-          setTotal(res.total || 0);
+          const jobList =
+            res.jobs || (res as unknown as { Jobs?: ReportJob[] }).Jobs || [];
+          const totalCount =
+            res.total ?? (res as unknown as { Total?: number }).Total ?? 0;
+          setJobs(jobList);
+          setTotal(totalCount);
           setLoading(false);
         }
       })
