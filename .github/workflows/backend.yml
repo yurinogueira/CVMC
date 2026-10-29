@@ -170,6 +170,41 @@ jobs:
             printf '%s\n' "$FIREBASE_CREDENTIALS_JSON" | ssh "$USER@$HOST" "cat > /tmp/cvmc-deploy/firebase-credentials.json"
           fi
 
+      - name: Resolve Terraform outputs from OCI state
+        id: tf-outputs
+        env:
+          STATE_BUCKET: ${{ secrets.OCI_STATE_BUCKET }}
+          STATE_NAMESPACE: ${{ secrets.OCI_STATE_NAMESPACE }}
+          CURRENT_ENDPOINT: ${{ secrets.OCI_STORAGE_ENDPOINT }}
+        run: |
+          ENDPOINT="$CURRENT_ENDPOINT"
+          if [ -z "$ENDPOINT" ] && [ -n "$STATE_BUCKET" ] && [ -n "$STATE_NAMESPACE" ]; then
+            echo "Fetching object_storage_endpoint from Terraform state..."
+            if oci os object get \
+              --bucket-name "$STATE_BUCKET" \
+              --namespace "$STATE_NAMESPACE" \
+              --name "terraform.tfstate" \
+              --file "/tmp/tfstate.json" 2>&1; then
+              PARSED_ENDPOINT=$(python3 -c "
+import json
+try:
+    with open('/tmp/tfstate.json') as f:
+        data = json.load(f)
+    print(data.get('outputs', {}).get('object_storage_endpoint', {}).get('value', ''))
+except Exception:
+    pass
+")
+              if [ -n "$PARSED_ENDPOINT" ]; then
+                ENDPOINT="$PARSED_ENDPOINT"
+                echo "Successfully resolved object_storage_endpoint from Terraform state!"
+              fi
+              rm -f /tmp/tfstate.json
+            else
+              echo "Warning: Could not fetch tfstate from bucket."
+            fi
+          fi
+          echo "endpoint=${ENDPOINT}" >> "$GITHUB_OUTPUT"
+
       - name: Apply updates and restart services on OCI
         env:
           HOST: ${{ secrets.OCI_HOST }}
@@ -189,7 +224,7 @@ jobs:
           OCI_STORAGE_BUCKET: ${{ secrets.OCI_STORAGE_BUCKET }}
           OCI_STORAGE_NAMESPACE: ${{ secrets.OCI_STORAGE_NAMESPACE }}
           OCI_STORAGE_REGION: ${{ secrets.OCI_STORAGE_REGION || 'sa-saopaulo-1' }}
-          OCI_STORAGE_ENDPOINT: ${{ secrets.OCI_STORAGE_ENDPOINT }}
+          OCI_STORAGE_ENDPOINT: ${{ steps.tf-outputs.outputs.endpoint || secrets.OCI_STORAGE_ENDPOINT }}
         run: |
           ssh "$USER@$HOST" "FIPE_API_TOKEN=\"$FIPE_API_TOKEN\" FIPE_BASE_URL=\"$FIPE_BASE_URL\" SMTP_HOST=\"$SMTP_HOST\" SMTP_PORT=\"$SMTP_PORT\" SMTP_USER=\"$SMTP_USER\" SMTP_PASS=\"$SMTP_PASS\" EMAIL_FROM=\"$EMAIL_FROM\" APP_BASE_URL=\"$APP_BASE_URL\" GOOGLE_CLIENT_ID=\"$GOOGLE_CLIENT_ID\" ALLOWED_ORIGINS=\"$ALLOWED_ORIGINS\" FILE_ENCRYPTION_KEY=\"$FILE_ENCRYPTION_KEY\" STORAGE_PROVIDER=\"$STORAGE_PROVIDER\" OCI_STORAGE_BUCKET=\"$OCI_STORAGE_BUCKET\" OCI_STORAGE_NAMESPACE=\"$OCI_STORAGE_NAMESPACE\" OCI_STORAGE_REGION=\"$OCI_STORAGE_REGION\" OCI_STORAGE_ENDPOINT=\"$OCI_STORAGE_ENDPOINT\" bash -s" << 'EOF'
             set -euo pipefail

@@ -117,3 +117,18 @@ jobs:
       - name: Terraform Apply
         if: inputs.apply
         run: terraform apply -input=false -auto-approve tfplan
+
+      - name: Export Outputs to Step Summary
+        run: |
+          ENDPOINT=$(terraform output -raw object_storage_endpoint 2>/dev/null || true)
+          if [ -n "$ENDPOINT" ]; then
+            echo "### 📦 OCI Storage Endpoint (Terraform PAR)" >> $GITHUB_STEP_SUMMARY
+            echo "Endpoint autenticado provisionado via Terraform:" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "$ENDPOINT" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "Para fixar manualmente no GitHub Secrets (opcional):" >> $GITHUB_STEP_SUMMARY
+            echo '```bash' >> $GITHUB_STEP_SUMMARY
+            echo "gh secret set OCI_STORAGE_ENDPOINT --body \"$ENDPOINT\"" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
