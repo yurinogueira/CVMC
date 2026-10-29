@@ -186,7 +186,7 @@ jobs:
           ALLOWED_ORIGINS: ${{ secrets.ALLOWED_ORIGINS || 'https://cvmc.yurinogueira.dev.br,https://localhost,capacitor://localhost' }}
           FILE_ENCRYPTION_KEY: ${{ secrets.FILE_ENCRYPTION_KEY }}
           STORAGE_PROVIDER: ${{ secrets.STORAGE_PROVIDER || 'oci' }}
-          OCI_STORAGE_BUCKET: ${{ secrets.OCI_STORAGE_BUCKET || 'cvmc-files' }}
+          OCI_STORAGE_BUCKET: ${{ secrets.OCI_STORAGE_BUCKET }}
           OCI_STORAGE_NAMESPACE: ${{ secrets.OCI_STORAGE_NAMESPACE }}
           OCI_STORAGE_REGION: ${{ secrets.OCI_STORAGE_REGION || 'sa-saopaulo-1' }}
           OCI_STORAGE_ENDPOINT: ${{ secrets.OCI_STORAGE_ENDPOINT }}

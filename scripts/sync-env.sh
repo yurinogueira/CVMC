@@ -27,7 +27,7 @@ def get_val(key, default=""):
 
 ip = get_val("instance_public_ip")
 mongo_uri = get_val("mongodb_uri")
-bucket = get_val("object_storage_bucket", "cvmc-files")
+bucket = get_val("object_storage_bucket", "")
 namespace = get_val("object_storage_namespace", "")
 print(f"{ip}\t{mongo_uri}\t{bucket}\t{namespace}")
 ' <<< "$TF_OUTPUTS")

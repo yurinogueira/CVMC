@@ -108,7 +108,7 @@ func Load() Config {
 		UploadPath:                getenv("UPLOAD_PATH", "./data/uploads"),
 		LogLevel:                  getenv("LOG_LEVEL", "info"),
 		StorageProvider:           getenv("STORAGE_PROVIDER", "local"),
-		OCIStorageBucket:          getenv("OCI_STORAGE_BUCKET", "cvmc-files"),
+		OCIStorageBucket:          getenv("OCI_STORAGE_BUCKET", ""),
 		OCIStorageNamespace:       getenv("OCI_STORAGE_NAMESPACE", ""),
 		OCIStorageRegion:          getenv("OCI_STORAGE_REGION", "sa-saopaulo-1"),
 		OCIStorageEndpoint:        getenv("OCI_STORAGE_ENDPOINT", ""),
