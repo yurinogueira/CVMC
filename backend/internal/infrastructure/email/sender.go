@@ -29,6 +29,7 @@ var (
 
 	verificationTmpl  = htmltemplate.Must(htmltemplate.ParseFS(templateFS, "templates/verification.html"))
 	passwordResetTmpl = htmltemplate.Must(htmltemplate.ParseFS(templateFS, "templates/password_reset.html"))
+	reportReadyTmpl   = htmltemplate.Must(htmltemplate.ParseFS(templateFS, "templates/report_ready.html"))
 )
 
 type Config struct {
@@ -121,6 +122,47 @@ func (s *Service) SendPasswordResetEmail(ctx context.Context, toEmail, toName, t
 		"Olá, %s!\n\nRecebemos uma solicitação para redefinir a senha da sua conta no CVMC.\n\nPara criar uma nova senha, acesse o link abaixo:\n%s\n\nEste link é válido por 30 minutos.\n\nSe você não solicitou a redefinição de senha, ignore este e-mail com segurança.",
 		cleanName,
 		resetURL,
+	)
+
+	return s.send(toEmail, subject, plainBody, htmlBuf.String())
+}
+
+func (s *Service) SendReportReadyEmail(ctx context.Context, toEmail, toName, carName, downloadURL string) error {
+	_ = ctx
+
+	cleanName := strings.TrimSpace(toName)
+	if cleanName == "" {
+		cleanName = "Motorista"
+	}
+
+	cleanCarName := strings.TrimSpace(carName)
+	if cleanCarName == "" {
+		cleanCarName = "Veículo"
+	}
+
+	subject := fmt.Sprintf("CVMC - Relatório de Manutenções do %s Disponível 📄", cleanCarName)
+
+	var htmlBuf bytes.Buffer
+	data := struct {
+		Name        string
+		CarName     string
+		DownloadURL string
+		CurrentYear int
+	}{
+		Name:        cleanName,
+		CarName:     cleanCarName,
+		DownloadURL: downloadURL,
+		CurrentYear: time.Now().Year(),
+	}
+	if err := reportReadyTmpl.Execute(&htmlBuf, data); err != nil {
+		return fmt.Errorf("failed to render report ready email template: %w", err)
+	}
+
+	plainBody := fmt.Sprintf(
+		"Olá, %s!\n\nO relatório de manutenções do seu veículo %s foi gerado com sucesso.\n\nPara visualizar ou baixar seu relatório, acesse o link abaixo:\n%s\n\nEste relatório ficará disponível na plataforma por 30 dias.\n\nAtenciosamente,\nEquipe Como Vai Meu Carro (CVMC)",
+		cleanName,
+		cleanCarName,
+		downloadURL,
 	)
 
 	return s.send(toEmail, subject, plainBody, htmlBuf.String())

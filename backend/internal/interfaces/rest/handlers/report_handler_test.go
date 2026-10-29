@@ -139,3 +139,47 @@ func TestReportHandler_Unauthorized(t *testing.T) {
 		t.Fatalf("expected 401 Unauthorized, got %d", w.Code)
 	}
 }
+
+func TestReportHandler_ListJobs_JSONTags(t *testing.T) {
+	handler, svc, carRepo, tokens := setupTestReportHandler(t)
+	ctx := context.Background()
+
+	car, _ := carRepo.Create(ctx, domaincar.Car{
+		OwnerID: "user-1",
+		Name:    "Civic",
+	})
+
+	_, _ = svc.StartMaintenanceReportJob(ctx, "user-1", car.ID)
+	token, _ := tokens.GenerateAccessToken(domainuser.User{ID: "user-1", Email: "user@cvmc.com"})
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/reports/jobs", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	w := httptest.NewRecorder()
+
+	handler.ListJobs(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d (body: %s)", w.Code, w.Body.String())
+	}
+
+	var raw map[string]interface{}
+	if err := json.Unmarshal(w.Body.Bytes(), &raw); err != nil {
+		t.Fatalf("failed to decode json: %v", err)
+	}
+
+	data, ok := raw["data"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected data object in response, got %v", raw)
+	}
+
+	// Must have lowercase "jobs", NOT uppercase "Jobs"
+	if _, hasJobs := data["jobs"]; !hasJobs {
+		t.Fatalf("expected lowercase 'jobs' key in data, found keys: %+v", data)
+	}
+	if _, hasUpperJobs := data["Jobs"]; hasUpperJobs {
+		t.Fatalf("found unintended uppercase 'Jobs' key in data: %+v", data)
+	}
+	jobsSlice, ok := data["jobs"].([]interface{})
+	if !ok || len(jobsSlice) != 1 {
+		t.Fatalf("expected 1 job in 'jobs' array, got %v", data["jobs"])
+	}
+}

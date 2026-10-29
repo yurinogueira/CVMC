@@ -14,9 +14,11 @@ import (
 	"time"
 
 	carport "cvmc/internal/application/ports/car"
+	emailport "cvmc/internal/application/ports/email"
 	maintenanceport "cvmc/internal/application/ports/maintenance"
 	reportport "cvmc/internal/application/ports/report"
 	storageport "cvmc/internal/application/ports/storage"
+	userport "cvmc/internal/application/ports/user"
 	domaincar "cvmc/internal/domain/car"
 	domainnotification "cvmc/internal/domain/notification"
 	domainreport "cvmc/internal/domain/report"
@@ -42,6 +44,9 @@ type Service struct {
 	maintRepo       maintenanceport.Repository
 	storageProvider storageport.Provider
 	notifSender     NotificationSender
+	userRepo        userport.Repository
+	emailSender     emailport.Sender
+	appBaseURL      string
 	pdfBuilder      *pdfinfra.Builder
 	queue           *WorkerQueue
 	now             func() time.Time
@@ -148,6 +153,16 @@ func NewService(
 	}
 	queue.service = svc
 	return svc
+}
+
+func (s *Service) WithEmailNotification(userRepo userport.Repository, emailSender emailport.Sender, appBaseURL string) *Service {
+	s.userRepo = userRepo
+	s.emailSender = emailSender
+	if appBaseURL == "" {
+		appBaseURL = "http://localhost:5173"
+	}
+	s.appBaseURL = strings.TrimRight(appBaseURL, "/")
+	return s
 }
 
 func (s *Service) StartWorker(ctx context.Context) {
@@ -304,6 +319,16 @@ func (s *Service) ProcessJob(ctx context.Context, jobID string) {
 			},
 		}
 		_, _ = s.notifSender.SendToUser(jobCtx, targetJob.UserID, msg)
+	}
+
+	// Send Email Notification
+	if s.emailSender != nil && s.userRepo != nil {
+		if u, err := s.userRepo.FindByID(jobCtx, targetJob.UserID); err == nil && u.Email != "" {
+			reportURL := fmt.Sprintf("%s/reports", strings.TrimRight(s.appBaseURL, "/"))
+			if err := s.emailSender.SendReportReadyEmail(jobCtx, u.Email, u.Name, targetJob.CarName, reportURL); err != nil {
+				log.Printf("[REPORT-EMAIL-ERROR] Failed to send report ready email to %s: %v", u.Email, err)
+			}
+		}
 	}
 }
 

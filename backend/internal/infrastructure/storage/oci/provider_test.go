@@ -101,3 +101,44 @@ func TestOCIStorageProvider_SaveAndDelete(t *testing.T) {
 		t.Error("expected error for path traversal in Delete, got nil")
 	}
 }
+
+func TestOCIStorageProvider_PreAuthenticatedRequest(t *testing.T) {
+	ctx := context.Background()
+	var receivedPath string
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		receivedPath = r.URL.Path
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("par content"))
+	}))
+	defer server.Close()
+
+	// PAR URL format: {server.URL}/p/some-par-token/n/test-ns/b/test-bucket/o/
+	parEndpoint := server.URL + "/p/par-token/n/test-ns/b/test-bucket/o"
+	provider := New(Config{
+		Endpoint: parEndpoint,
+		Client:   server.Client(),
+	})
+
+	stored, err := provider.Save(ctx, "reports/user_1/report.pdf", storage.File{
+		Name: "report.pdf",
+		Data: []byte("pdf-data"),
+	})
+	if err != nil {
+		t.Fatalf("unexpected PAR Save error: %v", err)
+	}
+	if stored.FileName != "reports/user_1/report.pdf" {
+		t.Errorf("unexpected StoredObject FileName: %s", stored.FileName)
+	}
+	if receivedPath != "/p/par-token/n/test-ns/b/test-bucket/o/reports/user_1/report.pdf" {
+		t.Errorf("expected PAR path, got %s", receivedPath)
+	}
+
+	data, err := provider.Get(ctx, "reports/user_1/report.pdf")
+	if err != nil {
+		t.Fatalf("unexpected PAR Get error: %v", err)
+	}
+	if string(data) != "par content" {
+		t.Errorf("expected 'par content', got %s", string(data))
+	}
+}

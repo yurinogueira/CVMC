@@ -52,12 +52,25 @@ func New(cfg Config) *Provider {
 
 func (p *Provider) objectURL(path string) string {
 	escapedPath := url.PathEscape(strings.TrimPrefix(path, "/"))
+	if strings.Contains(p.endpoint, "/p/") {
+		return fmt.Sprintf("%s/%s", strings.TrimRight(p.endpoint, "/"), escapedPath)
+	}
 	return fmt.Sprintf("%s/n/%s/b/%s/o/%s", p.endpoint, url.PathEscape(p.namespace), url.PathEscape(p.bucket), escapedPath)
 }
 
-func (p *Provider) Save(ctx context.Context, path string, file storage.File) (storage.StoredObject, error) {
+func (p *Provider) validateConfig() error {
+	if strings.Contains(p.endpoint, "/p/") {
+		return nil
+	}
 	if p.namespace == "" || p.bucket == "" {
-		return storage.StoredObject{}, errors.New("oci storage: namespace and bucket must be configured")
+		return errors.New("oci storage: namespace and bucket must be configured")
+	}
+	return nil
+}
+
+func (p *Provider) Save(ctx context.Context, path string, file storage.File) (storage.StoredObject, error) {
+	if err := p.validateConfig(); err != nil {
+		return storage.StoredObject{}, err
 	}
 
 	cleanPath := strings.TrimPrefix(path, "/")
@@ -97,8 +110,8 @@ func (p *Provider) Save(ctx context.Context, path string, file storage.File) (st
 }
 
 func (p *Provider) Get(ctx context.Context, path string) ([]byte, error) {
-	if p.namespace == "" || p.bucket == "" {
-		return nil, errors.New("oci storage: namespace and bucket must be configured")
+	if err := p.validateConfig(); err != nil {
+		return nil, err
 	}
 
 	cleanPath := strings.TrimPrefix(path, "/")
@@ -130,8 +143,8 @@ func (p *Provider) Get(ctx context.Context, path string) ([]byte, error) {
 }
 
 func (p *Provider) Delete(ctx context.Context, path string) error {
-	if p.namespace == "" || p.bucket == "" {
-		return errors.New("oci storage: namespace and bucket must be configured")
+	if err := p.validateConfig(); err != nil {
+		return err
 	}
 
 	cleanPath := strings.TrimPrefix(path, "/")

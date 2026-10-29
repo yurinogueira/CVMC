@@ -11,10 +11,12 @@ import (
 	domainmaint "cvmc/internal/domain/maintenance"
 	domainnotification "cvmc/internal/domain/notification"
 	domainreport "cvmc/internal/domain/report"
+	domainuser "cvmc/internal/domain/user"
 	memorycar "cvmc/internal/infrastructure/car/memory"
 	memorymaint "cvmc/internal/infrastructure/maintenance/memory"
 	memoryreport "cvmc/internal/infrastructure/report/memory"
 	memorylocal "cvmc/internal/infrastructure/storage/local"
+	memoryuser "cvmc/internal/infrastructure/user/memory"
 	"cvmc/internal/shared/filecipher"
 )
 
@@ -22,6 +24,32 @@ type mockNotifSender struct {
 	mu       sync.Mutex
 	messages []domainnotification.PushMessage
 	userIDs  []string
+}
+
+type mockEmailSender struct {
+	mu          sync.Mutex
+	reportCalls int
+	lastEmail   string
+	lastCar     string
+	lastURL     string
+}
+
+func (m *mockEmailSender) SendVerificationEmail(ctx context.Context, toEmail, toName, token string) error {
+	return nil
+}
+
+func (m *mockEmailSender) SendPasswordResetEmail(ctx context.Context, toEmail, toName, token string) error {
+	return nil
+}
+
+func (m *mockEmailSender) SendReportReadyEmail(ctx context.Context, toEmail, toName, carName, downloadURL string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.reportCalls++
+	m.lastEmail = toEmail
+	m.lastCar = carName
+	m.lastURL = downloadURL
+	return nil
 }
 
 func (m *mockNotifSender) SendToUser(ctx context.Context, userID string, msg domainnotification.PushMessage) (int, error) {
@@ -259,4 +287,46 @@ func TestWorkerQueue_Lifecycle(t *testing.T) {
 	}
 
 	svc.StopWorker()
+}
+
+func TestProcessJob_SendsEmailNotification(t *testing.T) {
+	svc, carRepo, _, _ := setupTestService(t)
+	userRepo := memoryuser.NewRepository()
+	emailSender := &mockEmailSender{}
+	ctx := context.Background()
+
+	createdUser, err := userRepo.Create(ctx, domainuser.User{
+		Name:  "Motorista Teste",
+		Email: "teste@cvmc.com.br",
+	})
+	if err != nil {
+		t.Fatalf("failed to create user: %v", err)
+	}
+
+	svc.WithEmailNotification(userRepo, emailSender, "https://cvmc.test.com")
+
+	car, _ := carRepo.Create(ctx, domaincar.Car{
+		OwnerID: createdUser.ID,
+		Name:    "Corolla Cross",
+	})
+
+	job, err := svc.StartMaintenanceReportJob(ctx, createdUser.ID, car.ID)
+	if err != nil {
+		t.Fatalf("failed to start report job: %v", err)
+	}
+
+	svc.ProcessJob(ctx, job.ID)
+
+	if emailSender.reportCalls != 1 {
+		t.Fatalf("expected 1 email sent, got %d", emailSender.reportCalls)
+	}
+	if emailSender.lastEmail != "teste@cvmc.com.br" {
+		t.Fatalf("expected email to 'teste@cvmc.com.br', got %s", emailSender.lastEmail)
+	}
+	if emailSender.lastCar != "Corolla Cross" {
+		t.Fatalf("expected car name 'Corolla Cross', got %s", emailSender.lastCar)
+	}
+	if emailSender.lastURL != "https://cvmc.test.com/reports" {
+		t.Fatalf("expected report URL 'https://cvmc.test.com/reports', got %s", emailSender.lastURL)
+	}
 }

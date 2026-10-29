@@ -20,6 +20,16 @@ services:
       UPLOAD_PATH: ${UPLOAD_PATH:-/app/uploads}
       LOG_LEVEL: ${LOG_LEVEL:-debug}
       STORAGE_PROVIDER: ${STORAGE_PROVIDER:-local}
+      OCI_STORAGE_BUCKET: ${OCI_STORAGE_BUCKET:-cvmc-files}
+      OCI_STORAGE_NAMESPACE: ${OCI_STORAGE_NAMESPACE:-}
+      OCI_STORAGE_REGION: ${OCI_STORAGE_REGION:-sa-saopaulo-1}
+      OCI_STORAGE_ENDPOINT: ${OCI_STORAGE_ENDPOINT:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      EMAIL_FROM: ${EMAIL_FROM:-no-reply@cvmc.com.br}
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:5173}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5173}
       COOKIE_DOMAIN: ${COOKIE_DOMAIN:-}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
