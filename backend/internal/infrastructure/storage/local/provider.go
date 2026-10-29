@@ -43,6 +43,20 @@ func (p *Provider) Save(ctx context.Context, path string, file storage.File) (st
 	return storage.StoredObject{FileName: path, Size: int64(len(file.Data)), Hash: hex.EncodeToString(hash[:])}, nil
 }
 
+func (p *Provider) Get(ctx context.Context, path string) ([]byte, error) {
+	_ = ctx
+	fullPath := filepath.Join(p.basePath, path)
+
+	// Prevent path traversal
+	absBase, _ := filepath.Abs(p.basePath)
+	absFull, _ := filepath.Abs(fullPath)
+	if !strings.HasPrefix(absFull, absBase+string(filepath.Separator)) && absFull != absBase {
+		return nil, errors.New("invalid path: traversal detected")
+	}
+
+	return os.ReadFile(fullPath)
+}
+
 func (p *Provider) Delete(ctx context.Context, path string) error {
 	_ = ctx
 	fullPath := filepath.Join(p.basePath, path)

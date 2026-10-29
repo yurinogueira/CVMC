@@ -65,6 +65,11 @@ const ProfilePage = lazy(() =>
     default: m.ProfilePage,
   })),
 );
+const ReportsPage = lazy(() =>
+  import("../features/reports/pages/ReportsPage").then((m) => ({
+    default: m.ReportsPage,
+  })),
+);
 
 export function AppRoutes() {
   return (
@@ -94,6 +99,7 @@ export function AppRoutes() {
               element={<RegisterMaintenancePage />}
             />
             <Route path="/maintenance" element={<MaintenancePage />} />
+            <Route path="/reports" element={<ReportsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
           </Route>
         </Route>

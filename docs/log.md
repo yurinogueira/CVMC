@@ -6,14 +6,20 @@ tags:
   - log
   - audit
   - history
-timestamp: 2026-10-28
+timestamp: 2026-10-29
 ---
 
 # 🕒 Diário de Bordo & Histórico Cronológico — CVMC
 
-Este documento funciona como o índice mestre de todas as mudanças de engenharia aplicadas ao projeto **CVMC (Como Vai Meu Carro)**. Cada entrada detalhada reside em um arquivo diário específico na pasta [docs/logs/2026-10-28.md](logs/2026-10-28.md), garantindo economia de tokens e histórico auditável.
+Este documento funciona como o índice mestre de todas as mudanças de engenharia aplicadas ao projeto **CVMC (Como Vai Meu Carro)**. Cada entrada detalhada reside em um arquivo diário específico na pasta [docs/logs/2026-10-29.md](logs/2026-10-29.md), garantindo economia de tokens e histórico auditável.
 
 Para navegação geral, retorne ao [Catálogo Canônico](index.md).
+
+## 📅 [2026-10-29](logs/2026-10-29.md) — Exportação Otimizada de Relatórios de Manutenção em PDF com Fila e Comprovantes Paginados (#144)
+- **Exportação Assíncrona e Fila Sequencial Otimizada (Concorrência = 1)**: Implementação do subdomínio `Report` com entidade `ReportJob`, repositório MongoDB e em memória, worker queue em Go com concorrência unitária para proteção de memória RAM em instâncias enxutas, e reconciliação no startup da aplicação.
+- **Motor de PDF com Diagramação Inteligente de Comprovantes**: Geração tabular estilizada via `fpdf` com capa, dados do veículo e histórico de revisões; comprovantes de imagem (JPG, PNG, WebP) ganham página A4 própria com cabeçalho da manutenção e redimensionamento proporcional; comprovantes em PDF originais têm suas páginas mescladas vetorialmente ao final do documento via `pdfcpu`.
+- **Notificações Push (FCM), Retenção de 30 Dias & Scheduler**: Disparo de notificação push no término do processamento, expiração em 30 dias (`expiresAt = completedAt + 30d`) e cronjob diário `ReportCleanupCron` para limpeza física no `storage.Provider` e atualização de status para `expired`.
+- **Frontend SPA & Navegação Unificada**: Criação da página `/reports` no `Sidebar`, componente `ExportHistoryTable` com polling inteligente em tempo real e download de blob, diálogo `ExportMaintenanceDialog` e aba "Relatórios Exportados" integrada na tela `/maintenance`.
 
 ## 📅 [2026-10-28](logs/2026-10-28.md) — Atualização de Versão para 0.5.1 e Persistência de Sessão Mobile (#140)
 - **Bump da Versão do App para 0.5.1**: Atualização do `versionCode` (de 1 para 2) e `versionName` (de `"0.5"` para `"0.5.1"`) no `frontend/android/app/build.gradle`, alinhando os metadados do pacote com a versão `"0.5.1"` em `frontend/package.json` e `package-lock.json` para suportar releases subsequentes no Google Play Console.

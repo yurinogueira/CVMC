@@ -28,6 +28,10 @@ func Created(w http.ResponseWriter, data interface{}) {
 	JSON(w, http.StatusCreated, SuccessEnvelope{Success: true, Data: data})
 }
 
+func Accepted(w http.ResponseWriter, data interface{}) {
+	JSON(w, http.StatusAccepted, SuccessEnvelope{Success: true, Data: data})
+}
+
 func JSON(w http.ResponseWriter, status int, payload interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)

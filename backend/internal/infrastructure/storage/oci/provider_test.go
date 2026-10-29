@@ -27,6 +27,13 @@ func TestOCIStorageProvider_SaveAndDelete(t *testing.T) {
 		case http.MethodDelete:
 			deletedPath = r.URL.Path
 			w.WriteHeader(http.StatusNoContent)
+		case http.MethodGet:
+			if r.URL.Path == "/n/test-ns/b/test-bucket/o/uploads/car.png" {
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write([]byte("sample file content"))
+			} else {
+				w.WriteHeader(http.StatusNotFound)
+			}
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)
 		}
@@ -61,6 +68,19 @@ func TestOCIStorageProvider_SaveAndDelete(t *testing.T) {
 	}
 	if string(savedBody) != string(testFile.Data) {
 		t.Errorf("server received %q, expected %q", string(savedBody), string(testFile.Data))
+	}
+
+	gotData, err := provider.Get(ctx, "uploads/car.png")
+	if err != nil {
+		t.Fatalf("unexpected Get error: %v", err)
+	}
+	if string(gotData) != "sample file content" {
+		t.Errorf("expected sample file content, got %s", string(gotData))
+	}
+
+	_, err = provider.Get(ctx, "../secret.txt")
+	if err == nil {
+		t.Error("expected error for path traversal in Get, got nil")
 	}
 
 	if err := provider.Delete(ctx, "uploads/car.png"); err != nil {

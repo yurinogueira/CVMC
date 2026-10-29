@@ -96,6 +96,39 @@ func (p *Provider) Save(ctx context.Context, path string, file storage.File) (st
 	}, nil
 }
 
+func (p *Provider) Get(ctx context.Context, path string) ([]byte, error) {
+	if p.namespace == "" || p.bucket == "" {
+		return nil, errors.New("oci storage: namespace and bucket must be configured")
+	}
+
+	cleanPath := strings.TrimPrefix(path, "/")
+	if strings.Contains(cleanPath, "..") {
+		return nil, errors.New("invalid path: traversal detected")
+	}
+
+	targetURL := p.objectURL(cleanPath)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, targetURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("oci storage: failed to create request: %w", err)
+	}
+
+	resp, err := p.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("oci storage: get request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, errors.New("file not found")
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("oci storage: unexpected status %d: %s", resp.StatusCode, string(body))
+	}
+
+	return io.ReadAll(resp.Body)
+}
+
 func (p *Provider) Delete(ctx context.Context, path string) error {
 	if p.namespace == "" || p.bucket == "" {
 		return errors.New("oci storage: namespace and bucket must be configured")

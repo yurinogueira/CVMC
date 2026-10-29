@@ -18,6 +18,8 @@ import {
   DialogActions,
   CircularProgress,
   Snackbar,
+  Tabs,
+  Tab,
 } from "@mui/material";
 import BuildCircleRoundedIcon from "@mui/icons-material/BuildCircleRounded";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
@@ -30,6 +32,7 @@ import LocalShippingRoundedIcon from "@mui/icons-material/LocalShippingRounded";
 import HistoryRoundedIcon from "@mui/icons-material/HistoryRounded";
 import EventRepeatRoundedIcon from "@mui/icons-material/EventRepeatRounded";
 import TuneRoundedIcon from "@mui/icons-material/TuneRounded";
+import PictureAsPdfRoundedIcon from "@mui/icons-material/PictureAsPdfRounded";
 import { useDocumentTitle } from "../../shared";
 import { brandColors } from "../../../styles/theme";
 import { carService } from "../../cars/services/car.service";
@@ -44,6 +47,8 @@ import { UpcomingMaintenanceCard } from "../components/UpcomingMaintenanceCard";
 import { MaintenanceCard } from "../components/MaintenanceCard";
 import { AddMaintenanceDialog } from "../components/AddMaintenanceDialog";
 import { MaintenanceIntervalsDialog } from "../components/MaintenanceIntervalsDialog";
+import { ExportHistoryTable } from "../../reports/components/ExportHistoryTable";
+import { ExportMaintenanceDialog } from "../../reports/components/ExportMaintenanceDialog";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -85,6 +90,9 @@ export function MaintenancePage() {
   const [deleting, setDeleting] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [intervalsDialogOpen, setIntervalsDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<number>(0);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [exportRefreshTrigger, setExportRefreshTrigger] = useState(0);
 
   const refreshData = useCallback(
     async (targetCarId?: string) => {
@@ -305,15 +313,27 @@ export function MaintenancePage() {
           </Typography>
         </Box>
 
-        <Button
-          variant="contained"
-          startIcon={<AddRoundedIcon />}
-          disabled={!selectedCar}
-          onClick={() => handleOpenNewMaintenance()}
-          sx={{ px: 2.5, py: 1.1 }}
-        >
-          Registrar Manutenção
-        </Button>
+        <Stack direction="row" spacing={1.5}>
+          <Button
+            variant="outlined"
+            startIcon={<PictureAsPdfRoundedIcon />}
+            disabled={!selectedCar}
+            onClick={() => setExportDialogOpen(true)}
+            sx={{ px: 2, py: 1.1, textTransform: "none", fontWeight: 600 }}
+          >
+            Exportar PDF
+          </Button>
+
+          <Button
+            variant="contained"
+            startIcon={<AddRoundedIcon />}
+            disabled={!selectedCar}
+            onClick={() => handleOpenNewMaintenance()}
+            sx={{ px: 2.5, py: 1.1 }}
+          >
+            Registrar Manutenção
+          </Button>
+        </Stack>
       </Stack>
 
       {errorMsg && (
@@ -513,208 +533,250 @@ export function MaintenancePage() {
             </Stack>
           </Box>
 
-          {/* Upcoming Periodic Maintenances Section */}
-          {selectedUpcoming && selectedUpcoming.items.length > 0 && (
-            <Box sx={{ mb: 5 }}>
-              <Stack
-                direction={{ xs: "column", sm: "row" }}
-                spacing={1.5}
-                sx={{
-                  alignItems: { xs: "flex-start", sm: "center" },
-                  justifyContent: "space-between",
-                  mb: 2,
-                }}
-              >
+          {/* Tabs Navigation */}
+          <Tabs
+            value={activeTab}
+            onChange={(_, val) => setActiveTab(val)}
+            sx={{
+              mb: 3.5,
+              borderBottom: "1px solid #E2E8F0",
+              "& .MuiTab-root": {
+                textTransform: "none",
+                fontWeight: 600,
+                fontSize: "0.95rem",
+              },
+            }}
+          >
+            <Tab label="Visão Geral & Preventivas" />
+            <Tab label="Relatórios Exportados" />
+          </Tabs>
+
+          {activeTab === 1 ? (
+            <Box sx={{ mb: 4 }}>
+              <ExportHistoryTable
+                carId={selectedCarId}
+                refreshTrigger={exportRefreshTrigger}
+              />
+            </Box>
+          ) : (
+            <>
+              {/* Upcoming Periodic Maintenances Section */}
+              {selectedUpcoming && selectedUpcoming.items.length > 0 && (
+                <Box sx={{ mb: 5 }}>
+                  <Stack
+                    direction={{ xs: "column", sm: "row" }}
+                    spacing={1.5}
+                    sx={{
+                      alignItems: { xs: "flex-start", sm: "center" },
+                      justifyContent: "space-between",
+                      mb: 2,
+                    }}
+                  >
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      sx={{ alignItems: "center" }}
+                    >
+                      <EventRepeatRoundedIcon color="primary" />
+                      <Box>
+                        <Typography
+                          component="h2"
+                          variant="h6"
+                          sx={{ fontWeight: 800, lineHeight: 1.2 }}
+                        >
+                          Próximas Manutenções Preventivas
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{ color: "text.secondary" }}
+                        >
+                          Monitoramento automático por quilometragem e tempo
+                          para <strong>{selectedUpcoming.carName}</strong>
+                        </Typography>
+                      </Box>
+                    </Stack>
+
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<TuneRoundedIcon />}
+                      onClick={() => setIntervalsDialogOpen(true)}
+                      disabled={!selectedCar}
+                      sx={{
+                        borderRadius: 2,
+                        textTransform: "none",
+                        fontWeight: 700,
+                        borderColor: "#CBD5E1",
+                        color: "text.primary",
+                        "&:hover": {
+                          borderColor: "primary.main",
+                          bgcolor: "rgba(2, 132, 199, 0.04)",
+                          color: "primary.main",
+                        },
+                      }}
+                    >
+                      Ajustar Intervalos
+                    </Button>
+                  </Stack>
+
+                  <Grid container spacing={2.5}>
+                    {selectedUpcoming.items.map((item) => (
+                      <Grid
+                        size={{ xs: 12, sm: 6, md: 6, lg: 4 }}
+                        key={item.type}
+                      >
+                        <UpcomingMaintenanceCard
+                          item={item}
+                          onQuickRegister={(type) =>
+                            handleOpenNewMaintenance(type)
+                          }
+                        />
+                      </Grid>
+                    ))}
+                  </Grid>
+                </Box>
+              )}
+
+              {/* Chronological Maintenance History Section */}
+              <Box>
                 <Stack
-                  direction="row"
-                  spacing={1}
-                  sx={{ alignItems: "center" }}
+                  direction={{ xs: "column", sm: "row" }}
+                  spacing={1.5}
+                  sx={{
+                    alignItems: { xs: "flex-start", sm: "center" },
+                    justifyContent: "space-between",
+                    mb: 2,
+                  }}
                 >
-                  <EventRepeatRoundedIcon color="primary" />
-                  <Box>
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    sx={{ alignItems: "center" }}
+                  >
+                    <HistoryRoundedIcon color="primary" />
                     <Typography
                       component="h2"
                       variant="h6"
-                      sx={{ fontWeight: 800, lineHeight: 1.2 }}
+                      sx={{ fontWeight: 800 }}
                     >
-                      Próximas Manutenções Preventivas
+                      Histórico de Manutenções Realizadas
                     </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{ color: "text.secondary" }}
-                    >
-                      Monitoramento automático por quilometragem e tempo para{" "}
-                      <strong>{selectedUpcoming.carName}</strong>
-                    </Typography>
-                  </Box>
+                    <Chip
+                      label={maintenances.length}
+                      size="small"
+                      sx={{ fontWeight: 700, borderRadius: 1 }}
+                    />
+                  </Stack>
                 </Stack>
 
-                <Button
-                  variant="outlined"
-                  size="small"
-                  startIcon={<TuneRoundedIcon />}
-                  onClick={() => setIntervalsDialogOpen(true)}
-                  disabled={!selectedCar}
-                  sx={{
-                    borderRadius: 2,
-                    textTransform: "none",
-                    fontWeight: 700,
-                    borderColor: "#CBD5E1",
-                    color: "text.primary",
-                    "&:hover": {
-                      borderColor: "primary.main",
-                      bgcolor: "rgba(2, 132, 199, 0.04)",
-                      color: "primary.main",
-                    },
-                  }}
-                >
-                  Ajustar Intervalos
-                </Button>
-              </Stack>
-
-              <Grid container spacing={2.5}>
-                {selectedUpcoming.items.map((item) => (
-                  <Grid size={{ xs: 12, sm: 6, md: 6, lg: 4 }} key={item.type}>
-                    <UpcomingMaintenanceCard
-                      item={item}
-                      onQuickRegister={(type) => handleOpenNewMaintenance(type)}
-                    />
-                  </Grid>
-                ))}
-              </Grid>
-            </Box>
-          )}
-
-          {/* Chronological Maintenance History Section */}
-          <Box>
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              spacing={1.5}
-              sx={{
-                alignItems: { xs: "flex-start", sm: "center" },
-                justifyContent: "space-between",
-                mb: 2,
-              }}
-            >
-              <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-                <HistoryRoundedIcon color="primary" />
-                <Typography
-                  component="h2"
-                  variant="h6"
-                  sx={{ fontWeight: 800 }}
-                >
-                  Histórico de Manutenções Realizadas
-                </Typography>
-                <Chip
-                  label={maintenances.length}
-                  size="small"
-                  sx={{ fontWeight: 700, borderRadius: 1 }}
-                />
-              </Stack>
-            </Stack>
-
-            {loadingHistory ? (
-              <Stack spacing={2}>
-                {[1, 2].map((i) => (
-                  <Skeleton
-                    key={i}
-                    variant="rectangular"
-                    height={110}
-                    sx={{ borderRadius: 2.5 }}
-                  />
-                ))}
-              </Stack>
-            ) : maintenances.length === 0 ? (
-              <Card
-                elevation={0}
-                sx={{
-                  py: 7,
-                  px: 3,
-                  textAlign: "center",
-                  border: "1px dashed #CBD5E1",
-                  bgcolor: "background.paper",
-                }}
-              >
-                <Box
-                  sx={{
-                    width: 56,
-                    height: 56,
-                    borderRadius: "50%",
-                    bgcolor: "rgba(2, 132, 199, 0.1)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    mx: "auto",
-                    mb: 2,
-                    color: "primary.main",
-                  }}
-                >
-                  <BuildCircleRoundedIcon sx={{ fontSize: 32 }} />
-                </Box>
-                <Typography
-                  component="h3"
-                  variant="h6"
-                  sx={{ fontWeight: 700, mb: 0.5 }}
-                >
-                  Nenhuma manutenção registrada
-                </Typography>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: "text.secondary",
-                    maxWidth: 460,
-                    mx: "auto",
-                    mb: 3,
-                  }}
-                >
-                  Registre trocas de óleo, filtros, pastilhas de freio ou
-                  revisões para atualizar os indicadores preventivos de{" "}
-                  <strong>{selectedCar?.name}</strong>.
-                </Typography>
-                <Button
-                  variant="contained"
-                  startIcon={<AddRoundedIcon />}
-                  onClick={() => handleOpenNewMaintenance()}
-                >
-                  Nova Manutenção
-                </Button>
-              </Card>
-            ) : (
-              <Stack spacing={2}>
-                {paginatedMaintenances.map((maint) => (
-                  <MaintenanceCard
-                    key={maint.id}
-                    maintenance={maint}
-                    onEdit={(m) =>
-                      navigate(`/vehicles/${m.carId}/maintenance/${m.id}/edit`)
-                    }
-                    onDelete={(maintId) => {
-                      const target = maintenances.find((x) => x.id === maintId);
-                      if (target) setMaintenanceToDelete(target);
-                    }}
-                  />
-                ))}
-
-                {totalPages > 1 && (
-                  <Box
+                {loadingHistory ? (
+                  <Stack spacing={2}>
+                    {[1, 2].map((i) => (
+                      <Skeleton
+                        key={i}
+                        variant="rectangular"
+                        height={110}
+                        sx={{ borderRadius: 2.5 }}
+                      />
+                    ))}
+                  </Stack>
+                ) : maintenances.length === 0 ? (
+                  <Card
+                    elevation={0}
                     sx={{
-                      display: "flex",
-                      justifyContent: "center",
-                      pt: 2,
+                      py: 7,
+                      px: 3,
+                      textAlign: "center",
+                      border: "1px dashed #CBD5E1",
+                      bgcolor: "background.paper",
                     }}
                   >
-                    <Pagination
-                      count={totalPages}
-                      page={page}
-                      onChange={(_, value) => setPage(value)}
-                      color="primary"
-                      shape="rounded"
-                    />
-                  </Box>
+                    <Box
+                      sx={{
+                        width: 56,
+                        height: 56,
+                        borderRadius: "50%",
+                        bgcolor: "rgba(2, 132, 199, 0.1)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        mx: "auto",
+                        mb: 2,
+                        color: "primary.main",
+                      }}
+                    >
+                      <BuildCircleRoundedIcon sx={{ fontSize: 32 }} />
+                    </Box>
+                    <Typography
+                      component="h3"
+                      variant="h6"
+                      sx={{ fontWeight: 700, mb: 0.5 }}
+                    >
+                      Nenhuma manutenção registrada
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: "text.secondary",
+                        maxWidth: 460,
+                        mx: "auto",
+                        mb: 3,
+                      }}
+                    >
+                      Registre trocas de óleo, filtros, pastilhas de freio ou
+                      revisões para atualizar os indicadores preventivos de{" "}
+                      <strong>{selectedCar?.name}</strong>.
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      startIcon={<AddRoundedIcon />}
+                      onClick={() => handleOpenNewMaintenance()}
+                    >
+                      Nova Manutenção
+                    </Button>
+                  </Card>
+                ) : (
+                  <Stack spacing={2}>
+                    {paginatedMaintenances.map((maint) => (
+                      <MaintenanceCard
+                        key={maint.id}
+                        maintenance={maint}
+                        onEdit={(m) =>
+                          navigate(
+                            `/vehicles/${m.carId}/maintenance/${m.id}/edit`,
+                          )
+                        }
+                        onDelete={(maintId) => {
+                          const target = maintenances.find(
+                            (x) => x.id === maintId,
+                          );
+                          if (target) setMaintenanceToDelete(target);
+                        }}
+                      />
+                    ))}
+
+                    {totalPages > 1 && (
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "center",
+                          pt: 2,
+                        }}
+                      >
+                        <Pagination
+                          count={totalPages}
+                          page={page}
+                          onChange={(_, value) => setPage(value)}
+                          color="primary"
+                          shape="rounded"
+                        />
+                      </Box>
+                    )}
+                  </Stack>
                 )}
-              </Stack>
-            )}
-          </Box>
+              </Box>
+            </>
+          )}
         </>
       )}
 
@@ -778,6 +840,18 @@ export function MaintenancePage() {
         onSaved={async () => {
           await refreshData(selectedCarId);
           setToastMessage("Intervalos de revisão atualizados com sucesso!");
+        }}
+      />
+
+      {/* Export Maintenance PDF Dialog */}
+      <ExportMaintenanceDialog
+        open={exportDialogOpen}
+        onClose={() => setExportDialogOpen(false)}
+        cars={cars}
+        initialCarId={selectedCarId}
+        onSuccess={() => {
+          setExportRefreshTrigger((prev) => prev + 1);
+          setToastMessage("Relatório de manutenções solicitado com sucesso!");
         }}
       />
 
