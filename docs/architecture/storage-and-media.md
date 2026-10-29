@@ -32,7 +32,7 @@ type Provider interface {
 ```
 
 - **Local Storage (`localstorage`)**: Utilizado em ambiente de desenvolvimento local (`UPLOAD_PATH=./data/uploads`).
-- **OCI Object Storage (`ocistorage`)**: Provedor Always Free da Oracle Cloud Infrastructure utilizado no ambiente de produção para alta disponibilidade e persistência desacoplada da máquina virtual.
+- **OCI Object Storage (`ocistorage`)**: Provedor Always Free da Oracle Cloud Infrastructure utilizado no ambiente de produção para alta disponibilidade e persistência desacoplada da máquina virtual. O acesso ao bucket privado (`NoPublicAccess`) é autenticado de forma segura via **Pre-Authenticated Request (PAR)** (`oci_objectstorage_preauthrequest`), gerenciado via Terraform e injetado via variável de ambiente/secret `OCI_STORAGE_ENDPOINT` contendo o token `/p/`. Isso permite leitura e gravação no bucket privado sem necessidade de distribuir chaves RSA privadas na máquina virtual.
 
 ---
 
