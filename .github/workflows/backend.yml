@@ -185,15 +185,7 @@ jobs:
               --namespace "$STATE_NAMESPACE" \
               --name "terraform.tfstate" \
               --file "/tmp/tfstate.json" 2>&1; then
-              PARSED_ENDPOINT=$(python3 -c "
-import json
-try:
-    with open('/tmp/tfstate.json') as f:
-        data = json.load(f)
-    print(data.get('outputs', {}).get('object_storage_endpoint', {}).get('value', ''))
-except Exception:
-    pass
-")
+              PARSED_ENDPOINT=$(python3 -c "import json; data=json.load(open('/tmp/tfstate.json')); print(data.get('outputs',{}).get('object_storage_endpoint',{}).get('value',''))" 2>/dev/null || true)
               if [ -n "$PARSED_ENDPOINT" ]; then
                 ENDPOINT="$PARSED_ENDPOINT"
                 echo "Successfully resolved object_storage_endpoint from Terraform state!"
