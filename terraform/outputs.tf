@@ -23,6 +23,12 @@ output "object_storage_bucket" {
   value = oci_objectstorage_bucket.files.name
 }
 
+output "object_storage_endpoint" {
+  value       = "https://objectstorage.${var.region}.oraclecloud.com${oci_objectstorage_preauthrequest.files_par.access_uri}"
+  description = "Endpoint PAR autenticado para o Object Storage (Secret: OCI_STORAGE_ENDPOINT)"
+  sensitive   = true
+}
+
 output "ssh_command" {
   value = "ssh ubuntu@${oci_core_public_ip.server_reserved_ip.ip_address}"
 }

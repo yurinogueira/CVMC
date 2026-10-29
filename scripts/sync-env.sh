@@ -29,13 +29,15 @@ ip = get_val("instance_public_ip")
 mongo_uri = get_val("mongodb_uri")
 bucket = get_val("object_storage_bucket", "")
 namespace = get_val("object_storage_namespace", "")
-print(f"{ip}\t{mongo_uri}\t{bucket}\t{namespace}")
+endpoint = get_val("object_storage_endpoint", "")
+print(f"{ip}\t{mongo_uri}\t{bucket}\t{namespace}\t{endpoint}")
 ' <<< "$TF_OUTPUTS")
 
 TF_HOST=$(echo "$PARSED" | cut -f1)
 MONGO_URI=$(echo "$PARSED" | cut -f2)
 BUCKET_NAME=$(echo "$PARSED" | cut -f3)
 BUCKET_NAMESPACE=$(echo "$PARSED" | cut -f4)
+STORAGE_ENDPOINT=$(echo "$PARSED" | cut -f5)
 
 HOST="${1:-$TF_HOST}"
 USER="${2:-ubuntu}"
@@ -79,7 +81,7 @@ MONGO_DATABASE=cvmc
 OCI_STORAGE_BUCKET=${BUCKET_NAME}
 OCI_STORAGE_NAMESPACE=${BUCKET_NAMESPACE}
 OCI_STORAGE_REGION=sa-saopaulo-1
-OCI_STORAGE_ENDPOINT=
+OCI_STORAGE_ENDPOINT=${STORAGE_ENDPOINT}
 
 # JWT Secrets
 JWT_SECRET=${JWT_SECRET}
