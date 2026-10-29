@@ -11,9 +11,12 @@ import (
 	fuelport "cvmc/internal/application/ports/fuel"
 	maintenanceport "cvmc/internal/application/ports/maintenance"
 	notificationport "cvmc/internal/application/ports/notification"
+	reportport "cvmc/internal/application/ports/report"
+	storageport "cvmc/internal/application/ports/storage"
 	userport "cvmc/internal/application/ports/user"
 	fipeusecase "cvmc/internal/application/usecase/fipe"
 	notificationusecase "cvmc/internal/application/usecase/notification"
+	reportusecase "cvmc/internal/application/usecase/report"
 	"cvmc/internal/config"
 	bcryptinfra "cvmc/internal/infrastructure/auth/bcrypt"
 	googleinfra "cvmc/internal/infrastructure/auth/google"
@@ -32,18 +35,27 @@ import (
 	fcmInfra "cvmc/internal/infrastructure/notification/fcm"
 	notifMemory "cvmc/internal/infrastructure/notification/memory"
 	notifMongo "cvmc/internal/infrastructure/notification/mongo"
+	reportMemory "cvmc/internal/infrastructure/report/memory"
+	reportMongo "cvmc/internal/infrastructure/report/mongo"
 	"cvmc/internal/infrastructure/scheduler"
+	localStorage "cvmc/internal/infrastructure/storage/local"
+	ociStorage "cvmc/internal/infrastructure/storage/oci"
 	userMemory "cvmc/internal/infrastructure/user/memory"
 	userMongo "cvmc/internal/infrastructure/user/mongo"
 	"cvmc/internal/interfaces/rest"
+	"cvmc/internal/shared/filecipher"
 
 	"go.mongodb.org/mongo-driver/v2/mongo"
+	"strings"
+	"time"
 )
 
 type App struct {
-	handler     *rest.Router
-	mongoClient *mongo.Client
-	cron        *scheduler.MaintenanceCron
+	handler       *rest.Router
+	mongoClient   *mongo.Client
+	cron          *scheduler.MaintenanceCron
+	cleanupCron   *scheduler.ReportCleanupCron
+	reportService *reportusecase.Service
 }
 
 func New(ctx context.Context, cfg config.Config) (*App, error) {
@@ -54,6 +66,7 @@ func New(ctx context.Context, cfg config.Config) (*App, error) {
 		fuelings     fuelport.Repository
 		fipes        fipeport.Repository
 		deviceTokens notificationport.DeviceTokenRepository
+		reports      reportport.Repository
 		mongoClient  *mongo.Client
 		emailSender  emailport.Sender
 	)
@@ -85,16 +98,18 @@ func New(ctx context.Context, cfg config.Config) (*App, error) {
 		fuelMongoRepo := fuelMongo.NewRepository(db)
 		fMongo := fipeMongo.NewRepository(db)
 		dtMongo := notifMongo.NewRepository(db)
+		rMongo := reportMongo.NewRepository(db)
 
 		bootstrapper := mongoinfra.NewBootstrapper(
 			db,
-			[]string{"users", "cars", "maintenances", "fuelings", "brands", "device_tokens"},
+			[]string{"users", "cars", "maintenances", "fuelings", "brands", "device_tokens", "report_jobs"},
 			uMongo,
 			cMongo,
 			mMongo,
 			fuelMongoRepo,
 			fMongo,
 			dtMongo,
+			rMongo,
 		)
 
 		if err := bootstrapper.Ensure(ctx); err != nil {
@@ -102,7 +117,7 @@ func New(ctx context.Context, cfg config.Config) (*App, error) {
 			return nil, fmt.Errorf("failed to bootstrap mongodb collections and indexes: %w", err)
 		}
 
-		log.Printf("Successfully bootstrapped MongoDB collections (users, cars, maintenances, fuelings, brands, device_tokens) and indexes on %q", cfg.MongoDatabase)
+		log.Printf("Successfully bootstrapped MongoDB collections (users, cars, maintenances, fuelings, brands, device_tokens, report_jobs) and indexes on %q", cfg.MongoDatabase)
 
 		users = uMongo
 		cars = cMongo
@@ -110,6 +125,7 @@ func New(ctx context.Context, cfg config.Config) (*App, error) {
 		fuelings = fuelMongoRepo
 		fipes = fMongo
 		deviceTokens = dtMongo
+		reports = rMongo
 	} else {
 		log.Println("Initializing application with in-memory repositories (MONGO_URI=memory)")
 		users = userMemory.NewRepository()
@@ -118,8 +134,22 @@ func New(ctx context.Context, cfg config.Config) (*App, error) {
 		fuelings = fuelMemory.NewRepository()
 		fipes = fipeMemory.NewRepository()
 		deviceTokens = notifMemory.NewRepository()
+		reports = reportMemory.NewRepository()
 	}
 
+	var storageProvider storageport.Provider
+	if strings.EqualFold(cfg.StorageProvider, "oci") {
+		storageProvider = ociStorage.New(ociStorage.Config{
+			Namespace: cfg.OCIStorageNamespace,
+			Bucket:    cfg.OCIStorageBucket,
+			Region:    cfg.OCIStorageRegion,
+			Endpoint:  cfg.OCIStorageEndpoint,
+		})
+	} else {
+		storageProvider = localStorage.New(cfg.UploadPath)
+	}
+
+	cipher := filecipher.New(cfg.FileEncryptionKey)
 	pushSender, err := fcmInfra.NewSender(ctx, fcmInfra.Config{
 		CredentialsJSON: cfg.FirebaseCredentialsJSON,
 		CredentialsFile: cfg.FirebaseCredentialsFile,
@@ -133,17 +163,26 @@ func New(ctx context.Context, cfg config.Config) (*App, error) {
 
 	fipeService := fipeusecase.NewService(fipes, fipeClient)
 	notificationService := notificationusecase.NewService(deviceTokens, pushSender, cars, maintenances)
+	reportService := reportusecase.NewService(reports, cars, maintenances, storageProvider, notificationService, cipher)
+	reportService.StartWorker(context.Background())
+
 	googleValidator := googleinfra.NewValidator(cfg.GoogleClientID)
-	handler := rest.NewRouter(cfg, users, hasher, tokens, emailSender, cars, maintenances, fuelings, fipeService, notificationService, googleValidator)
+	handler := rest.NewRouter(cfg, users, hasher, tokens, emailSender, cars, maintenances, fuelings, fipeService, notificationService, reportService, googleValidator)
 
 	cronInterval := scheduler.ParseCronInterval(cfg.MaintenanceCronInterval)
 	maintCron := scheduler.NewMaintenanceCron(notificationService, cronInterval)
 	maintCron.Start(context.Background())
 
+	cleanupInterval := scheduler.ParseCronInterval(cfg.ReportCleanupCronInterval)
+	cleanupCron := scheduler.NewReportCleanupCron(reportService, cleanupInterval, 30*24*time.Hour)
+	cleanupCron.Start(context.Background())
+
 	return &App{
-		handler:     handler,
-		mongoClient: mongoClient,
-		cron:        maintCron,
+		handler:       handler,
+		mongoClient:   mongoClient,
+		cron:          maintCron,
+		cleanupCron:   cleanupCron,
+		reportService: reportService,
 	}, nil
 }
 
@@ -154,6 +193,12 @@ func (a *App) Handler() *rest.Router {
 func (a *App) Close(ctx context.Context) error {
 	if a.cron != nil {
 		a.cron.Stop()
+	}
+	if a.cleanupCron != nil {
+		a.cleanupCron.Stop()
+	}
+	if a.reportService != nil {
+		a.reportService.StopWorker()
 	}
 	if a.mongoClient != nil {
 		return a.mongoClient.Disconnect(ctx)

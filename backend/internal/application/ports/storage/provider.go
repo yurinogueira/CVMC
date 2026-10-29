@@ -16,5 +16,6 @@ type StoredObject struct {
 
 type Provider interface {
 	Save(ctx context.Context, path string, file File) (StoredObject, error)
+	Get(ctx context.Context, path string) ([]byte, error)
 	Delete(ctx context.Context, path string) error
 }

@@ -77,6 +77,7 @@ Especificações detalhadas de regras de negócio, agregações e fluxos de cada
 - [Fipe (Consulta Tabela FIPE)](domain/fipe.md): Integração com API FIPE, busca de marcas, modelos, anos e valor de mercado com cache.
 - [User (Identidade & Usuários)](domain/user.md): Cadastro de condutores, credenciais seguras, papéis de acesso e recuperação de senha.
 - [Attachment (Anexos & Comprovantes)](domain/attachment.md): Sanitização de arquivos, tipos permitidos, controle de tamanho e segurança de downloads.
+- [Report (Relatórios & Exportações)](domain/report.md): Processamento assíncrono em fila (concorrência 1), geração de PDF de manutenções com comprovantes paginados e retenção de 30 dias.
 
 ### 3. 🖥️ Engenharia de Frontend (`frontend/`)
 Padrões de desenvolvimento para a SPA React 19:

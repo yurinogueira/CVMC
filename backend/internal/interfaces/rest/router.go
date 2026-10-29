@@ -15,8 +15,11 @@ import (
 	fuelusecase "cvmc/internal/application/usecase/fuel"
 	maintusecase "cvmc/internal/application/usecase/maintenance"
 	notificationusecase "cvmc/internal/application/usecase/notification"
+	reportusecase "cvmc/internal/application/usecase/report"
 	"cvmc/internal/config"
 	notifMemory "cvmc/internal/infrastructure/notification/memory"
+	reportMemory "cvmc/internal/infrastructure/report/memory"
+	localStorage "cvmc/internal/infrastructure/storage/local"
 	"cvmc/internal/interfaces/rest/handlers"
 	"cvmc/internal/shared/filecipher"
 	"cvmc/internal/shared/httpx"
@@ -29,12 +32,15 @@ type Router struct {
 	handler http.Handler
 }
 
-func NewRouter(cfg config.Config, users userport.Repository, hasher portauth.PasswordHasher, tokens portauth.TokenService, emailSender emailport.Sender, cars carport.Repository, maintenances maintport.Repository, fuelings fuelport.Repository, fipeService *fipeusecase.Service, notificationService *notificationusecase.Service, googleValidator ...portauth.GoogleTokenValidator) *Router {
+func NewRouter(cfg config.Config, users userport.Repository, hasher portauth.PasswordHasher, tokens portauth.TokenService, emailSender emailport.Sender, cars carport.Repository, maintenances maintport.Repository, fuelings fuelport.Repository, fipeService *fipeusecase.Service, notificationService *notificationusecase.Service, reportService *reportusecase.Service, googleValidator ...portauth.GoogleTokenValidator) *Router {
 	mux := http.NewServeMux()
 	if notificationService == nil {
 		notificationService = notificationusecase.NewService(notifMemory.NewRepository(), nil, cars, maintenances)
 	}
 	cipher := filecipher.New(cfg.FileEncryptionKey)
+	if reportService == nil {
+		reportService = reportusecase.NewService(reportMemory.NewRepository(), cars, maintenances, localStorage.New(cfg.UploadPath), notificationService, cipher)
+	}
 	healthHandler := handlers.NewHealthHandler()
 	authHandler := handlers.NewAuthHandler(users, hasher, tokens, emailSender, cfg.CookieDomain, cfg.CookieSecure, googleValidator...)
 	userHandler := handlers.NewUserHandler(users, cars, hasher, tokens, googleValidator...)
@@ -51,6 +57,7 @@ func NewRouter(cfg config.Config, users userport.Repository, hasher portauth.Pas
 	fuelHandler := handlers.NewFuelHandler(fuelusecase.NewService(fuelings, cars), tokens)
 	fipeHandler := handlers.NewFipeHandler(fipeService, tokens)
 	notificationHandler := handlers.NewNotificationHandler(notificationService, tokens)
+	reportHandler := handlers.NewReportHandler(reportService, tokens)
 
 	// Rate limiters
 	globalLimiter := middleware.NewRateLimiter(100.0/60.0, 100, cfg.TrustedProxies...) // 100 req/min burst 100
@@ -134,6 +141,12 @@ func NewRouter(cfg config.Config, users userport.Repository, hasher portauth.Pas
 	mux.Handle("POST /api/v1/devices/token", middleware.Chain(http.HandlerFunc(notificationHandler.RegisterDeviceToken), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
 	mux.Handle("DELETE /api/v1/devices/token", middleware.Chain(http.HandlerFunc(notificationHandler.UnregisterDeviceToken), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
 	mux.Handle("POST /api/v1/notifications/test", strictChain(notificationHandler.SendTestNotification))
+
+	// Reports endpoints
+	mux.Handle("POST /api/v1/reports/maintenance-pdf", middleware.Chain(http.HandlerFunc(reportHandler.StartMaintenanceReport), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
+	mux.Handle("GET /api/v1/reports/jobs", middleware.Chain(http.HandlerFunc(reportHandler.ListJobs), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
+	mux.Handle("GET /api/v1/reports/jobs/{id}", middleware.Chain(http.HandlerFunc(reportHandler.GetJob), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
+	mux.Handle("GET /api/v1/reports/download", middleware.Chain(http.HandlerFunc(reportHandler.DownloadReport), middleware.RequestID, middleware.StructuredLogging(cfg.LogLevel)))
 
 	// Apply global middleware: Security Headers → CORS → Rate Limit → Body Limit → Mux
 	handler := middleware.SecurityHeaders(

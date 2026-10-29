@@ -200,6 +200,12 @@ definitions:
         example: co-motorista@cvmc.com
         type: string
     type: object
+  handlers.StartReportRequest:
+    properties:
+      carId:
+        example: 60c72b2f9b1d8b001c8e4d2a
+        type: string
+    type: object
   handlers.UnregisterDeviceTokenRequest:
     properties:
       token:
@@ -1506,6 +1512,164 @@ paths:
       summary: Disparar notificação push de teste
       tags:
       - Notifications
+  /api/v1/reports/download:
+    get:
+      description: Permite o download seguro do arquivo de relatório em PDF gerado
+        com validação de isolamento de usuário e expiração de 30 dias
+      parameters:
+      - description: Caminho relativo do arquivo de relatório
+        in: query
+        name: file
+        required: true
+        type: string
+      produces:
+      - application/pdf
+      responses:
+        "200":
+          description: Arquivo PDF
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "410":
+          description: Relatório expirado
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Baixar arquivo PDF de relatório gerado
+      tags:
+      - Reports
+  /api/v1/reports/jobs:
+    get:
+      description: Retorna o histórico paginado de relatórios e exportações geradas
+        para o usuário autenticado
+      parameters:
+      - description: Filtrar por ID do veículo
+        in: query
+        name: carId
+        type: string
+      - description: 'Página (padrão: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Itens por página (padrão: 10, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Listar histórico de relatórios
+      tags:
+      - Reports
+  /api/v1/reports/jobs/{id}:
+    get:
+      description: Obtém o status de processamento e metadados de um job de relatório
+        individual
+      parameters:
+      - description: ID do Job
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Consultar status de um relatório
+      tags:
+      - Reports
+  /api/v1/reports/maintenance-pdf:
+    post:
+      consumes:
+      - application/json
+      description: Inicia o processamento assíncrono do relatório de manutenções com
+        comprovantes paginados via fila sequencial
+      parameters:
+      - description: ID do veículo
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.StartReportRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/httpx.SuccessEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.ErrorEnvelope'
+      security:
+      - BearerAuth: []
+      summary: Solicitar exportação de relatório de manutenções em PDF
+      tags:
+      - Reports
   /api/v1/user/account:
     delete:
       consumes:

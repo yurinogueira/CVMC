@@ -18,6 +18,7 @@ import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
 import DirectionsCarRoundedIcon from "@mui/icons-material/DirectionsCarRounded";
 import BuildRoundedIcon from "@mui/icons-material/BuildRounded";
 import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
+import AssessmentRoundedIcon from "@mui/icons-material/AssessmentRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import { useAuthStore } from "../features/auth/state/auth.store";
 import { authService } from "../features/auth/services/auth.service";
@@ -45,6 +46,11 @@ const navItems = [
     label: "Manutenções",
     path: "/maintenance",
     icon: <BuildRoundedIcon fontSize="small" />,
+  },
+  {
+    label: "Relatórios",
+    path: "/reports",
+    icon: <AssessmentRoundedIcon fontSize="small" />,
   },
   {
     label: "Meu Perfil",
