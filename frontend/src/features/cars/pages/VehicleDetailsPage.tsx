@@ -440,46 +440,66 @@ export function VehicleDetailsPage() {
 
                 {/* Specs Badges */}
                 <Stack
-                  direction="row"
+                  direction={{ xs: "column", sm: "row" }}
                   spacing={1.5}
-                  sx={{ flexWrap: "wrap", gap: 1.5, mb: 3 }}
+                  useFlexGap
+                  sx={{
+                    alignItems: { xs: "stretch", sm: "center" },
+                    flexWrap: "wrap",
+                    mb: 3,
+                  }}
                 >
-                  <Chip
-                    icon={
-                      <CalendarMonthRoundedIcon
-                        sx={{ "&&": { fontSize: 18 } }}
-                      />
-                    }
-                    label={`Ano: ${car.yearManufacture}/${car.yearModel}`}
+                  <Stack
+                    direction="row"
+                    spacing={1.5}
+                    useFlexGap
                     sx={{
-                      bgcolor: "#F1F5F9",
-                      color: "text.primary",
-                      fontWeight: 600,
-                      borderRadius: 1.5,
-                      py: 0.5,
+                      flexWrap: "wrap",
+                      width: { xs: "100%", sm: "auto" },
                     }}
-                  />
-                  <Chip
-                    icon={
-                      <SpeedRoundedIcon
-                        sx={{ "&&": { fontSize: 18, color: "#064E3B" } }}
-                      />
-                    }
-                    label={`${(car.lastMileage || 0).toLocaleString("pt-BR")} km`}
-                    sx={{
-                      bgcolor: brandColors.mint,
-                      color: "#064E3B",
-                      fontWeight: 700,
-                      borderRadius: 1.5,
-                      py: 0.5,
-                    }}
-                  />
+                  >
+                    <Chip
+                      icon={
+                        <CalendarMonthRoundedIcon
+                          sx={{ "&&": { fontSize: 18 } }}
+                        />
+                      }
+                      label={`Ano: ${car.yearManufacture}/${car.yearModel}`}
+                      sx={{
+                        flex: { xs: 1, sm: "initial" },
+                        justifyContent: "center",
+                        bgcolor: "#F1F5F9",
+                        color: "text.primary",
+                        fontWeight: 600,
+                        borderRadius: 1.5,
+                        py: 0.5,
+                      }}
+                    />
+                    <Chip
+                      icon={
+                        <SpeedRoundedIcon
+                          sx={{ "&&": { fontSize: 18, color: "#064E3B" } }}
+                        />
+                      }
+                      label={`${(car.lastMileage || 0).toLocaleString("pt-BR")} km`}
+                      sx={{
+                        flex: { xs: 1, sm: "initial" },
+                        justifyContent: "center",
+                        bgcolor: brandColors.mint,
+                        color: "#064E3B",
+                        fontWeight: 700,
+                        borderRadius: 1.5,
+                        py: 0.5,
+                      }}
+                    />
+                  </Stack>
                   <Button
                     variant="outlined"
                     size="small"
                     startIcon={<TuneRoundedIcon sx={{ fontSize: 16 }} />}
                     onClick={() => setIntervalsDialogOpen(true)}
                     sx={{
+                      width: { xs: "100%", sm: "auto" },
                       borderRadius: 1.5,
                       fontWeight: 700,
                       textTransform: "none",
