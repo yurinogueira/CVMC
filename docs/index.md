@@ -103,6 +103,7 @@ Histórico imutável de decisões de engenharia:
 - [ADR 0002: Autenticação via Cookies HttpOnly e Sessões Stateless](adrs/0002-httponly-cookie-sessions.md)
 - [ADR 0003: Gerenciamento de Estado Global com Zustand](adrs/0003-zustand-state-management.md)
 - [ADR 0004: Governança Canônica de Documentação OKF e Zero-Divergence](adrs/0004-canonical-docs-okf.md)
+- [ADR 0005: Política de Versões do MongoDB e Paridade com MongoDB Atlas M0](adrs/0005-mongodb-version-policy-and-atlas-parity.md)
 
 ### 6. 🕒 Trilha de Auditoria e Histórico Datado
 - [Diário de Bordo & Registro Cronológico](log.md): Linha do tempo das mudanças realizadas no repositório.
