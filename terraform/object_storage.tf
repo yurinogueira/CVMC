@@ -18,6 +18,13 @@ resource "oci_objectstorage_preauthrequest" "files_par" {
   access_type           = "AnyObjectReadWrite"
   bucket_listing_action = "ListObjects"
   time_expires          = "2035-12-31T23:59:59Z"
+
+  # A API da OCI não retorna `bucket_listing_action` na leitura do PAR; sem este
+  # ignore, todo refresh gera drift e força a recriação do PAR (rotacionando a URL
+  # consumida pelo backend). Ver issue #147.
+  lifecycle {
+    ignore_changes = [bucket_listing_action]
+  }
 }
 
 data "oci_objectstorage_namespace" "main" {
