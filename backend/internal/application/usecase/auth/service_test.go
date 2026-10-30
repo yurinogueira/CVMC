@@ -391,6 +391,7 @@ func TestServiceLoginWithGoogle(t *testing.T) {
 			Email:         "google.user@example.com",
 			EmailVerified: true,
 			Name:          "Google User",
+			Picture:       "https://lh3.googleusercontent.com/photo1.jpg",
 		},
 	}
 	service := NewService(users, hasher, tokens, nil, mockValidator)
@@ -407,6 +408,9 @@ func TestServiceLoginWithGoogle(t *testing.T) {
 	if res1.User.GoogleID != "google-sub-12345" {
 		t.Fatalf("unexpected google ID: %s", res1.User.GoogleID)
 	}
+	if res1.User.AvatarURL != "https://lh3.googleusercontent.com/photo1.jpg" {
+		t.Fatalf("expected avatar URL to be synchronized, got: %s", res1.User.AvatarURL)
+	}
 	if !res1.User.EmailVerified {
 		t.Fatalf("expected email to be verified")
 	}
@@ -414,13 +418,17 @@ func TestServiceLoginWithGoogle(t *testing.T) {
 		t.Fatalf("expected tokens to be issued")
 	}
 
-	// 2. Existing user login with already linked GoogleID
+	// 2. Existing user login with already linked GoogleID and updated picture
+	mockValidator.payload.Picture = "https://lh3.googleusercontent.com/photo2.jpg"
 	res2, err := service.LoginWithGoogle(ctx, "valid-token")
 	if err != nil {
 		t.Fatalf("expected successful login for existing user, got: %v", err)
 	}
 	if res2.User.ID != res1.User.ID {
 		t.Fatalf("expected same user ID, got %s vs %s", res2.User.ID, res1.User.ID)
+	}
+	if res2.User.AvatarURL != "https://lh3.googleusercontent.com/photo2.jpg" {
+		t.Fatalf("expected avatar URL to be updated on subsequent login, got: %s", res2.User.AvatarURL)
 	}
 
 	// 3. Auto-linking: Existing user registered with email/password logs in with Google
@@ -433,6 +441,7 @@ func TestServiceLoginWithGoogle(t *testing.T) {
 		Email:         "bob@example.com",
 		EmailVerified: true,
 		Name:          "Bob Google",
+		Picture:       "https://lh3.googleusercontent.com/bob.jpg",
 	}
 	resBob, err := service.LoginWithGoogle(ctx, "bob-token")
 	if err != nil {
@@ -440,6 +449,9 @@ func TestServiceLoginWithGoogle(t *testing.T) {
 	}
 	if resBob.User.GoogleID != "google-sub-bob-999" {
 		t.Fatalf("expected bob's GoogleID to be updated, got: %s", resBob.User.GoogleID)
+	}
+	if resBob.User.AvatarURL != "https://lh3.googleusercontent.com/bob.jpg" {
+		t.Fatalf("expected bob's avatar URL to be updated during auto-linking, got: %s", resBob.User.AvatarURL)
 	}
 	if !resBob.User.EmailVerified {
 		t.Fatalf("expected bob's email to become verified after google login")

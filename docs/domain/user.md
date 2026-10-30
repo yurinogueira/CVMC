@@ -37,6 +37,7 @@ type User struct {
     Email                      string     `json:"email"`
     PasswordHash               string     `json:"-"`
     GoogleID                   string     `json:"googleId,omitempty"`
+    AvatarURL                  string     `json:"avatarUrl,omitempty"`
     Role                       Role       `json:"role"`
     EmailVerified              bool       `json:"emailVerified"`
     EmailVerifiedAt            *time.Time `json:"emailVerifiedAt,omitempty"`
@@ -70,6 +71,19 @@ O CVMC oferece autenticação via Google Cloud sem uso de intermediários (Googl
 - `POST /api/v1/user/auth-providers/google/unlink`: Desvincula a conta Google.
 - `POST /api/v1/user/password/set`: Permite que usuários cadastrados exclusivamente via Google definam uma senha local inicial para login convencional.
 - `DELETE /api/v1/user/account`: Exclui permanentemente a conta do usuário autenticado e executa a remoção em cascata de todos os seus dados (veículos próprios, manutenções, abastecimentos, vínculos de compartilhamento em veículos de terceiros e tokens FCM de dispositivos móveis), limpando também os cookies `HttpOnly` de sessão. Exige confirmação da senha atual (`currentPassword`) para contas com senha local ou a palavra-chave `"EXCLUIR"` (`confirmation`) para contas exclusivamente sociais.
+
+### Sincronização e Exibição de Foto de Perfil (AvatarURL)
+- **Captura no Token Google**: O claim `picture` do Google ID Token é capturado no payload e sanitizado via `domainuser.SanitizeAvatarURL()`.
+- **Sanitização Estrita de Esquema**: Rejeita esquemas inseguros (`http://`, `javascript:`, URIs de dados base64), exigindo estritamente esquema `https://` com host válido para prevenir SSRF ou injeções arbitrárias.
+- **Sincronização Contínua**:
+  - No registro de novo usuário via Google (`POST /api/v1/auth/google`), a foto é persistida em `AvatarURL`.
+  - No login recorrente ou auto-linking por e-mail (`POST /api/v1/auth/google`), `AvatarURL` é atualizada automaticamente caso o Google forneça uma nova URL de imagem.
+  - Na vinculação de conta Google (`POST /api/v1/user/auth-providers/google/link`), o avatar é preenchido caso o usuário ainda não possua foto cadastrada.
+  - Na desvinculação (`POST /api/v1/user/auth-providers/google/unlink`), a foto atual é mantida garantindo a integridade visual do perfil.
+- **Renderização e Proteção no Frontend**:
+  - Os componentes `<Avatar>` na `Topbar`, `Sidebar` e `ProfilePage` consomem `user.avatarUrl`.
+  - Configuração obrigatória de `slotProps={{ img: { referrerPolicy: "no-referrer" } }}` para evitar bloqueios de requisição com erro `403 Forbidden` pelo CDN `*.googleusercontent.com`.
+  - Fallback automático para a inicial maiúscula do nome do usuário caso a imagem falhe ao carregar ou o campo seja nulo.
 
 ---
 

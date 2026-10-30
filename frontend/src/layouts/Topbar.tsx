@@ -165,6 +165,9 @@ export function Topbar({ onDrawerToggle }: TopbarProps) {
         >
           <IconButton onClick={handleMenuOpen} size="small" sx={{ p: 0.5 }}>
             <Avatar
+              src={user?.avatarUrl}
+              alt={user?.name || "Avatar"}
+              slotProps={{ img: { referrerPolicy: "no-referrer" } }}
               sx={{
                 width: 38,
                 height: 38,

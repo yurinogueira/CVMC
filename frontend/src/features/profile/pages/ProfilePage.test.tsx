@@ -176,4 +176,35 @@ describe("ProfilePage", () => {
       screen.getByRole("link", { name: /Política de Privacidade/i }),
     ).toBeInTheDocument();
   });
+
+  it("renders user avatar with Google photo and referrerPolicy='no-referrer'", async () => {
+    vi.mocked(profileService.getProfile).mockResolvedValueOnce({
+      user: {
+        id: "user-5",
+        name: "Google Photo User",
+        email: "photo@cvmc.com",
+        avatarUrl: "https://lh3.googleusercontent.com/photo.jpg",
+        emailVerified: true,
+        maxVehicles: 3,
+        createdAt: "2026-08-25T00:00:00Z",
+      },
+      vehiclesCount: 0,
+      maxVehicles: 3,
+    });
+
+    render(
+      <BrowserRouter>
+        <ProfilePage />
+      </BrowserRouter>,
+    );
+
+    await waitFor(() => {
+      const avatarImg = screen.getByRole("img", { name: "Google Photo User" });
+      expect(avatarImg).toHaveAttribute(
+        "src",
+        "https://lh3.googleusercontent.com/photo.jpg",
+      );
+      expect(avatarImg).toHaveAttribute("referrerpolicy", "no-referrer");
+    });
+  });
 });

@@ -385,6 +385,13 @@ func (s *Service) LoginWithGoogle(ctx context.Context, idToken string) (AuthOutp
 	// 1. Try to find user by GoogleID
 	user, err := s.users.FindByGoogleID(ctx, payload.Subject)
 	if err == nil {
+		if pic := domainuser.SanitizeAvatarURL(payload.Picture); pic != "" && pic != user.AvatarURL {
+			user.AvatarURL = pic
+			user.UpdatedAt = s.now().UTC()
+			if updated, updateErr := s.users.Update(ctx, user); updateErr == nil {
+				user = updated
+			}
+		}
 		pair, err := s.tokens.GeneratePair(user)
 		if err != nil {
 			return AuthOutput{}, err
@@ -400,6 +407,9 @@ func (s *Service) LoginWithGoogle(ctx context.Context, idToken string) (AuthOutp
 		if !user.EmailVerified {
 			user.EmailVerified = true
 			user.EmailVerifiedAt = &now
+		}
+		if pic := domainuser.SanitizeAvatarURL(payload.Picture); pic != "" {
+			user.AvatarURL = pic
 		}
 		user.UpdatedAt = now
 		updated, err := s.users.Update(ctx, user)
@@ -425,6 +435,7 @@ func (s *Service) LoginWithGoogle(ctx context.Context, idToken string) (AuthOutp
 		Name:            name,
 		Email:           payload.Email,
 		GoogleID:        payload.Subject,
+		AvatarURL:       domainuser.SanitizeAvatarURL(payload.Picture),
 		PasswordHash:    "",
 		EmailVerified:   true,
 		EmailVerifiedAt: &now,

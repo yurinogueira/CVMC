@@ -20,6 +20,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Avatar,
 } from "@mui/material";
 import VerifiedUserRoundedIcon from "@mui/icons-material/VerifiedUserRounded";
 import GppMaybeRoundedIcon from "@mui/icons-material/GppMaybeRounded";
@@ -191,6 +192,12 @@ export function ProfilePage() {
       setAuthProviders(updatedProviders);
       const updatedProfile = await profileService.getProfile();
       setProfileData(updatedProfile);
+      const currentUser = useAuthStore.getState().user;
+      if (currentUser) {
+        setUser({ ...currentUser, ...updatedProfile.user });
+      } else {
+        setUser(updatedProfile.user);
+      }
     } catch (err: unknown) {
       const errorObj = err as { response?: { data?: { message?: string } } };
       setProviderError(
@@ -212,6 +219,12 @@ export function ProfilePage() {
       setAuthProviders(updatedProviders);
       const updatedProfile = await profileService.getProfile();
       setProfileData(updatedProfile);
+      const currentUser = useAuthStore.getState().user;
+      if (currentUser) {
+        setUser({ ...currentUser, ...updatedProfile.user });
+      } else {
+        setUser(updatedProfile.user);
+      }
     } catch (err: unknown) {
       const errorObj = err as { response?: { data?: { message?: string } } };
       setProviderError(
@@ -361,14 +374,48 @@ export function ProfilePage() {
       maximumFractionDigits: 2,
     });
 
+  const displayName = user?.name || profileData?.user?.name || "";
+  const avatarInitial = displayName.trim()
+    ? displayName.trim().charAt(0).toUpperCase()
+    : "U";
+
   return (
     <Box>
-      {/* Page Title */}
-      <PageHeader
-        title="Meu Perfil & Configurações"
-        subtitle="Gerencie seus dados de acesso, status de e-mail e limites de frota."
-        mb={4}
-      />
+      {/* Page Title & Profile Header */}
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: { xs: 2, sm: 2.5 },
+          mb: 4,
+        }}
+      >
+        <Avatar
+          src={user?.avatarUrl || profileData?.user?.avatarUrl}
+          alt={displayName || "Avatar"}
+          slotProps={{ img: { referrerPolicy: "no-referrer" } }}
+          data-testid="profile-avatar"
+          sx={{
+            width: { xs: 56, sm: 68 },
+            height: { xs: 56, sm: 68 },
+            bgcolor: "primary.main",
+            fontSize: { xs: "1.5rem", sm: "1.875rem" },
+            fontWeight: 700,
+            border: "2px solid #E2E8F0",
+            boxShadow: "0 2px 8px rgba(15, 23, 42, 0.08)",
+            flexShrink: 0,
+          }}
+        >
+          {avatarInitial}
+        </Avatar>
+        <Box sx={{ minWidth: 0, flex: 1 }}>
+          <PageHeader
+            title="Meu Perfil & Configurações"
+            subtitle="Gerencie seus dados de acesso, status de e-mail e limites de frota."
+            mb={0}
+          />
+        </Box>
+      </Box>
 
       {pageError && (
         <Alert severity="error" sx={{ mb: 3 }}>

@@ -232,6 +232,9 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
             }}
           >
             <Avatar
+              src={user?.avatarUrl}
+              alt={user?.name || "Avatar"}
+              slotProps={{ img: { referrerPolicy: "no-referrer" } }}
               sx={{
                 width: 36,
                 height: 36,

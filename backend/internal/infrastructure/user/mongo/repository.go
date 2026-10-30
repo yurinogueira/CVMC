@@ -20,6 +20,7 @@ type userDoc struct {
 	Email                      string     `bson:"email"`
 	PasswordHash               string     `bson:"passwordHash"`
 	GoogleID                   string     `bson:"googleId,omitempty"`
+	AvatarURL                  string     `bson:"avatarUrl,omitempty"`
 	EmailVerified              bool       `bson:"emailVerified"`
 	EmailVerifiedAt            *time.Time `bson:"emailVerifiedAt,omitempty"`
 	EmailVerificationTokenHash string     `bson:"emailVerificationTokenHash,omitempty"`
@@ -55,6 +56,7 @@ func (d userDoc) toDomain() domainuser.User {
 		Email:                      d.Email,
 		PasswordHash:               d.PasswordHash,
 		GoogleID:                   d.GoogleID,
+		AvatarURL:                  d.AvatarURL,
 		EmailVerified:              d.EmailVerified,
 		EmailVerifiedAt:            d.EmailVerifiedAt,
 		EmailVerificationTokenHash: d.EmailVerificationTokenHash,
@@ -140,6 +142,7 @@ func (r *Repository) Create(ctx context.Context, user domainuser.User) (domainus
 		Email:                      user.Email,
 		PasswordHash:               user.PasswordHash,
 		GoogleID:                   strings.TrimSpace(user.GoogleID),
+		AvatarURL:                  strings.TrimSpace(user.AvatarURL),
 		EmailVerified:              user.EmailVerified,
 		EmailVerifiedAt:            user.EmailVerifiedAt,
 		EmailVerificationTokenHash: user.EmailVerificationTokenHash,
@@ -189,6 +192,7 @@ func (r *Repository) Update(ctx context.Context, user domainuser.User) (domainus
 			"email":                      user.Email,
 			"passwordHash":               user.PasswordHash,
 			"googleId":                   strings.TrimSpace(user.GoogleID),
+			"avatarUrl":                  strings.TrimSpace(user.AvatarURL),
 			"emailVerified":              user.EmailVerified,
 			"emailVerifiedAt":            user.EmailVerifiedAt,
 			"emailVerificationTokenHash": user.EmailVerificationTokenHash,

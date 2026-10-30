@@ -239,6 +239,11 @@ func (s *Service) LinkGoogleAccount(ctx context.Context, userID, idToken string)
 		user.EmailVerified = true
 		user.EmailVerifiedAt = &now
 	}
+	if user.AvatarURL == "" {
+		if pic := domainuser.SanitizeAvatarURL(payload.Picture); pic != "" {
+			user.AvatarURL = pic
+		}
+	}
 	user.UpdatedAt = now
 
 	_, err = s.users.Update(ctx, user)

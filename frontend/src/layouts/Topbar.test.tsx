@@ -16,9 +16,14 @@ vi.mock("../services/notifications/push.service", () => ({
   },
 }));
 
+let mockUser: { name?: string; email?: string; avatarUrl?: string } | null = {
+  name: "Yuri Nogueira",
+  email: "yuri@cvmc.dev.br",
+};
+
 vi.mock("../features/auth/state/auth.store", () => ({
   useAuthStore: () => ({
-    user: { name: "Yuri Nogueira", email: "yuri@cvmc.dev.br" },
+    user: mockUser,
     clear: vi.fn(),
   }),
 }));
@@ -76,5 +81,32 @@ describe("Topbar Component", () => {
     );
 
     expect(screen.getByText("Detalhes do Veículo")).toBeInTheDocument();
+  });
+
+  it("renders avatar image with referrerPolicy='no-referrer' when avatarUrl is present", () => {
+    mockUser = {
+      name: "Yuri Nogueira",
+      email: "yuri@cvmc.dev.br",
+      avatarUrl: "https://lh3.googleusercontent.com/avatar.jpg",
+    };
+
+    render(
+      <MemoryRouter initialEntries={["/dashboard"]}>
+        <Topbar onDrawerToggle={vi.fn()} />
+      </MemoryRouter>,
+    );
+
+    const avatarImg = screen.getByRole("img", { name: "Yuri Nogueira" });
+    expect(avatarImg).toHaveAttribute(
+      "src",
+      "https://lh3.googleusercontent.com/avatar.jpg",
+    );
+    expect(avatarImg).toHaveAttribute("referrerpolicy", "no-referrer");
+
+    // Reset mockUser
+    mockUser = {
+      name: "Yuri Nogueira",
+      email: "yuri@cvmc.dev.br",
+    };
   });
 });
