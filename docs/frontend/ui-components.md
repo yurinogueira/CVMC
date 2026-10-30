@@ -8,7 +8,7 @@ tags:
   - mui
   - design-system
   - accessibility
-timestamp: 2026-10-29
+timestamp: 2026-10-30
 ---
 
 # 🎨 Componentes UI e Design System — CVMC
@@ -77,6 +77,11 @@ Para prevenir estouro horizontal (*horizontal overflow*) e garantir adaptação 
 8. **Grid Responsivo em Resoluções Intermediárias e Monitores Verticais (`MaintenancePage.tsx`)**:
    - Em grids com alta densidade de métricas e ações (como os cards de `UpcomingMaintenanceCard.tsx`), a presença do drawer lateral persistente de 260px (`DRAWER_WIDTH`) a partir de `md` (900px) reduz a largura útil do container para ~690px em resoluções como 1000x1800.
    - Para evitar achatamento visual, truncamento de badges de status e quebras descompensadas de texto, o grid preventivo adota a proporção adaptativa `size={{ xs: 12, sm: 6, md: 6, lg: 4 }}` (renderizando 2 colunas no breakpoint `md` e reservando 3 colunas para larguras amplas `lg` >= 1200px), associado a confinamento interno com `minWidth: 0` e `overflowWrap: "break-word"`.
+9. **Harmonização e Distribuição Simétrica de Badges de Especificações Técnicas e Ações (`VehicleDetailsPage.tsx`)**:
+   - Em cabeçalhos de detalhe de entidade com especificações técnicas e ações secundárias, os elementos utilizam uma composição responsiva de dois níveis:
+     - O container principal adota `Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} useFlexGap` com alinhamento estendido no mobile (`alignItems: { xs: "stretch", sm: "center" }`).
+     - Os badges informativos (Chips de Ano e Quilometragem) são agrupados em um subcontainer flexível com `width: { xs: "100%", sm: "auto" }`, permitindo expansão proporcional e simétrica dos chips em dispositivos móveis (`flex: { xs: 1, sm: "initial" }`, `justifyContent: "center"`).
+     - O botão de ação ("Ajustar Intervalos de Revisão") estende-se para largura total no mobile (`width: { xs: "100%", sm: "auto" }`) e preserva largura intrínseca alinhado horizontalmente em telas `sm`+, eliminando quebras desbalanceadas e espaços vazios assimétricos.
 
 ---
 

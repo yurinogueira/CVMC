@@ -149,6 +149,34 @@ describe("VehicleDetailsPage", () => {
     });
   });
 
+  it("renders specs badges and opens maintenance intervals dialog from header button", async () => {
+    vi.mocked(carService.get).mockResolvedValue(mockCar);
+    vi.mocked(maintenanceService.listByCar).mockResolvedValue([]);
+    vi.mocked(fuelService.listByCar).mockResolvedValue([]);
+
+    render(
+      <BrowserRouter>
+        <VehicleDetailsPage />
+      </BrowserRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Ano: 2021/2022")).toBeInTheDocument();
+      expect(screen.getByText("45.000 km")).toBeInTheDocument();
+    });
+
+    const adjustButton = screen.getByRole("button", {
+      name: /ajustar intervalos de revisão/i,
+    });
+    expect(adjustButton).toBeInTheDocument();
+
+    fireEvent.click(adjustButton);
+
+    await waitFor(() => {
+      expect(screen.getByText("Intervalos de Revisão")).toBeInTheDocument();
+    });
+  });
+
   it("renders fuelings list by default on Tab 0", async () => {
     vi.mocked(carService.get).mockResolvedValue(mockCar);
     vi.mocked(maintenanceService.listByCar).mockResolvedValue([]);
