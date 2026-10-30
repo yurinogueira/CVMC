@@ -6,14 +6,19 @@ tags:
   - log
   - audit
   - history
-timestamp: 2026-10-29
+timestamp: 2026-10-30
 ---
 
 # 🕒 Diário de Bordo & Histórico Cronológico — CVMC
 
-Este documento funciona como o índice mestre de todas as mudanças de engenharia aplicadas ao projeto **CVMC (Como Vai Meu Carro)**. Cada entrada detalhada reside em um arquivo diário específico na pasta [docs/logs/2026-10-29.md](logs/2026-10-29.md), garantindo economia de tokens e histórico auditável.
+Este documento funciona como o índice mestre de todas as mudanças de engenharia aplicadas ao projeto **CVMC (Como Vai Meu Carro)**. Cada entrada detalhada reside em um arquivo diário específico na pasta [docs/logs/2026-10-30.md](logs/2026-10-30.md), garantindo economia de tokens e histórico auditável.
 
 Para navegação geral, retorne ao [Catálogo Canônico](index.md).
+
+## 📅 [2026-10-30](logs/2026-10-30.md) — Avaliação de Compatibilidade do MongoDB 9 (#148), Governança no Dependabot (#132) e ADR 0005
+- **Avaliação de Compatibilidade do MongoDB 9 e Integridade Local (#148)**: Análise técnica e empírica da proposta do Dependabot ([#132](https://github.com/yurinogueira/CVMC/pull/132)) para migração do MongoDB de 8 para 9 no `docker-compose.yml`. Identificou-se que a substituição direta da imagem causa encerramento fatal do container local (`exitCode: 62`) devido a incompatibilidades com o `featureCompatibilityVersion` (8.2) de volumes existentes (`mongo_data`).
+- **Paridade Estrita com Cluster Gerenciado MongoDB Atlas M0 (Zero-Divergence)**: O cluster gratuito gerenciado em nuvem (`terraform/mongodb.tf`) opera fixado na linha MongoDB 8.0 LTS sem suporte ao MongoDB 9. A adoção da versão 9 apenas no desenvolvimento local violaria a paridade com a produção.
+- **Governança no Dependabot e Formalização da ADR 0005**: Adição de regra `ignore` para `version-update:semver-major` no `.github/dependabot.yml` para a dependência `mongo`, formalização da [ADR 0005: Política de Versões do MongoDB e Paridade com MongoDB Atlas M0](adrs/0005-mongodb-version-policy-and-atlas-parity.md), atualização das diretrizes em `docs/architecture/multitenancy-and-data.md` e `docs/operations/docker-and-local-dev.md`, e plano de fechamento do PR #132 com embasamento técnico.
 
 ## 📅 [2026-10-29](logs/2026-10-29.md) — Correções no Relatório PDF (#155), Padronização de Hierarquia Tipográfica & Topbar (#156), Relatórios PDF (#144) e Limpeza da Tela de Perfil (#158)
 - **Correções de Diagramação, Quebra de Página e Transbordo no Relatório PDF (#155)**: Refinamento visual crítico do motor `fpdf` (`builder.go`), corrigindo: (1) sobreposição de modelos longos da FIPE no card de veículo através de redistribuição de colunas (`40mm`, `64mm`, `36mm`, `34mm`) e truncamento inteligente com reticências (`fitText`); (2) restauração do preenchimento zebra (`setRowFill`) após quebra de página, eliminando o fundo escuro Slate 900 com texto escuro na página 2+ da tabela; e (3) enquadramento dinâmico de comprovantes com cabeçalho de altura adaptativa (28mm a 34mm) para títulos extensos, sanitização de anexos ocultando hashes UUID brutos (`7dd77e08...jpeg`) e cálculo dinâmico de `posY` e `availH` para evitar colisões com o cabeçalho e o rodapé.

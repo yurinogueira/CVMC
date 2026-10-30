@@ -42,11 +42,12 @@ O script `./scripts/dev.sh` facilita as rotinas diárias:
 
 1. **`backend`**: API REST em Go (porta interna 8080).
 2. **`frontend`**: Aplicação React com Vite Hot Reload (porta 5173).
-3. **`mongodb`**: Instância local de desenvolvimento do MongoDB (rede interna de containers sem exposição de portas inseguras ao host).
+3. **`mongodb`**: Instância local de desenvolvimento do MongoDB utilizando a imagem `mongo:8` (rede interna de containers sem exposição de portas inseguras ao host). A versão é fixada na linha 8 LTS por paridade estrita com o MongoDB Atlas M0 em produção (vide [ADR 0005](../adrs/0005-mongodb-version-policy-and-atlas-parity.md)).
 
 ---
 
 ## 🔗 Referências Cruzadas
 - [Catálogo Canônico](../index.md)
+- [ADR 0005: Política de Versões do MongoDB](../adrs/0005-mongodb-version-policy-and-atlas-parity.md)
 - [Ambiente e Configuração](environment-and-config.md)
 - [Pipelines de CI/CD](ci-cd-pipelines.md)

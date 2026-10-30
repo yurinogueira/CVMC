@@ -93,8 +93,18 @@ Para garantir consultas instantâneas e prevenção de duplicações:
 
 ---
 
+## ⚙️ 4. Política de Versões e Paridade de Ambientes
+
+Em conformidade com a [ADR 0005](../adrs/0005-mongodb-version-policy-and-atlas-parity.md), o CVMC adota a linha **MongoDB 8 LTS**:
+- **Ambiente Local (`docker-compose.yml`)**: Imagem oficial `mongo:8`.
+- **Produção (Nuvem)**: Cluster gerenciado MongoDB Atlas tier M0 (`terraform/mongodb.tf`), mantido na versão 8.0 LTS.
+- **Governança**: Upgrades de major version (como a linha 9) exigem prévia homologação e suporte oficial no MongoDB Atlas M0, preservando estrita paridade operacional (Zero-Divergence) e estabilidade de volumes locais.
+
+---
+
 ## 🔗 Referências Cruzadas
 - [Catálogo Canônico](../index.md)
+- [ADR 0005: Política de Versões do MongoDB](../adrs/0005-mongodb-version-policy-and-atlas-parity.md)
 - [Visão Geral da Arquitetura](overview.md)
 - [Subdomínio de Veículos](../domain/car.md)
 - [Subdomínio de Manutenções](../domain/maintenance.md)

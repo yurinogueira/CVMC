@@ -95,6 +95,9 @@ updates:
       docker-compose:
         patterns:
           - "*"
+    ignore:
+      - dependency-name: "mongo"
+        update-types: ["version-update:semver-major"]
     commit-message:
       prefix: "docker-compose"
       include: "scope"
