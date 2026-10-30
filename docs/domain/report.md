@@ -67,9 +67,11 @@ type ReportJob struct {
    - Chamada a `runtime.GC()` ao final de cada execução para liberação ativa de memória.
    - Reconciliação automática no startup do servidor: jobs em estado `pending` ou `processing` são re-enfileirados.
 
-2. **Diagramação Inteligente de Comprovantes**:
-   - Cada comprovante de imagem (JPG, PNG, WebP) ganha página própria A4 dedicada ao final do dossiê, com cabeçalho contendo identificação da manutenção (Título, Data, Odômetro, Valor) e imagem redimensionada proporcionalmente.
-   - Comprovantes em formato PDF (ex: notas fiscais eletrônicas) têm suas páginas vetoriais mescladas diretamente ao final do documento gerado via `pdfcpu`.
+2. **Diagramação Inteligente de Comprovantes e Resiliência Visual**:
+   - **Card de Informações do Veículo**: Colunas com distribuição balanceada (40mm, 64mm, 36mm, 34mm) e truncamento inteligente com reticências (`fitText`) garantindo que nomes de modelos extensos vindos da tabela FIPE não sobreponham o ano de fabricação ou outras colunas adjacentes.
+   - **Tabela Cronológica & Quebra de Página**: Cálculo preventivo de altura de linha via `pdf.SplitLines` antes de iniciar cada registro e restauração mandatória da cor de preenchimento zebra (`SetFillColor`) na quebra de página (evitando que a primeira linha de páginas subsequentes herde o fundo Slate 900 do cabeçalho).
+   - **Card de Comprovantes de Manutenção**: Altura adaptativa (28mm a 34mm) com quebra controlada em até 2 linhas para títulos longos de múltiplos serviços, sanitização de nomes de arquivos UUID internos (ex.: `7dd77e08...jpeg`) limitando a 25 caracteres, e cálculo dinâmico de enquadramento da imagem (`posY = headerBottomY + margin` e `availH = 275 - topY`) garantindo que a imagem nunca colida com o cabeçalho nem com o rodapé.
+   - Cada comprovante de imagem (JPG, PNG, WebP) ganha página própria A4 dedicada ao final do dossiê, e comprovantes em formato PDF (ex: notas fiscais eletrônicas) têm suas páginas vetoriais mescladas diretamente ao final do documento gerado via `pdfcpu`.
 
 3. **Notificações Push (FCM)**:
    - Ao concluir a geração do relatório (`StatusCompleted`), uma notificação push é enviada aos dispositivos registrados do usuário com metadados para redirecionamento.

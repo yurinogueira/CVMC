@@ -10,6 +10,8 @@ import (
 	"image/png"
 	_ "image/png"
 	"io"
+	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -98,13 +100,18 @@ func (b *Builder) BuildMaintenanceReport(ctx context.Context, car domaincar.Car,
 		}
 	}
 
+	col0W := 40.0
+	col1W := 64.0
+	col2W := 36.0
+	col3W := 34.0
+
 	pdf.SetFont("Arial", "B", 9)
 	pdf.SetTextColor(textMutedR, textMutedG, textMutedB)
 	pdf.SetXY(18, 52)
-	pdf.Cell(40, 5, tr("Veículo:"))
-	pdf.Cell(50, 5, tr("Fabricante / Modelo:"))
-	pdf.Cell(45, 5, tr("Ano Fab / Modelo:"))
-	pdf.Cell(39, 5, tr("Km Atual:"))
+	pdf.Cell(col0W, 5, tr("Veículo:"))
+	pdf.Cell(col1W, 5, tr("Fabricante / Modelo:"))
+	pdf.Cell(col2W, 5, tr("Ano Fab / Modelo:"))
+	pdf.Cell(col3W, 5, tr("Km Atual:"))
 
 	pdf.SetFont("Arial", "", 9)
 	pdf.SetTextColor(textDarkR, textDarkG, textDarkB)
@@ -113,34 +120,41 @@ func (b *Builder) BuildMaintenanceReport(ctx context.Context, car domaincar.Car,
 	if carTitle == "" {
 		carTitle = car.Model
 	}
-	pdf.Cell(40, 5, tr(carTitle))
-	pdf.Cell(50, 5, tr(fmt.Sprintf("%s %s", car.Manufacturer, car.Model)))
-	pdf.Cell(45, 5, tr(fmt.Sprintf("%d / %d", car.YearManufacture, car.YearModel)))
-	pdf.Cell(39, 5, tr(fmt.Sprintf("%d km", car.LastMileage)))
+	makerModel := fmt.Sprintf("%s %s", car.Manufacturer, car.Model)
+	yearFabMod := fmt.Sprintf("%d / %d", car.YearManufacture, car.YearModel)
+	kmCurrent := fmt.Sprintf("%d km", car.LastMileage)
+
+	pdf.Cell(col0W, 5, fitText(pdf, tr, carTitle, col0W-2))
+	pdf.Cell(col1W, 5, fitText(pdf, tr, makerModel, col1W-2))
+	pdf.Cell(col2W, 5, fitText(pdf, tr, yearFabMod, col2W-2))
+	pdf.Cell(col3W, 5, fitText(pdf, tr, kmCurrent, col3W-2))
 
 	pdf.SetFont("Arial", "B", 9)
 	pdf.SetTextColor(textMutedR, textMutedG, textMutedB)
 	pdf.SetXY(18, 64)
-	pdf.Cell(40, 5, tr("Total de Manutenções:"))
-	pdf.Cell(50, 5, tr("Investimento Total:"))
-	pdf.Cell(45, 5, tr("Combustível:"))
-	pdf.Cell(39, 5, tr("Cód. FIPE:"))
+	pdf.Cell(col0W, 5, tr("Total de Manutenções:"))
+	pdf.Cell(col1W, 5, tr("Investimento Total:"))
+	pdf.Cell(col2W, 5, tr("Combustível:"))
+	pdf.Cell(col3W, 5, tr("Cód. FIPE:"))
 
 	pdf.SetFont("Arial", "", 9)
 	pdf.SetTextColor(textDarkR, textDarkG, textDarkB)
 	pdf.SetXY(18, 69)
-	pdf.Cell(40, 5, tr(fmt.Sprintf("%d registro(s)", len(maintenances))))
-	pdf.Cell(50, 5, tr(fmt.Sprintf("R$ %.2f", totalCost)))
+	totalMaintStr := fmt.Sprintf("%d registro(s)", len(maintenances))
+	totalCostStr := fmt.Sprintf("R$ %.2f", totalCost)
 	fuelLabel := car.Fuel
 	if fuelLabel == "" {
 		fuelLabel = "Flex / Não inf."
 	}
-	pdf.Cell(45, 5, tr(fuelLabel))
 	fipeLabel := car.FIPECode
 	if fipeLabel == "" {
 		fipeLabel = "-"
 	}
-	pdf.Cell(39, 5, tr(fipeLabel))
+
+	pdf.Cell(col0W, 5, fitText(pdf, tr, totalMaintStr, col0W-2))
+	pdf.Cell(col1W, 5, fitText(pdf, tr, totalCostStr, col1W-2))
+	pdf.Cell(col2W, 5, fitText(pdf, tr, fuelLabel, col2W-2))
+	pdf.Cell(col3W, 5, fitText(pdf, tr, fipeLabel, col3W-2))
 
 	pdf.SetY(85)
 
@@ -152,34 +166,40 @@ func (b *Builder) BuildMaintenanceReport(ctx context.Context, car domaincar.Car,
 
 	// Table Header
 	colW := []float64{22, 22, 90, 24, 24} // Total = 182mm
-	pdf.SetFillColor(primaryR, primaryG, primaryB)
-	pdf.SetTextColor(255, 255, 255)
-	pdf.SetFont("Arial", "B", 8)
 
-	pdf.CellFormat(colW[0], 7, tr("Data"), "1", 0, "C", true, 0, "")
-	pdf.CellFormat(colW[1], 7, tr("Km"), "1", 0, "C", true, 0, "")
-	pdf.CellFormat(colW[2], 7, tr("Descrição / Serviços"), "1", 0, "L", true, 0, "")
-	pdf.CellFormat(colW[3], 7, tr("Comprovantes"), "1", 0, "C", true, 0, "")
-	pdf.CellFormat(colW[4], 7, tr("Custo (R$)"), "1", 1, "R", true, 0, "")
+	renderTableHeader := func() {
+		pdf.SetFillColor(primaryR, primaryG, primaryB)
+		pdf.SetTextColor(255, 255, 255)
+		pdf.SetFont("Arial", "B", 8)
+
+		pdf.CellFormat(colW[0], 7, tr("Data"), "1", 0, "C", true, 0, "")
+		pdf.CellFormat(colW[1], 7, tr("Km"), "1", 0, "C", true, 0, "")
+		pdf.CellFormat(colW[2], 7, tr("Descrição / Serviços"), "1", 0, "L", true, 0, "")
+		pdf.CellFormat(colW[3], 7, tr("Comprovantes"), "1", 0, "C", true, 0, "")
+		pdf.CellFormat(colW[4], 7, tr("Custo (R$)"), "1", 1, "R", true, 0, "")
+
+		pdf.SetFont("Arial", "", 8)
+		pdf.SetTextColor(textDarkR, textDarkG, textDarkB)
+	}
+
+	renderTableHeader()
 
 	if len(maintenances) == 0 {
 		pdf.SetFont("Arial", "I", 9)
 		pdf.SetTextColor(textMutedR, textMutedG, textMutedB)
 		pdf.CellFormat(182, 10, tr("Nenhuma manutenção registrada para este veículo até o momento."), "1", 1, "C", false, 0, "")
 	} else {
-		pdf.SetFont("Arial", "", 8)
-		pdf.SetTextColor(textDarkR, textDarkG, textDarkB)
+		setRowFill := func(idx int) {
+			if idx%2 == 0 {
+				pdf.SetFillColor(255, 255, 255)
+			} else {
+				pdf.SetFillColor(bgLightR, bgLightG, bgLightB)
+			}
+		}
 
 		for i, m := range maintenances {
 			if err := ctx.Err(); err != nil {
 				return nil, err
-			}
-
-			// Alternate row background
-			if i%2 == 0 {
-				pdf.SetFillColor(255, 255, 255)
-			} else {
-				pdf.SetFillColor(bgLightR, bgLightG, bgLightB)
 			}
 
 			dateStr := m.Date.Format("02/01/2006")
@@ -203,21 +223,24 @@ func (b *Builder) BuildMaintenanceReport(ctx context.Context, car domaincar.Car,
 				desc = fmt.Sprintf("%s - %s", desc, m.Description)
 			}
 
-			// Check if new page needed
-			if pdf.GetY() > 265 {
-				pdf.AddPage()
-				// Reprint header on page break
-				pdf.SetFillColor(primaryR, primaryG, primaryB)
-				pdf.SetTextColor(255, 255, 255)
-				pdf.SetFont("Arial", "B", 8)
-				pdf.CellFormat(colW[0], 7, tr("Data"), "1", 0, "C", true, 0, "")
-				pdf.CellFormat(colW[1], 7, tr("Km"), "1", 0, "C", true, 0, "")
-				pdf.CellFormat(colW[2], 7, tr("Descrição / Serviços"), "1", 0, "L", true, 0, "")
-				pdf.CellFormat(colW[3], 7, tr("Comprovantes"), "1", 0, "C", true, 0, "")
-				pdf.CellFormat(colW[4], 7, tr("Custo (R$)"), "1", 1, "R", true, 0, "")
-				pdf.SetFont("Arial", "", 8)
-				pdf.SetTextColor(textDarkR, textDarkG, textDarkB)
+			// Pre-calculate line height to avoid mid-row page breaks
+			pdf.SetFont("Arial", "", 8)
+			lines := pdf.SplitLines([]byte(tr(desc)), colW[2])
+			estHeight := float64(len(lines)) * 5.0
+			if estHeight < 7.0 {
+				estHeight = 7.0
 			}
+
+			// Check if new page needed
+			if pdf.GetY()+estHeight > 265 {
+				pdf.AddPage()
+				renderTableHeader()
+			}
+
+			// Restore alternating row fill color (fixes dark background on new page)
+			setRowFill(i)
+			pdf.SetFont("Arial", "", 8)
+			pdf.SetTextColor(textDarkR, textDarkG, textDarkB)
 
 			startX := pdf.GetX()
 			startY := pdf.GetY()
@@ -271,8 +294,8 @@ func (b *Builder) BuildMaintenanceReport(ctx context.Context, car domaincar.Car,
 				pdfReceiptStreams = append(pdfReceiptStreams, rawBytes)
 				// Transition / bookmark page in main PDF
 				pdf.AddPage()
-				b.renderReceiptHeader(pdf, tr, m, att, attIdx+1, true)
-				pdf.SetY(60)
+				headerBottomY := b.renderReceiptHeader(pdf, tr, m, att, attIdx+1, true)
+				pdf.SetY(headerBottomY + 16.0)
 				pdf.SetFont("Arial", "I", 10)
 				pdf.SetTextColor(textMutedR, textMutedG, textMutedB)
 				pdf.CellFormat(182, 10, tr("O documento original em formato PDF (Nota Fiscal / Ordem de Serviço) foi anexado nas páginas a seguir."), "", 1, "C", false, 0, "")
@@ -310,11 +333,13 @@ func (b *Builder) BuildMaintenanceReport(ctx context.Context, car domaincar.Car,
 			}
 
 			pdf.AddPage()
-			b.renderReceiptHeader(pdf, tr, m, att, attIdx+1, false)
+			headerBottomY := b.renderReceiptHeader(pdf, tr, m, att, attIdx+1, false)
 
-			// Calculate dimensions to fit inside A4 page (max width: 182mm, max height: 215mm)
+			// Calculate dimensions to fit inside A4 page (max width: 182mm, page bottom limit: 275mm)
+			margin := 6.0
+			topY := headerBottomY + margin
 			availW := 182.0
-			availH := 215.0
+			availH := 275.0 - topY
 
 			scaleX := availW / float64(imgCfg.Width)
 			scaleY := availH / float64(imgCfg.Height)
@@ -326,7 +351,7 @@ func (b *Builder) BuildMaintenanceReport(ctx context.Context, car domaincar.Car,
 			finalW := float64(imgCfg.Width) * scale
 			finalH := float64(imgCfg.Height) * scale
 			posX := 14.0 + (availW-finalW)/2.0
-			posY := 48.0 + (availH-finalH)/2.0
+			posY := topY + (availH-finalH)/2.0
 
 			imageName := fmt.Sprintf("receipt_%s_%d", m.ID, imgReceiptCount)
 			imgReceiptCount++
@@ -375,44 +400,142 @@ func (b *Builder) BuildMaintenanceReport(ctx context.Context, car domaincar.Car,
 	return mergedBuf.Bytes(), nil
 }
 
-func (b *Builder) renderReceiptHeader(pdf *fpdf.Fpdf, tr func(string) string, m domainmaint.Maintenance, att domainmaint.Attachment, num int, isPDF bool) {
+var uuidRegex = regexp.MustCompile(`(?i)^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}`)
+
+func sanitizeAttachmentName(name string) string {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return "comprovante"
+	}
+
+	ext := filepath.Ext(name)
+	base := strings.TrimSuffix(name, ext)
+	extClean := strings.TrimPrefix(ext, ".")
+
+	// If the base starts with or is a UUID, shorten it (e.g. 7dd77e08...jpeg)
+	if uuidRegex.MatchString(base) {
+		if extClean != "" {
+			return base[:8] + "..." + extClean
+		}
+		return base[:8] + "..."
+	}
+
+	// If name exceeds 25 characters, truncate gracefully
+	const maxLen = 25
+	if len(name) > maxLen {
+		if len(extClean) > 0 && len(extClean) < 10 {
+			maxBaseLen := maxLen - len(extClean) - 3 // 3 for "..."
+			if maxBaseLen < 6 {
+				maxBaseLen = 6
+			}
+			runes := []rune(base)
+			if len(runes) > maxBaseLen {
+				base = string(runes[:maxBaseLen])
+			}
+			return base + "..." + extClean
+		}
+		runes := []rune(name)
+		return string(runes[:maxLen-3]) + "..."
+	}
+
+	return name
+}
+
+func fitText(pdf *fpdf.Fpdf, tr func(string) string, text string, maxW float64) string {
+	str := tr(text)
+	if pdf.GetStringWidth(str) <= maxW {
+		return str
+	}
+	runes := []rune(text)
+	for len(runes) > 0 {
+		candidate := tr(string(runes) + "...")
+		if pdf.GetStringWidth(candidate) <= maxW {
+			return candidate
+		}
+		runes = runes[:len(runes)-1]
+	}
+	return tr("...")
+}
+
+func (b *Builder) renderReceiptHeader(pdf *fpdf.Fpdf, tr func(string) string, m domainmaint.Maintenance, att domainmaint.Attachment, num int, isPDF bool) float64 {
 	primaryR, primaryG, primaryB := 15, 23, 42
 	accentR, accentG, accentB := 37, 99, 235
 	bgLightR, bgLightG, bgLightB := 248, 250, 252
 	borderR, borderG, borderB := 226, 232, 240
 	textMutedR, textMutedG, textMutedB := 100, 116, 139
 
+	cardX := 14.0
+	cardY := 14.0
+	cardW := 182.0
+	contentX := 18.0
+	contentW := 174.0
+
+	// Check title line wrapping
+	pdf.SetFont("Arial", "B", 9)
+	titleText := fmt.Sprintf("Manutenção: %s", m.Title)
+	titleLines := pdf.SplitLines([]byte(tr(titleText)), contentW)
+
+	cardH := 28.0
+	hasMultipleLines := len(titleLines) > 1
+	if hasMultipleLines {
+		cardH = 34.0
+	}
+
 	pdf.SetFillColor(bgLightR, bgLightG, bgLightB)
 	pdf.SetDrawColor(borderR, borderG, borderB)
 	pdf.SetLineWidth(0.3)
-	pdf.RoundedRect(14, 14, 182, 28, 2, "1234", "FD")
+	pdf.RoundedRect(cardX, cardY, cardW, cardH, 2, "1234", "FD")
 
-	pdf.SetXY(18, 17)
+	// 1. Type header
+	pdf.SetXY(contentX, 17)
 	pdf.SetFont("Arial", "B", 10)
 	pdf.SetTextColor(accentR, accentG, accentB)
 	typeLabel := "COMPROVANTE DE MANUTENÇÃO (IMAGEM)"
 	if isPDF {
 		typeLabel = "COMPROVANTE DE MANUTENÇÃO (DOCUMENTO PDF)"
 	}
-	pdf.Cell(174, 5, tr(fmt.Sprintf("%s #%d", typeLabel, num)))
+	pdf.Cell(contentW, 5, tr(fmt.Sprintf("%s #%d", typeLabel, num)))
 
-	pdf.SetXY(18, 23)
+	// 2. Maintenance Title
 	pdf.SetFont("Arial", "B", 9)
 	pdf.SetTextColor(primaryR, primaryG, primaryB)
-	pdf.Cell(174, 5, tr(fmt.Sprintf("Manutenção: %s", m.Title)))
+	if !hasMultipleLines {
+		pdf.SetXY(contentX, 23)
+		pdf.Cell(contentW, 5, fitText(pdf, tr, titleText, contentW-2))
+	} else {
+		// First line
+		pdf.SetXY(contentX, 23)
+		pdf.Cell(contentW, 5, string(titleLines[0]))
+		// Second line (if more than 2 lines, truncate with fitText)
+		pdf.SetXY(contentX, 28)
+		if len(titleLines) == 2 {
+			pdf.Cell(contentW, 5, string(titleLines[1]))
+		} else {
+			line2 := fitText(pdf, func(s string) string { return s }, string(titleLines[1]), contentW-8)
+			if !strings.HasSuffix(line2, "...") {
+				line2 += "..."
+			}
+			pdf.Cell(contentW, 5, line2)
+		}
+	}
 
-	pdf.SetXY(18, 29)
+	// 3. Metadata line
+	metaY := 29.0
+	if hasMultipleLines {
+		metaY = 34.0
+	}
+	pdf.SetXY(contentX, metaY)
 	pdf.SetFont("Arial", "", 8)
 	pdf.SetTextColor(textMutedR, textMutedG, textMutedB)
 	costStr := "-"
 	if m.Cost != nil && *m.Cost > 0 {
 		costStr = fmt.Sprintf("R$ %.2f", *m.Cost)
 	}
-	attName := att.Name
-	if attName == "" {
-		attName = "comprovante"
-	}
-	pdf.Cell(174, 5, tr(fmt.Sprintf("Data: %s  •  Odômetro: %d km  •  Valor: %s  •  Arquivo: %s", m.Date.Format("02/01/2006"), m.Mileage, costStr, attName)))
+	attName := sanitizeAttachmentName(att.Name)
+	metaStr := fmt.Sprintf("Data: %s  •  Odômetro: %d km  •  Valor: %s  •  Arquivo: %s", m.Date.Format("02/01/2006"), m.Mileage, costStr, attName)
+	pdf.Cell(contentW, 5, fitText(pdf, tr, metaStr, contentW-2))
+
+	return cardY + cardH
 }
 
 func isPDFMime(mime string) bool {
