@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from "react";
 import {
   Box,
-  Typography,
   Button,
-  Stack,
   FormControl,
   InputLabel,
   Select,
@@ -12,7 +10,7 @@ import {
   Alert,
 } from "@mui/material";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
-import { useDocumentTitle } from "../../shared";
+import { useDocumentTitle, PageHeader } from "../../shared";
 import { carService } from "../../cars/services/car.service";
 import { Car } from "../../cars/types/car.types";
 import { ExportHistoryTable } from "../components/ExportHistoryTable";
@@ -59,38 +57,21 @@ export function ReportsPage() {
   return (
     <Box sx={{ width: "100%", pb: 4 }}>
       {/* Page Header */}
-      <Stack
-        direction={{ xs: "column", sm: "row" }}
-        spacing={2}
-        sx={{
-          mb: 3,
-          justifyContent: "space-between",
-          alignItems: { xs: "flex-start", sm: "center" },
-        }}
-      >
-        <Box>
-          <Typography
-            variant="h5"
-            sx={{ fontWeight: 700, color: "text.primary" }}
+      <PageHeader
+        title="Relatórios & Exportações"
+        subtitle="Gere e baixe dossiês completos de manutenções com comprovantes anexados"
+        action={
+          <Button
+            variant="contained"
+            startIcon={<AddRoundedIcon />}
+            onClick={() => setDialogOpen(true)}
+            disabled={cars.length === 0}
+            sx={{ textTransform: "none", fontWeight: 600, px: 2.5 }}
           >
-            Relatórios & Exportações
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Gere e baixe dossiês completos de manutenções com comprovantes
-            anexados
-          </Typography>
-        </Box>
-
-        <Button
-          variant="contained"
-          startIcon={<AddRoundedIcon />}
-          onClick={() => setDialogOpen(true)}
-          disabled={cars.length === 0}
-          sx={{ textTransform: "none", fontWeight: 600, px: 2.5 }}
-        >
-          Exportar Manutenções (PDF)
-        </Button>
-      </Stack>
+            Exportar Manutenções (PDF)
+          </Button>
+        }
+      />
 
       {/* Filter Toolbar */}
       {cars.length > 0 && (

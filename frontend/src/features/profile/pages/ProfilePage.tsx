@@ -46,7 +46,11 @@ import {
   GoogleSignInButton,
 } from "../../auth/components/GoogleSignInButton";
 import { ProfileData } from "../types/profile.types";
-import { useDocumentTitle, PageLoadingFallback } from "../../shared";
+import {
+  useDocumentTitle,
+  PageLoadingFallback,
+  PageHeader,
+} from "../../shared";
 import { pushNotificationService } from "../../../services/notifications/push.service";
 
 export function ProfilePage() {
@@ -388,17 +392,11 @@ export function ProfilePage() {
   return (
     <Box>
       {/* Page Title */}
-      <Box sx={{ mb: 4 }}>
-        <Typography
-          variant="h4"
-          sx={{ fontWeight: 800, color: "text.primary" }}
-        >
-          Meu Perfil & Configurações
-        </Typography>
-        <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
-          Gerencie seus dados de acesso, status de e-mail e limites de frota.
-        </Typography>
-      </Box>
+      <PageHeader
+        title="Meu Perfil & Configurações"
+        subtitle="Gerencie seus dados de acesso, status de e-mail e limites de frota."
+        mb={4}
+      />
 
       {pageError && (
         <Alert severity="error" sx={{ mb: 3 }}>

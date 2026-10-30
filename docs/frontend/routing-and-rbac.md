@@ -7,7 +7,7 @@ tags:
   - routing
   - react-router
   - rbac
-timestamp: 2026-10-10
+timestamp: 2026-10-29
 ---
 
 # 🚦 Roteamento e Controle de Acesso (RBAC) — CVMC
@@ -27,11 +27,24 @@ Para navegação geral, retorne ao [Catálogo Canônico](../index.md).
   - `/verify-email` — Confirmação de e-mail.
   - `/privacy` — Página pública de Política de Privacidade (LGPD) e instruções de Exclusão de Conta e Dados (`#exclusao-de-conta`), pré-renderizada em `dist/privacy/index.html` pelo `spaPrerenderPlugin` no `vite.config.ts` para retornar HTTP 200 OK direto no GitHub Pages e atender ao verificador do Google Play Console sem exigir login.
 - **Protegidas (`ProtectedRoute`)**:
-  - `/dashboard` — Painel geral com KPIs e visão consolidada.
-  - `/cars` — Listagem, cadastro e detalhes dos veículos.
-  - `/maintenance` — Histórico e agendamento de manutenções.
-  - `/fuel` — Histórico e registro de abastecimentos.
-  - `/profile` — Edição de dados pessoais e alteração de senha.
+  - `/dashboard` — Painel consolidado com KPIs, alertas de revisões e resumo de frotas.
+  - `/vehicles` — Gestão, listagem e cadastro de veículos.
+  - `/vehicles/:id` — Detalhes completos do automóvel, histórico de combustível e manutenções preventivas/corretivas.
+  - `/vehicles/:id/maintenance/new` — Formulário de registro de nova manutenção e anexos.
+  - `/vehicles/:id/maintenance/:maintenanceId/edit` — Edição e auditoria de ordem de manutenção.
+  - `/maintenance` — Histórico global de manutenções e acompanhamento de revisões periódicas.
+  - `/reports` — Relatórios e exportação de dossiê consolidado de manutenções em PDF assíncrono.
+  - `/profile` — Edição de dados do usuário, limites de frota, quota de storage e segurança de conta.
+
+---
+
+## 🔝 Resolução de Títulos no Topbar (`getTopbarTitle`)
+
+A barra superior (`Topbar.tsx`) sincroniza seu título de navegação dinamicamente de acordo com o `pathname` ativo:
+1. **Normalização de Trailing Slashes**: Remove barras finais (ex: `/vehicles/` -> `/vehicles`), prevenindo fallbacks indesejados.
+2. **Mapeamento Estático & Dinâmico**: Rotas exatas utilizam o dicionário `staticRouteTitles`, enquanto rotas parametrizadas (ex: `/vehicles/:id`) utilizam correspondência por expressões regulares em `dynamicRouteTitles`.
+3. **Harmonia com Sidebar e PageHeader**: Os títulos no Topbar espelham a nomenclatura das abas do menu lateral e dos cabeçalhos `<PageHeader>`.
+4. **Governança Automatizada**: Todas as rotas são validadas de forma contínua pelo script `scripts/check-typography.sh` e pela suíte de testes `Topbar.test.tsx`.
 
 ---
 

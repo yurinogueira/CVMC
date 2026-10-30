@@ -20,7 +20,7 @@ import { useAuthStore } from "../../auth/state/auth.store";
 import { carService } from "../../cars/services/car.service";
 import { Car } from "../../cars/types/car.types";
 import { VehicleCard } from "../../cars/components/VehicleCard";
-import { useDocumentTitle } from "../../shared";
+import { useDocumentTitle, PageHeader } from "../../shared";
 import { brandColors } from "../../../styles/theme";
 
 const AddCarDialog = lazy(() =>
@@ -97,18 +97,11 @@ export function DashboardPage() {
   return (
     <Box>
       {/* Welcome Banner */}
-      <Box sx={{ mb: 4 }}>
-        <Typography
-          component="h1"
-          variant="h4"
-          sx={{ fontWeight: 800, mb: 0.5, color: "text.primary" }}
-        >
-          Olá, {user?.name?.split(" ")[0] || "Motorista"} 👋
-        </Typography>
-        <Typography variant="body1" sx={{ color: "text.secondary" }}>
-          Aqui está o resumo da sua frota e atividades recentes.
-        </Typography>
-      </Box>
+      <PageHeader
+        title={`Olá, ${user?.name?.split(" ")[0] || "Motorista"} 👋`}
+        subtitle="Aqui está o resumo da sua frota e atividades recentes."
+        mb={4}
+      />
 
       {/* KPI Cards Grid */}
       <Grid container spacing={3} sx={{ mb: 4 }}>

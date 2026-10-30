@@ -47,7 +47,7 @@ import { fuelService } from "../../fuel/services/fuel.service";
 import { Fueling } from "../../fuel/types/fuel.types";
 import { FuelCard } from "../../fuel/components/FuelCard";
 import { AddFuelingDialog } from "../../fuel/components/AddFuelingDialog";
-import { useDocumentTitle } from "../../shared";
+import { useDocumentTitle, PageHeader } from "../../shared";
 import { brandColors } from "../../../styles/theme";
 
 export function VehicleDetailsPage() {
@@ -293,83 +293,39 @@ export function VehicleDetailsPage() {
   return (
     <Box>
       {/* Top Header Navigation */}
-      <Stack
-        direction={{ xs: "column", sm: "row" }}
-        spacing={2}
-        sx={{
-          alignItems: { xs: "stretch", sm: "center" },
-          justifyContent: "space-between",
-          mb: 3,
-        }}
-      >
-        <Stack
-          direction="row"
-          spacing={1.5}
-          sx={{ alignItems: "center", minWidth: 0, flexWrap: "wrap", gap: 1 }}
-        >
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<ArrowBackRoundedIcon />}
-            onClick={() => navigate("/vehicles")}
-            sx={{
-              borderRadius: 2,
-              color: "text.secondary",
-              borderColor: "#E2E8F0",
-              flexShrink: 0,
-              "&:hover": {
-                borderColor: "#CBD5E1",
-                bgcolor: "#F8FAFC",
-              },
-            }}
-          >
-            Voltar
-          </Button>
-          {loadingCar ? (
-            <Skeleton width={200} height={36} />
-          ) : (
-            <Typography
-              component="h1"
-              variant="h5"
-              sx={{
-                fontWeight: 800,
-                color: "text.primary",
-                wordBreak: "break-word",
-                fontSize: { xs: "1.25rem", sm: "1.5rem" },
+      <PageHeader
+        title={car?.name || ""}
+        loading={loadingCar}
+        backButton={{ onClick: () => navigate("/vehicles") }}
+        action={
+          activeTab === 0 ? (
+            <Button
+              variant="contained"
+              startIcon={<AddRoundedIcon />}
+              onClick={() => {
+                setSelectedFueling(null);
+                setFuelDialogOpen(true);
               }}
+              disabled={loadingCar || !car}
+              sx={{ px: 2.5, py: 1.1, width: { xs: "100%", sm: "auto" } }}
             >
-              {car?.name}
-            </Typography>
-          )}
-        </Stack>
-
-        {activeTab === 0 ? (
-          <Button
-            variant="contained"
-            startIcon={<AddRoundedIcon />}
-            onClick={() => {
-              setSelectedFueling(null);
-              setFuelDialogOpen(true);
-            }}
-            disabled={loadingCar || !car}
-            sx={{ px: 2.5, py: 1.1, width: { xs: "100%", sm: "auto" } }}
-          >
-            Registrar Abastecimento
-          </Button>
-        ) : (
-          <Button
-            variant="contained"
-            startIcon={<AddRoundedIcon />}
-            onClick={() =>
-              navigate(`/vehicles/${car?.id || id}/maintenance/new`)
-            }
-            disabled={loadingCar || !car}
-            sx={{ px: 2.5, py: 1.1, width: { xs: "100%", sm: "auto" } }}
-          >
-            Registrar Manutenção
-          </Button>
-        )}
-      </Stack>
+              Registrar Abastecimento
+            </Button>
+          ) : (
+            <Button
+              variant="contained"
+              startIcon={<AddRoundedIcon />}
+              onClick={() =>
+                navigate(`/vehicles/${car?.id || id}/maintenance/new`)
+              }
+              disabled={loadingCar || !car}
+              sx={{ px: 2.5, py: 1.1, width: { xs: "100%", sm: "auto" } }}
+            >
+              Registrar Manutenção
+            </Button>
+          )
+        }
+      />
 
       {/* Vehicle Overview Card */}
       {loadingCar ? (

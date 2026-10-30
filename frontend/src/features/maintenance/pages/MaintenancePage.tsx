@@ -33,7 +33,7 @@ import HistoryRoundedIcon from "@mui/icons-material/HistoryRounded";
 import EventRepeatRoundedIcon from "@mui/icons-material/EventRepeatRounded";
 import TuneRoundedIcon from "@mui/icons-material/TuneRounded";
 import PictureAsPdfRoundedIcon from "@mui/icons-material/PictureAsPdfRounded";
-import { useDocumentTitle } from "../../shared";
+import { useDocumentTitle, PageHeader } from "../../shared";
 import { brandColors } from "../../../styles/theme";
 import { carService } from "../../cars/services/car.service";
 import { Car } from "../../cars/types/car.types";
@@ -290,51 +290,33 @@ export function MaintenancePage() {
   return (
     <Box>
       {/* Header */}
-      <Stack
-        direction={{ xs: "column", sm: "row" }}
-        spacing={2}
-        sx={{
-          alignItems: { xs: "flex-start", sm: "center" },
-          justifyContent: "space-between",
-          mb: 3,
-        }}
-      >
-        <Box>
-          <Typography
-            component="h1"
-            variant="h5"
-            sx={{ fontWeight: 800, color: "text.primary" }}
-          >
-            Manutenções & Revisões
-          </Typography>
-          <Typography variant="body2" sx={{ color: "text.secondary" }}>
-            Monitoramento inteligente de revisões periódicas e histórico
-            completo por veículo.
-          </Typography>
-        </Box>
+      <PageHeader
+        title="Manutenções & Revisões"
+        subtitle="Monitoramento inteligente de revisões periódicas e histórico completo por veículo."
+        action={
+          <Stack direction="row" spacing={1.5}>
+            <Button
+              variant="outlined"
+              startIcon={<PictureAsPdfRoundedIcon />}
+              disabled={!selectedCar}
+              onClick={() => setExportDialogOpen(true)}
+              sx={{ px: 2, py: 1.1, textTransform: "none", fontWeight: 600 }}
+            >
+              Exportar PDF
+            </Button>
 
-        <Stack direction="row" spacing={1.5}>
-          <Button
-            variant="outlined"
-            startIcon={<PictureAsPdfRoundedIcon />}
-            disabled={!selectedCar}
-            onClick={() => setExportDialogOpen(true)}
-            sx={{ px: 2, py: 1.1, textTransform: "none", fontWeight: 600 }}
-          >
-            Exportar PDF
-          </Button>
-
-          <Button
-            variant="contained"
-            startIcon={<AddRoundedIcon />}
-            disabled={!selectedCar}
-            onClick={() => handleOpenNewMaintenance()}
-            sx={{ px: 2.5, py: 1.1 }}
-          >
-            Registrar Manutenção
-          </Button>
-        </Stack>
-      </Stack>
+            <Button
+              variant="contained"
+              startIcon={<AddRoundedIcon />}
+              disabled={!selectedCar}
+              onClick={() => handleOpenNewMaintenance()}
+              sx={{ px: 2.5, py: 1.1 }}
+            >
+              Registrar Manutenção
+            </Button>
+          </Stack>
+        }
+      />
 
       {errorMsg && (
         <Alert
