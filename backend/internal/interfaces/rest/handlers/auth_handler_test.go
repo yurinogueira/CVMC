@@ -215,6 +215,7 @@ func TestAuthHandlerGoogleAuth(t *testing.T) {
 			Email:         "google-handler@test.com",
 			EmailVerified: true,
 			Name:          "Google Handler Test",
+			Picture:       "https://lh3.googleusercontent.com/avatar-test.jpg",
 		},
 	}
 	handler := NewAuthHandler(users, hasher, tokens, nil, "", false, mockVal)
@@ -226,6 +227,20 @@ func TestAuthHandlerGoogleAuth(t *testing.T) {
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected status 200 OK for GoogleAuth, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	var authResp struct {
+		Data struct {
+			User struct {
+				AvatarURL string `json:"avatarUrl"`
+			} `json:"user"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &authResp); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+	if authResp.Data.User.AvatarURL != "https://lh3.googleusercontent.com/avatar-test.jpg" {
+		t.Fatalf("expected avatarUrl to be returned, got %q", authResp.Data.User.AvatarURL)
 	}
 
 	cookies := rec.Result().Cookies()

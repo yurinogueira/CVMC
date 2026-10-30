@@ -46,8 +46,9 @@ func TestUserHandlerGetAndUpdateProfile(t *testing.T) {
 	var getResp struct {
 		Data struct {
 			User struct {
-				Name  string `json:"name"`
-				Email string `json:"email"`
+				Name      string `json:"name"`
+				Email     string `json:"email"`
+				AvatarURL string `json:"avatarUrl"`
 			} `json:"user"`
 			VehiclesCount int `json:"vehiclesCount"`
 			MaxVehicles   int `json:"maxVehicles"`

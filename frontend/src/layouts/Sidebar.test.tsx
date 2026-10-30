@@ -79,4 +79,30 @@ describe("Sidebar", () => {
     expect(screen.getAllByText("Como Vai Meu Carro")[0]).toBeInTheDocument();
     expect(screen.getAllByText("Dashboard")[0]).toBeInTheDocument();
   });
+
+  it("renders user avatar with avatarUrl and referrerPolicy='no-referrer'", () => {
+    useAuthStore.getState().setUser({
+      id: "user-1",
+      name: "João Silva",
+      email: "joao@cvmc.com",
+      avatarUrl: "https://lh3.googleusercontent.com/joao.jpg",
+      emailVerified: true,
+      maxVehicles: 3,
+      createdAt: "2026-08-25T00:00:00Z",
+    });
+
+    render(
+      <MemoryRouter initialEntries={["/dashboard"]}>
+        <Sidebar mobileOpen={false} onMobileClose={mockOnMobileClose} />
+      </MemoryRouter>,
+    );
+
+    const avatarImgs = screen.getAllByRole("img", { name: "João Silva" });
+    expect(avatarImgs.length).toBeGreaterThan(0);
+    expect(avatarImgs[0]).toHaveAttribute(
+      "src",
+      "https://lh3.googleusercontent.com/joao.jpg",
+    );
+    expect(avatarImgs[0]).toHaveAttribute("referrerpolicy", "no-referrer");
+  });
 });

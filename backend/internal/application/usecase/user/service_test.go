@@ -162,9 +162,18 @@ func TestUserServiceAuthProvidersAndLinkUnlinkGoogle(t *testing.T) {
 
 	// 3. Link Google with matching email succeeds
 	mockValidator.payload.Email = "alice@example.com"
+	mockValidator.payload.Picture = "https://lh3.googleusercontent.com/alice.jpg"
 	err = userService.LinkGoogleAccount(ctx, reg.User.ID, "token-1")
 	if err != nil {
 		t.Fatalf("expected successful link, got %v", err)
+	}
+
+	profileAlice, err := userService.GetProfile(ctx, reg.User.ID)
+	if err != nil {
+		t.Fatalf("failed to get profile: %v", err)
+	}
+	if profileAlice.User.AvatarURL != "https://lh3.googleusercontent.com/alice.jpg" {
+		t.Fatalf("expected alice avatar to be set from google photo, got %s", profileAlice.User.AvatarURL)
 	}
 
 	providers, err = userService.GetAuthProviders(ctx, reg.User.ID)

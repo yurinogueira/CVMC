@@ -1,6 +1,10 @@
 package user
 
-import "time"
+import (
+	"net/url"
+	"strings"
+	"time"
+)
 
 const (
 	DefaultMaxVehicles           = 3
@@ -14,6 +18,7 @@ type User struct {
 	Email                      string     `json:"email"`
 	PasswordHash               string     `json:"-"`
 	GoogleID                   string     `json:"googleId,omitempty" bson:"googleId,omitempty"`
+	AvatarURL                  string     `json:"avatarUrl,omitempty" bson:"avatarUrl,omitempty"`
 	EmailVerified              bool       `json:"emailVerified"`
 	EmailVerifiedAt            *time.Time `json:"emailVerifiedAt,omitempty"`
 	EmailVerificationTokenHash string     `json:"-"`
@@ -47,3 +52,19 @@ func (u User) EffectiveMaxStorageBytes() int64 {
 	}
 	return u.MaxStorageBytes
 }
+
+func SanitizeAvatarURL(raw string) string {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" {
+		return ""
+	}
+	parsed, err := url.Parse(trimmed)
+	if err != nil {
+		return ""
+	}
+	if parsed.Scheme != "https" || parsed.Host == "" {
+		return ""
+	}
+	return trimmed
+}
+
