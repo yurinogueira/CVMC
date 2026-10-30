@@ -16,7 +16,6 @@ import {
   Tooltip,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
-import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import BuildCircleRoundedIcon from "@mui/icons-material/BuildCircleRounded";
 import OpacityRoundedIcon from "@mui/icons-material/OpacityRounded";
 import SpeedRoundedIcon from "@mui/icons-material/SpeedRounded";
@@ -30,7 +29,7 @@ import AttachMoneyRoundedIcon from "@mui/icons-material/AttachMoneyRounded";
 import ReceiptLongRoundedIcon from "@mui/icons-material/ReceiptLongRounded";
 import DirectionsCarRoundedIcon from "@mui/icons-material/DirectionsCarRounded";
 
-import { useDocumentTitle } from "../../shared";
+import { useDocumentTitle, PageHeader } from "../../shared";
 import { carService } from "../../cars/services/car.service";
 import { Car } from "../../cars/types/car.types";
 import { maintenanceService } from "../services/maintenance.service";
@@ -458,82 +457,59 @@ export function RegisterMaintenancePage() {
   return (
     <Box component="form" onSubmit={handleSubmit} sx={{ pb: 6 }}>
       {/* Header & Back Navigation */}
-      <Stack
-        direction={{ xs: "column", sm: "row" }}
-        spacing={2}
-        sx={{
-          alignItems: { xs: "flex-start", sm: "center" },
-          justifyContent: "space-between",
-          mb: 3,
-        }}
-      >
-        <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<ArrowBackRoundedIcon />}
-            onClick={() => navigate(`/vehicles/${id}`)}
-            sx={{ borderRadius: 2, textTransform: "none" }}
-          >
-            Voltar
-          </Button>
-          <Box>
-            <Typography
-              component="h1"
-              variant="h5"
-              sx={{ fontWeight: 800, color: "text.primary" }}
+      <PageHeader
+        title={isEdit ? "Editar Manutenção" : "Registrar Manutenção"}
+        subtitle={
+          car ? (
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{ alignItems: "center", mt: 0.2 }}
             >
-              {isEdit ? "Editar Manutenção" : "Registrar Manutenção"}
-            </Typography>
-            {car && (
-              <Stack
-                direction="row"
-                spacing={1}
-                sx={{ alignItems: "center", mt: 0.2 }}
-              >
-                <DirectionsCarRoundedIcon
-                  sx={{ fontSize: 16, color: "text.secondary" }}
-                />
-                <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                  Veículo: <strong>{car.name}</strong> ({car.manufacturer}{" "}
-                  {car.model})
-                </Typography>
-              </Stack>
-            )}
-          </Box>
-        </Stack>
-
-        <Stack
-          direction={{ xs: "column-reverse", sm: "row" }}
-          spacing={1.5}
-          sx={{ width: { xs: "100%", sm: "auto" } }}
-        >
-          <Button
-            variant="outlined"
-            color="inherit"
-            onClick={() => navigate(`/vehicles/${id}`)}
-            disabled={submitting || processingFiles}
-            sx={{ borderRadius: 2, width: { xs: "100%", sm: "auto" } }}
+              <DirectionsCarRoundedIcon
+                sx={{ fontSize: 16, color: "text.secondary" }}
+              />
+              <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                Veículo: <strong>{car.name}</strong> ({car.manufacturer}{" "}
+                {car.model})
+              </Typography>
+            </Stack>
+          ) : undefined
+        }
+        backButton={{ onClick: () => navigate(`/vehicles/${id}`) }}
+        action={
+          <Stack
+            direction={{ xs: "column-reverse", sm: "row" }}
+            spacing={1.5}
+            sx={{ width: { xs: "100%", sm: "auto" } }}
           >
-            Cancelar
-          </Button>
-          <Button
-            type="submit"
-            variant="contained"
-            disabled={submitting || processingFiles}
-            startIcon={
-              submitting ? (
-                <CircularProgress size={18} color="inherit" />
-              ) : (
-                <BuildCircleRoundedIcon />
-              )
-            }
-            sx={{ px: 3, borderRadius: 2, width: { xs: "100%", sm: "auto" } }}
-          >
-            Salvar Manutenção
-          </Button>
-        </Stack>
-      </Stack>
+            <Button
+              variant="outlined"
+              color="inherit"
+              onClick={() => navigate(`/vehicles/${id}`)}
+              disabled={submitting || processingFiles}
+              sx={{ borderRadius: 2, width: { xs: "100%", sm: "auto" } }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={submitting || processingFiles}
+              startIcon={
+                submitting ? (
+                  <CircularProgress size={18} color="inherit" />
+                ) : (
+                  <BuildCircleRoundedIcon />
+                )
+              }
+              sx={{ px: 3, borderRadius: 2, width: { xs: "100%", sm: "auto" } }}
+            >
+              Salvar Manutenção
+            </Button>
+          </Stack>
+        }
+      />
 
       {errorMsg && (
         <Alert

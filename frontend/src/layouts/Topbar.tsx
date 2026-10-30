@@ -25,12 +25,53 @@ interface TopbarProps {
   onDrawerToggle: () => void;
 }
 
-const routeTitles: Record<string, string> = {
-  "/dashboard": "Visão Geral",
+export interface RoutePattern {
+  pattern: RegExp;
+  title: string;
+}
+
+export const staticRouteTitles: Record<string, string> = {
+  "/dashboard": "Dashboard",
   "/vehicles": "Meus Veículos",
-  "/maintenance": "Histórico de Manutenções",
+  "/maintenance": "Manutenções & Revisões",
+  "/reports": "Relatórios & Exportações",
   "/profile": "Meu Perfil",
+  "/privacy": "Política de Privacidade",
 };
+
+export const dynamicRouteTitles: RoutePattern[] = [
+  {
+    pattern: /^\/vehicles\/[^/]+\/maintenance\/new$/,
+    title: "Registrar Manutenção",
+  },
+  {
+    pattern: /^\/vehicles\/[^/]+\/maintenance\/[^/]+\/edit$/,
+    title: "Editar Manutenção",
+  },
+  {
+    pattern: /^\/vehicles\/[^/]+$/,
+    title: "Detalhes do Veículo",
+  },
+];
+
+export function getTopbarTitle(pathname: string): string {
+  if (!pathname) return "Painel CVMC";
+
+  // Normaliza múltiplos slashes e trailing slashes (ex: /vehicles/ -> /vehicles)
+  const normalizedPath = pathname.replace(/\/+$/, "") || "/";
+
+  if (staticRouteTitles[normalizedPath]) {
+    return staticRouteTitles[normalizedPath];
+  }
+
+  for (const route of dynamicRouteTitles) {
+    if (route.pattern.test(normalizedPath)) {
+      return route.title;
+    }
+  }
+
+  return "Painel CVMC";
+}
 
 export function Topbar({ onDrawerToggle }: TopbarProps) {
   const location = useLocation();
@@ -38,7 +79,7 @@ export function Topbar({ onDrawerToggle }: TopbarProps) {
   const { user, clear } = useAuthStore();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
-  const currentTitle = routeTitles[location.pathname] || "Painel CVMC";
+  const currentTitle = getTopbarTitle(location.pathname);
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);

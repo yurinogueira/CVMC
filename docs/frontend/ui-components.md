@@ -8,7 +8,7 @@ tags:
   - mui
   - design-system
   - accessibility
-timestamp: 2026-10-10
+timestamp: 2026-10-29
 ---
 
 # 🎨 Componentes UI e Design System — CVMC
@@ -82,9 +82,14 @@ Para prevenir estouro horizontal (*horizontal overflow*) e garantir adaptação 
 
 ## ♿ Acessibilidade e Semântica de Cabeçalhos
 
-- **Hierarquia de Headings**:
-  - Cada página contém exatamente um `<h1>` semântico (`component="h1"` com `variant="h4"`).
-  - Títulos de seções utilizam `<h2>` e cards utilizam `<h3>`.
+- **Hierarquia de Headings e Contrato Mandatório de Cabeçalho (`PageHeader`)**:
+  - Toda página autenticada da aplicação deve obrigatoriamente utilizar o componente padronizado `<PageHeader>` (`frontend/src/features/shared/components/PageHeader.tsx`).
+  - **Tag `<h1>` Canônica Única**: Cada tela contém exatamente uma tag `<h1>` semântica para conformidade com WCAG AA/AAA e acessibilidade por leitores de tela. O cabeçalho é renderizado com `component="h1"`, `variant="h5"`, `fontWeight: 800` e tamanho de fonte responsivo (`fontSize: { xs: "1.25rem", sm: "1.5rem" }`).
+  - **Proibição de Declarações Ad-Hoc**: É expressamente proibido declarar `<Typography component="h1">` manual ou títulos de tela com `variant="h4"` / pesos arbitrários diretamente em arquivos de página (`*Page.tsx`).
+  - **Subtítulo Padronizado**: Subtítulos de contextualização utilizam `variant="body2"` e cor `text.secondary` com espaçamento uniforme (`mt: 0.5`).
+  - **Ações e Botões de Voltar Responsivos**: O slot `action` alinha botões à direita no desktop e os empilha com largura adaptativa no mobile. O botão voltar é padronizado pelo objeto `backButton={{ onClick, label }}` com bordas sutis e contraste acessível.
+  - **Estado de Carregamento sem Layout Shift**: Ao carregar entidades (como dados do veículo), deve-se passar `loading={true}` para o `PageHeader`, renderizando o Skeleton correspondente sem quebra de alinhamento visual.
+  - **Validação Automatizada Contínua**: O cumprimento dessas diretrizes visuais é verificado de forma automatizada pelo script `scripts/check-typography.sh` e pela suíte arquitetural Vitest (`TypographyHierarchy.test.tsx`), integrados ao comando `./scripts/check.sh frontend` e às esteiras de CI. Qualquer cabeçalho fora do padrão interrompe o build.
 - **Prevenção de Erros de Hidratação em Diálogos**:
   - `<DialogTitle>` renderiza uma tag `<h2>` por padrão. Para aninhar `<Typography>` em modais, use explicitamente `component="div"` ou `component="span"`.
 - **Cards de Próximas Manutenções (`UpcomingMaintenanceCard.tsx` e `MaintenancePage.tsx`)**:

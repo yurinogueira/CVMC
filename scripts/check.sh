@@ -44,6 +44,13 @@ check_frontend() {
   export CI=true
   export NODE_NO_WARNINGS=1
 
+  # 0. Visual Hierarchy & Typography Contract
+  if ! output=$("$PROJECT_ROOT/scripts/check-typography.sh" 2>&1); then
+    echo "❌ [Frontend] Typography check failed:"
+    echo "$output"
+    return 1
+  fi
+
   # 1. TypeCheck
   if ! output=$(cd "$frontend_dir" && "$bin_dir/tsc" -b 2>&1); then
     echo "❌ [Frontend] Typecheck (tsc) failed:"

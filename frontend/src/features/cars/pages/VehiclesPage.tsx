@@ -5,7 +5,6 @@ import {
   Typography,
   Grid,
   Button,
-  Stack,
   TextField,
   InputAdornment,
   Skeleton,
@@ -18,7 +17,7 @@ import DirectionsCarFilledRoundedIcon from "@mui/icons-material/DirectionsCarFil
 import { carService } from "../services/car.service";
 import { Car } from "../types/car.types";
 import { VehicleCard } from "../components/VehicleCard";
-import { useDocumentTitle } from "../../shared";
+import { useDocumentTitle, PageHeader } from "../../shared";
 
 const AddCarDialog = lazy(() =>
   import("../components/AddCarDialog").then((m) => ({
@@ -111,37 +110,20 @@ export function VehiclesPage() {
   return (
     <Box>
       {/* Header Actions */}
-      <Stack
-        direction={{ xs: "column", sm: "row" }}
-        spacing={2}
-        sx={{
-          alignItems: { xs: "flex-start", sm: "center" },
-          justifyContent: "space-between",
-          mb: 3,
-        }}
-      >
-        <Box>
-          <Typography
-            component="h1"
-            variant="h5"
-            sx={{ fontWeight: 800, color: "text.primary" }}
+      <PageHeader
+        title="Meus Veículos"
+        subtitle="Gerencie todos os veículos cadastrados na sua conta."
+        action={
+          <Button
+            variant="contained"
+            startIcon={<AddRoundedIcon />}
+            onClick={() => setOpenAddDialog(true)}
+            sx={{ px: 2.5, py: 1.1 }}
           >
-            Meus Veículos
-          </Typography>
-          <Typography variant="body2" sx={{ color: "text.secondary" }}>
-            Gerencie todos os veículos cadastrados na sua conta.
-          </Typography>
-        </Box>
-
-        <Button
-          variant="contained"
-          startIcon={<AddRoundedIcon />}
-          onClick={() => setOpenAddDialog(true)}
-          sx={{ px: 2.5, py: 1.1 }}
-        >
-          Adicionar Veículo
-        </Button>
-      </Stack>
+            Adicionar Veículo
+          </Button>
+        }
+      />
 
       {/* Search Input */}
       <Box sx={{ mb: 3, maxWidth: 400 }}>
