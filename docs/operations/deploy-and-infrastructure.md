@@ -8,7 +8,7 @@ tags:
   - oci
   - caddy
   - cloudflare
-timestamp: 2026-10-10
+timestamp: 2026-10-30
 ---
 
 # 🚀 Deploy e Topologia de Nuvem — CVMC
@@ -43,6 +43,30 @@ flowchart LR
    - Gerencia terminação TLS automática e roteamento para o backend local.
 3. **Deploy Automatizado**:
    - Executado via script `scripts/deploy-backend.sh` e esteira GitHub Actions.
+
+---
+
+## 🧱 Infraestrutura como Código (Terraform)
+
+### Provedores homologados
+
+| Provedor | Versão travada (`.terraform.lock.hcl`) | Constraint (`versions.tf`) |
+| :--- | :--- | :--- |
+| `oracle/oci` | `9.11.0` | `~> 9.11.0` |
+| `mongodb/mongodbatlas` | `2.20.1` | `~> 2.20.0` |
+| `cloudflare/cloudflare` | `5.28.1` | `~> 5.28.0` |
+| `hashicorp/random` | `3.9.1` | `~> 3.9.0` |
+
+### Protocolo de homologação de upgrades (Dependabot)
+1. PRs do grupo `terraform` **não têm auto-merge**; exigem revisão manual.
+2. Validar localmente: `terraform -chdir=terraform init -backend=false && terraform -chdir=terraform validate`.
+3. Executar **plan somente leitura** com credenciais reais via `workflow_dispatch` do workflow `Terraform` com `apply=false` (o merge feito por bot não dispara o workflow de `push`).
+4. Qualquer `forces replacement` deve ser isolado com um plan de controle na versão anterior do provedor para distinguir regressão de drift pré-existente.
+5. `apply` apenas via `workflow_dispatch` com `apply=true`, após plan revisado.
+
+### Drifts conhecidos e mitigados
+- **`oci_objectstorage_preauthrequest.files_par`**: a API da OCI não retorna `bucket_listing_action` na leitura, gerando `forces replacement` a cada plan (independe da versão do provedor — reproduzido em 9.10.0 e 9.11.0). Mitigado com `lifecycle { ignore_changes = [bucket_listing_action] }` para evitar a rotação da URL do PAR consumida pelo backend (issue #147).
+- **`mongodbatlas_cluster`**: recurso depreciado (aviso no `validate`); migração para `mongodbatlas_advanced_cluster` deve ocorrer antes do próximo major do provedor.
 
 ---
 
