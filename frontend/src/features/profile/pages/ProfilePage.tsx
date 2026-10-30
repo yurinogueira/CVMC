@@ -33,7 +33,6 @@ import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import LinkRoundedIcon from "@mui/icons-material/LinkRounded";
 import LinkOffRoundedIcon from "@mui/icons-material/LinkOffRounded";
-import NotificationsActiveRoundedIcon from "@mui/icons-material/NotificationsActiveRounded";
 import DeleteForeverRoundedIcon from "@mui/icons-material/DeleteForeverRounded";
 import PolicyRoundedIcon from "@mui/icons-material/PolicyRounded";
 
@@ -93,11 +92,6 @@ export function ProfilePage() {
   const [emailSuccess, setEmailSuccess] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
-
-  // Push notifications test state
-  const [testingPush, setTestingPush] = useState(false);
-  const [pushSuccess, setPushSuccess] = useState<string | null>(null);
-  const [pushError, setPushError] = useState<string | null>(null);
 
   // Account deletion state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -296,28 +290,6 @@ export function ProfilePage() {
       );
     } finally {
       setResendingEmail(false);
-    }
-  };
-
-  const handleTestPushNotification = async () => {
-    setPushSuccess(null);
-    setPushError(null);
-
-    try {
-      setTestingPush(true);
-      const res = await pushNotificationService.sendTestNotification();
-      setPushSuccess(
-        res.message ||
-          `Notificação de teste enviada (${res.devicesNotified} dispositivo(s)).`,
-      );
-    } catch (err: unknown) {
-      const errorObj = err as { response?: { data?: { message?: string } } };
-      setPushError(
-        errorObj.response?.data?.message ||
-          "Nenhum dispositivo móvel registrado ou falha ao enviar notificação de teste.",
-      );
-    } finally {
-      setTestingPush(false);
     }
   };
 
@@ -1094,84 +1066,7 @@ export function ProfilePage() {
           </Card>
         </Grid>
 
-        {/* Card 6: Notificações Push (Dispositivos Móveis) */}
-        <Grid size={{ xs: 12, md: 6 }}>
-          <Card
-            elevation={0}
-            sx={{
-              height: "100%",
-              borderRadius: 3,
-              border: "1px solid #E2E8F0",
-              p: 1,
-            }}
-          >
-            <CardContent>
-              <Stack
-                direction="row"
-                spacing={1.5}
-                sx={{ alignItems: "center", mb: 2 }}
-              >
-                <NotificationsActiveRoundedIcon
-                  sx={{ color: "primary.main", fontSize: 28 }}
-                />
-                <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                  Notificações Push
-                </Typography>
-              </Stack>
-
-              <Typography
-                variant="body2"
-                sx={{ color: "text.secondary", mb: 2.5 }}
-              >
-                Receba alertas em tempo real sobre revisões preventivas,
-                quilometragem e lembretes de manutenção diretamente no seu
-                smartphone.
-              </Typography>
-
-              {pushSuccess && (
-                <Alert
-                  severity="success"
-                  onClose={() => setPushSuccess(null)}
-                  sx={{ mb: 2 }}
-                >
-                  {pushSuccess}
-                </Alert>
-              )}
-
-              {pushError && (
-                <Alert
-                  severity="error"
-                  onClose={() => setPushError(null)}
-                  sx={{ mb: 2 }}
-                >
-                  {pushError}
-                </Alert>
-              )}
-
-              <Button
-                variant="outlined"
-                color="primary"
-                onClick={handleTestPushNotification}
-                disabled={testingPush}
-                data-testid="test-push-btn"
-                startIcon={
-                  testingPush ? (
-                    <CircularProgress size={18} color="inherit" />
-                  ) : (
-                    <SendRoundedIcon />
-                  )
-                }
-                sx={{ fontWeight: 600 }}
-              >
-                {testingPush
-                  ? "Enviando..."
-                  : "Enviar Notificação Push de Teste"}
-              </Button>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Card 7: Privacidade & Zona de Perigo (Exclusão de Conta) */}
+        {/* Card 6: Privacidade & Zona de Perigo (Exclusão de Conta) */}
         <Grid size={{ xs: 12 }}>
           <Card
             elevation={0}

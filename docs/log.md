@@ -15,7 +15,8 @@ Este documento funciona como o índice mestre de todas as mudanças de engenhari
 
 Para navegação geral, retorne ao [Catálogo Canônico](index.md).
 
-## 📅 [2026-10-29](logs/2026-10-29.md) — Padronização de Hierarquia Tipográfica & Topbar (#156) e Exportação de Relatórios PDF (#144)
+## 📅 [2026-10-29](logs/2026-10-29.md) — Padronização de Hierarquia Tipográfica & Topbar (#156), Relatórios PDF (#144) e Limpeza da Tela de Perfil (#158)
+- **Remoção do Card de Notificação Push de Teste na Tela de Perfil (#158)**: Desativação do card e botão de teste de notificações push em `ProfilePage.tsx` após validação da infraestrutura FCM no app móvel, mantendo a interface enxuta e focada exclusivamente nas configurações do condutor.
 - **Padronização da Hierarquia Tipográfica e Componente Canônico `PageHeader` (#156)**: Criação do componente `PageHeader` em `frontend/src/features/shared` e adoção em todas as 6 telas autenticadas (`DashboardPage`, `VehiclesPage`, `VehicleDetailsPage`, `MaintenancePage`, `RegisterMaintenancePage`, `ReportsPage`, `ProfilePage`), eliminando saltos bruscos entre 24px e 34px e padronizando a tag única `<h1>` (`variant="h5"`, peso 800) e subtítulos `variant="body2"`.
 - **Roteamento Dinâmico e Normalização no `Topbar.tsx` (#156)**: Sanitização de trailing slashes (ex: `/vehicles/`), inclusão explícita de `/reports` como "Relatórios & Exportações" (eliminando fallback indevido para "Painel CVMC") e suporte a rotas dinâmicas por regex para veículos e manutenções.
 - **Governança Visual e Prevenção de Regressões (#156)**: Criação do script de checagem `scripts/check-typography.sh` integrado ao `./scripts/check.sh frontend` e suíte de testes arquiteturais no Vitest (`TypographyHierarchy.test.tsx`), garantindo conformidade visual contínua no CI.
