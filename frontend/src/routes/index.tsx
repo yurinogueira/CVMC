@@ -90,6 +90,7 @@ export function AppRoutes() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/vehicles" element={<VehiclesPage />} />
             <Route path="/vehicles/:id" element={<VehicleDetailsPage />} />
+            <Route path="/cars/:id" element={<VehicleDetailsPage />} />
             <Route
               path="/vehicles/:id/maintenance/new"
               element={<RegisterMaintenancePage />}

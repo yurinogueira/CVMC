@@ -21,6 +21,10 @@ const (
 	PreventiveDaysThreshold    = 150
 	UpcomingWindowDays         = 7
 	AlertCooldownDuration      = 7 * 24 * time.Hour
+	// MileageStaleThreshold is the minimum time without mileage updates before a reminder is sent.
+	MileageStaleThreshold = 3 * 24 * time.Hour
+	// MileageReminderCooldown is the minimum time between consecutive mileage reminders for the same vehicle.
+	MileageReminderCooldown = 7 * 24 * time.Hour
 )
 
 var (
@@ -42,6 +46,8 @@ type Service struct {
 	now          func() time.Time
 	mu           sync.RWMutex
 	alertHistory map[string]carAlertState
+	// mileageReminderHistory tracks the last mileage reminder sent per user:car key.
+	mileageReminderHistory map[string]time.Time
 }
 
 func NewService(
@@ -57,6 +63,8 @@ func NewService(
 		maintenances: maintenances,
 		now:          time.Now,
 		alertHistory: make(map[string]carAlertState),
+
+		mileageReminderHistory: make(map[string]time.Time),
 	}
 }
 
@@ -330,4 +338,103 @@ func evaluateConsolidatedCarAlert(car domaincar.Car, maintenances []domainmainte
 	}
 
 	return domainnotification.PushMessage{}, nil, false
+}
+
+// RunMileageReminderAlerts scans all users with active FCM tokens and reminds them to update the mileage
+// of vehicles that have not been updated for more than MileageStaleThreshold, respecting a per-vehicle cooldown.
+func (s *Service) RunMileageReminderAlerts(ctx context.Context) (int, error) {
+	if s.tokens == nil || s.cars == nil {
+		return 0, nil
+	}
+
+	userIDs, err := s.tokens.ListDistinctUserIDs(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	total := 0
+	for _, userID := range userIDs {
+		if err := ctx.Err(); err != nil {
+			return total, err
+		}
+		sent, err := s.CheckMileageReminders(ctx, userID)
+		if err != nil {
+			continue
+		}
+		total += sent
+	}
+	return total, nil
+}
+
+// CheckMileageReminders evaluates the vehicles accessible by a user and sends one reminder per stale vehicle.
+func (s *Service) CheckMileageReminders(ctx context.Context, userID string) (int, error) {
+	if s.cars == nil {
+		return 0, nil
+	}
+	cleanUserID := strings.TrimSpace(userID)
+	if cleanUserID == "" {
+		return 0, ErrInvalidPayload
+	}
+	cars, err := s.cars.ListByUser(ctx, cleanUserID)
+	if err != nil {
+		return 0, err
+	}
+
+	now := s.now().UTC()
+	sentReminders := 0
+	for _, car := range cars {
+		if err := ctx.Err(); err != nil {
+			return sentReminders, err
+		}
+		if !IsMileageStale(car, now) {
+			continue
+		}
+		key := cleanUserID + ":" + car.ID
+		if !s.shouldDispatchMileageReminder(key, now) {
+			continue
+		}
+		sent, err := s.SendToUser(ctx, cleanUserID, buildMileageReminderMessage(car))
+		if err == nil && sent > 0 {
+			s.mu.Lock()
+			s.mileageReminderHistory[key] = now
+			s.mu.Unlock()
+			sentReminders++
+		}
+	}
+	return sentReminders, nil
+}
+
+// IsMileageStale reports whether the vehicle mileage has not been updated for more than MileageStaleThreshold.
+func IsMileageStale(car domaincar.Car, now time.Time) bool {
+	last := car.EffectiveMileageUpdatedAt()
+	if last.IsZero() {
+		return false
+	}
+	return now.Sub(last) > MileageStaleThreshold
+}
+
+func (s *Service) shouldDispatchMileageReminder(key string, now time.Time) bool {
+	s.mu.RLock()
+	lastSent, exists := s.mileageReminderHistory[key]
+	s.mu.RUnlock()
+	return !exists || now.Sub(lastSent) >= MileageReminderCooldown
+}
+
+func buildMileageReminderMessage(car domaincar.Car) domainnotification.PushMessage {
+	label := strings.TrimSpace(car.Name)
+	if label == "" {
+		label = strings.TrimSpace(car.Model)
+	}
+	if label == "" {
+		label = "veículo"
+	}
+	return domainnotification.SanitizeMessage(domainnotification.PushMessage{
+		Title: "Lembrete de Quilometragem 🚗",
+		Body:  fmt.Sprintf("Faz mais de 3 dias que a quilometragem do seu %s não é atualizada. Mantenha os dados em dia para acompanhar suas revisões!", label),
+		Data: map[string]string{
+			"type":  "mileage_reminder",
+			"carId": car.ID,
+			"route": "/cars/" + car.ID,
+		},
+	})
 }

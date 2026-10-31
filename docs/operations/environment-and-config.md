@@ -37,6 +37,7 @@ Para navegação geral, retorne ao [Catálogo Canônico](../index.md).
 | `FIREBASE_CREDENTIALS_JSON` | JSON da conta de serviço do Firebase para envio push FCM v1 | - | Opcional (opera em no-op se omitido) |
 | `FIREBASE_CREDENTIALS_FILE` | Caminho alternativo do arquivo JSON da conta de serviço do Firebase | - | Opcional (opera em no-op se omitido) |
 | `MAINTENANCE_CRON_INTERVAL` | Intervalo de execução do cronjob de alertas preventivos (`24h`, `6h`, `disabled`) | `24h` | Opcional |
+| `MILEAGE_REMINDER_CRON_INTERVAL` | Intervalo de execução do cronjob semanal de lembrete de quilometragem (`168h`, `24h`, `disabled`) | `168h` | Opcional |
 | `FILE_ENCRYPTION_KEY` | Chave mestra (mín. 32 chars) para derivação `HKDF-SHA256` e criptografia `AES-256-GCM` dos arquivos por usuário | Derivado de `JWT_SECRET` se omitido | Sim (via GitHub Secrets) |
 
 

@@ -39,6 +39,9 @@ func (r *Repository) Create(ctx context.Context, car domaincar.Car) (domaincar.C
 	if car.UpdatedAt.IsZero() {
 		car.UpdatedAt = car.CreatedAt
 	}
+	if car.MileageUpdatedAt.IsZero() {
+		car.MileageUpdatedAt = car.EffectiveMileageUpdatedAt()
+	}
 	car.SharedWith = append([]string{}, car.SharedWith...)
 	r.byID[car.ID] = car
 	return car, nil

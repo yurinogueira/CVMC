@@ -55,6 +55,7 @@ type App struct {
 	mongoClient   *mongo.Client
 	cron          *scheduler.MaintenanceCron
 	cleanupCron   *scheduler.ReportCleanupCron
+	mileageCron   *scheduler.MileageReminderCron
 	reportService *reportusecase.Service
 }
 
@@ -178,11 +179,16 @@ func New(ctx context.Context, cfg config.Config) (*App, error) {
 	cleanupCron := scheduler.NewReportCleanupCron(reportService, cleanupInterval, 30*24*time.Hour)
 	cleanupCron.Start(context.Background())
 
+	mileageInterval := scheduler.ParseMileageReminderInterval(cfg.MileageReminderCronInterval)
+	mileageCron := scheduler.NewMileageReminderCron(notificationService, mileageInterval)
+	mileageCron.Start(context.Background())
+
 	return &App{
 		handler:       handler,
 		mongoClient:   mongoClient,
 		cron:          maintCron,
 		cleanupCron:   cleanupCron,
+		mileageCron:   mileageCron,
 		reportService: reportService,
 	}, nil
 }
@@ -197,6 +203,9 @@ func (a *App) Close(ctx context.Context) error {
 	}
 	if a.cleanupCron != nil {
 		a.cleanupCron.Stop()
+	}
+	if a.mileageCron != nil {
+		a.mileageCron.Stop()
 	}
 	if a.reportService != nil {
 		a.reportService.StopWorker()

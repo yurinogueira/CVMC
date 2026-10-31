@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"time"
 
 	portauth "cvmc/internal/application/ports/auth"
 	carusecase "cvmc/internal/application/usecase/car"
@@ -63,6 +64,70 @@ type ShareCarRequest struct {
 	Email string `json:"email" example:"co-motorista@cvmc.com"`
 }
 
+type CarResponse struct {
+	ID                   string                                `json:"id" example:"67123abc456def7890123456"`
+	OwnerID              string                                `json:"ownerId" example:"67123abc456def7890123400"`
+	Name                 string                                `json:"name" example:"Meu Civic"`
+	Manufacturer         string                                `json:"manufacturer" example:"Honda"`
+	Model                string                                `json:"model" example:"Civic Touring"`
+	YearManufacture      int                                   `json:"yearManufacture" example:"2023"`
+	YearModel            int                                   `json:"yearModel" example:"2024"`
+	InitialMileage       int                                   `json:"initialMileage,omitempty" example:"30000"`
+	LastMileage          int                                   `json:"lastMileage" example:"35000"`
+	VehicleType          string                                `json:"vehicleType,omitempty" example:"cars"`
+	ImageUrl             string                                `json:"imageUrl,omitempty" example:"https://images.unsplash.com/photo-1590362891988-39cb01f6ec08"`
+	FIPECode             string                                `json:"fipeCode,omitempty" example:"005487-9"`
+	FIPEPrice            string                                `json:"fipePrice,omitempty" example:"R$ 150.000,00"`
+	Fuel                 string                                `json:"fuel,omitempty" example:"Gasolina"`
+	SharedWith           []string                              `json:"sharedWith,omitempty"`
+	MaintenanceIntervals map[string]MaintenanceIntervalRequest `json:"maintenanceIntervals,omitempty"`
+	MileageUpdatedAt     time.Time                             `json:"mileageUpdatedAt,omitempty" example:"2026-10-29T12:00:00Z"`
+	CreatedAt            time.Time                             `json:"createdAt" example:"2026-10-01T10:00:00Z"`
+	UpdatedAt            time.Time                             `json:"updatedAt" example:"2026-10-29T12:00:00Z"`
+}
+
+func toCarResponse(c domaincar.Car) CarResponse {
+	var intervals map[string]MaintenanceIntervalRequest
+	if len(c.MaintenanceIntervals) > 0 {
+		intervals = make(map[string]MaintenanceIntervalRequest, len(c.MaintenanceIntervals))
+		for k, v := range c.MaintenanceIntervals {
+			intervals[k] = MaintenanceIntervalRequest{
+				IntervalKm:     v.IntervalKm,
+				IntervalMonths: v.IntervalMonths,
+			}
+		}
+	}
+	return CarResponse{
+		ID:                   c.ID,
+		OwnerID:              c.OwnerID,
+		Name:                 c.Name,
+		Manufacturer:         c.Manufacturer,
+		Model:                c.Model,
+		YearManufacture:      c.YearManufacture,
+		YearModel:            c.YearModel,
+		InitialMileage:       c.InitialMileage,
+		LastMileage:          c.LastMileage,
+		VehicleType:          c.VehicleType,
+		ImageUrl:             c.ImageUrl,
+		FIPECode:             c.FIPECode,
+		FIPEPrice:            c.FIPEPrice,
+		Fuel:                 c.Fuel,
+		SharedWith:           c.SharedWith,
+		MaintenanceIntervals: intervals,
+		MileageUpdatedAt:     c.EffectiveMileageUpdatedAt(),
+		CreatedAt:            c.CreatedAt,
+		UpdatedAt:            c.UpdatedAt,
+	}
+}
+
+func toCarResponses(cars []domaincar.Car) []CarResponse {
+	items := make([]CarResponse, 0, len(cars))
+	for _, c := range cars {
+		items = append(items, toCarResponse(c))
+	}
+	return items
+}
+
 func (h *CarHandler) extractUserID(r *http.Request) string {
 	// Try cookie first
 	if cookie, err := r.Cookie("cvmc_access_token"); err == nil && cookie.Value != "" {
@@ -95,7 +160,7 @@ func (h *CarHandler) extractUserID(r *http.Request) string {
 // @Produce      json
 // @Security     BearerAuth
 // @Param        payload body CreateCarRequest true "Dados do veículo"
-// @Success      201 {object} httpx.SuccessEnvelope
+// @Success      201 {object} httpx.SuccessEnvelope{data=CarResponse}
 // @Failure      400 {object} httpx.ErrorEnvelope
 // @Failure      401 {object} httpx.ErrorEnvelope
 // @Router       /api/v1/cars [post]
@@ -127,7 +192,7 @@ func (h *CarHandler) Create(w http.ResponseWriter, r *http.Request) {
 		handleCarError(w, err)
 		return
 	}
-	httpx.Created(w, car)
+	httpx.Created(w, toCarResponse(car))
 }
 
 // List godoc
@@ -136,7 +201,7 @@ func (h *CarHandler) Create(w http.ResponseWriter, r *http.Request) {
 // @Tags         Cars
 // @Produce      json
 // @Security     BearerAuth
-// @Success      200 {object} httpx.SuccessEnvelope
+// @Success      200 {object} httpx.SuccessEnvelope{data=[]CarResponse}
 // @Failure      401 {object} httpx.ErrorEnvelope
 // @Router       /api/v1/cars [get]
 func (h *CarHandler) List(w http.ResponseWriter, r *http.Request) {
@@ -150,7 +215,7 @@ func (h *CarHandler) List(w http.ResponseWriter, r *http.Request) {
 		handleCarError(w, err)
 		return
 	}
-	httpx.Success(w, cars)
+	httpx.Success(w, toCarResponses(cars))
 }
 
 // Get godoc
@@ -160,7 +225,7 @@ func (h *CarHandler) List(w http.ResponseWriter, r *http.Request) {
 // @Produce      json
 // @Security     BearerAuth
 // @Param        id path string true "ID do veículo"
-// @Success      200 {object} httpx.SuccessEnvelope
+// @Success      200 {object} httpx.SuccessEnvelope{data=CarResponse}
 // @Failure      401 {object} httpx.ErrorEnvelope
 // @Failure      404 {object} httpx.ErrorEnvelope
 // @Router       /api/v1/cars/{id} [get]
@@ -176,7 +241,7 @@ func (h *CarHandler) Get(w http.ResponseWriter, r *http.Request) {
 		handleCarError(w, err)
 		return
 	}
-	httpx.Success(w, car)
+	httpx.Success(w, toCarResponse(car))
 }
 
 // Update godoc
@@ -188,7 +253,7 @@ func (h *CarHandler) Get(w http.ResponseWriter, r *http.Request) {
 // @Security     BearerAuth
 // @Param        id path string true "ID do veículo"
 // @Param        payload body UpdateCarRequest true "Dados atualizados"
-// @Success      200 {object} httpx.SuccessEnvelope
+// @Success      200 {object} httpx.SuccessEnvelope{data=CarResponse}
 // @Failure      400 {object} httpx.ErrorEnvelope
 // @Failure      401 {object} httpx.ErrorEnvelope
 // @Failure      404 {object} httpx.ErrorEnvelope
@@ -234,7 +299,7 @@ func (h *CarHandler) Update(w http.ResponseWriter, r *http.Request) {
 		handleCarError(w, err)
 		return
 	}
-	httpx.Success(w, car)
+	httpx.Success(w, toCarResponse(car))
 }
 
 // Delete godoc
@@ -272,7 +337,7 @@ func (h *CarHandler) Delete(w http.ResponseWriter, r *http.Request) {
 // @Security     BearerAuth
 // @Param        id path string true "ID do veículo"
 // @Param        payload body ShareCarRequest true "E-mail do usuário"
-// @Success      200 {object} httpx.SuccessEnvelope
+// @Success      200 {object} httpx.SuccessEnvelope{data=CarResponse}
 // @Failure      401 {object} httpx.ErrorEnvelope
 // @Failure      404 {object} httpx.ErrorEnvelope
 // @Router       /api/v1/cars/{id}/share [post]
@@ -293,7 +358,7 @@ func (h *CarHandler) Share(w http.ResponseWriter, r *http.Request) {
 		handleCarError(w, err)
 		return
 	}
-	httpx.Success(w, car)
+	httpx.Success(w, toCarResponse(car))
 }
 
 // Unshare godoc
@@ -304,7 +369,7 @@ func (h *CarHandler) Share(w http.ResponseWriter, r *http.Request) {
 // @Security     BearerAuth
 // @Param        id path string true "ID do veículo"
 // @Param        userID path string true "ID do usuário a desvincular"
-// @Success      200 {object} httpx.SuccessEnvelope
+// @Success      200 {object} httpx.SuccessEnvelope{data=CarResponse}
 // @Failure      401 {object} httpx.ErrorEnvelope
 // @Failure      404 {object} httpx.ErrorEnvelope
 // @Router       /api/v1/cars/{id}/share/{userID} [delete]
@@ -321,7 +386,7 @@ func (h *CarHandler) Unshare(w http.ResponseWriter, r *http.Request) {
 		handleCarError(w, err)
 		return
 	}
-	httpx.Success(w, car)
+	httpx.Success(w, toCarResponse(car))
 }
 
 func handleCarError(w http.ResponseWriter, err error) {

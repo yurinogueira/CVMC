@@ -167,6 +167,7 @@ func (s *Service) Create(ctx context.Context, actorID, carID string, input Creat
 	}
 	if input.Mileage > car.LastMileage {
 		car.LastMileage = input.Mileage
+		car.MileageUpdatedAt = s.now().UTC()
 		car.UpdatedAt = s.now().UTC()
 		_, _ = s.cars.Update(ctx, car)
 	}
@@ -265,6 +266,7 @@ func (s *Service) Update(ctx context.Context, actorID, maintenanceID string, inp
 	}
 	if item.Mileage > car.LastMileage {
 		car.LastMileage = item.Mileage
+		car.MileageUpdatedAt = s.now().UTC()
 		car.UpdatedAt = s.now().UTC()
 		_, _ = s.cars.Update(ctx, car)
 	}

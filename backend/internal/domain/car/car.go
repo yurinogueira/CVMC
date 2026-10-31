@@ -24,6 +24,19 @@ type Car struct {
 	Fuel                 string                               `json:"fuel,omitempty"`
 	SharedWith           []string                             `json:"sharedWith,omitempty"`
 	MaintenanceIntervals map[string]MaintenanceIntervalConfig `json:"maintenanceIntervals,omitempty"`
+	MileageUpdatedAt     time.Time                            `json:"mileageUpdatedAt,omitempty"`
 	CreatedAt            time.Time                            `json:"createdAt"`
 	UpdatedAt            time.Time                            `json:"updatedAt"`
+}
+
+// EffectiveMileageUpdatedAt returns the timestamp of the last mileage update,
+// falling back to UpdatedAt and then CreatedAt for legacy records without it.
+func (c Car) EffectiveMileageUpdatedAt() time.Time {
+	if !c.MileageUpdatedAt.IsZero() {
+		return c.MileageUpdatedAt
+	}
+	if !c.UpdatedAt.IsZero() {
+		return c.UpdatedAt
+	}
+	return c.CreatedAt
 }

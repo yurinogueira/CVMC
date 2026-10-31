@@ -19,6 +19,7 @@ export interface Car {
   ownerId: string;
   sharedWith?: string[];
   maintenanceIntervals?: Record<string, MaintenanceIntervalConfig>;
+  mileageUpdatedAt?: string;
   createdAt?: string;
   updatedAt?: string;
 }
