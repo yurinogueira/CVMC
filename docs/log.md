@@ -6,14 +6,19 @@ tags:
   - log
   - audit
   - history
-timestamp: 2026-10-30
+timestamp: 2026-10-31
 ---
 
 # 🕒 Diário de Bordo & Histórico Cronológico — CVMC
 
-Este documento funciona como o índice mestre de todas as mudanças de engenharia aplicadas ao projeto **CVMC (Como Vai Meu Carro)**. Cada entrada detalhada reside em um arquivo diário específico na pasta [docs/logs/2026-10-30.md](logs/2026-10-30.md), garantindo economia de tokens e histórico auditável.
+Este documento funciona como o índice mestre de todas as mudanças de engenharia aplicadas ao projeto **CVMC (Como Vai Meu Carro)**. Cada entrada detalhada reside em um arquivo diário específico na pasta [docs/logs/2026-10-31.md](logs/2026-10-31.md), garantindo economia de tokens e histórico auditável.
 
 Para navegação geral, retorne ao [Catálogo Canônico](index.md).
+
+## 📅 [2026-10-31](logs/2026-10-31.md) — Lembrete Semanal de Atualização de Quilometragem (#143)
+- **Timestamp de Atualização de Quilometragem (`MileageUpdatedAt`) & Persistência (#143)**: Inclusão do campo `MileageUpdatedAt` na entidade `Car`, repositórios MongoDB/memória e `CarResponse` (Swagger), atualizado automaticamente no cadastro do veículo, na edição de quilometragem e no avanço de odômetro via manutenções, com fallback transparente (`EffectiveMileageUpdatedAt`) para registros legados.
+- **Scheduler Semanal `MileageReminderCron` & Notificação Push com Cooldown (#143)**: Implementação de rotina em background (`MILEAGE_REMINDER_CRON_INTERVAL`, padrão `168h`) com graceful shutdown que identifica veículos sem atualização de quilometragem há mais de 3 dias para usuários com tokens FCM ativos, disparando notificação push sanitizada (`Lembrete de Quilometragem 🚗`) com cooldown de 7 dias por veículo/usuário.
+- **Indicador Visual no Frontend & Deep-Link (#143)**: Exibição da data formatada (`"Km atualizada em DD/MM/AAAA"`) no `VehicleCard` e na `VehicleDetailsPage`, além de suporte à rota `/cars/:id` para navegação direta ao tocar no lembrete push.
 
 ## 📅 [2026-10-30](logs/2026-10-30.md) — Alinhamento no Mobile (#145), Foto Google (#146), MongoDB 9 (#148), Dependabot (#132), ADR 0005 & Provedores Terraform (#147)
 - **Alinhamento Responsivo de Badges e Ações na Página de Veículo (#145)**: Correção de alinhamento e assimetria em telas móveis (`/veiculos/:id`) com `Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} useFlexGap`, distribuição proporcional dos chips de Ano e Quilometragem em `xs` (`flex: { xs: 1, sm: "initial" }`, `justifyContent: "center"`) e expansão de largura completa para o botão "Ajustar Intervalos de Revisão" (`width: { xs: "100%", sm: "auto" }`).

@@ -472,4 +472,25 @@ describe("VehicleDetailsPage", () => {
       expect(scroller).toHaveClass("MuiTabs-scrollableX");
     });
   });
+
+  it("renders mileageUpdatedAt timestamp formatted as DD/MM/AAAA when available", async () => {
+    vi.mocked(carService.get).mockResolvedValue({
+      ...mockCar,
+      mileageUpdatedAt: "2026-10-29T10:00:00Z",
+    });
+    vi.mocked(maintenanceService.listByCar).mockResolvedValue([]);
+    vi.mocked(fuelService.listByCar).mockResolvedValue([]);
+
+    render(
+      <BrowserRouter>
+        <VehicleDetailsPage />
+      </BrowserRouter>,
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("Km atualizada em 29/10/2026"),
+      ).toBeInTheDocument();
+    });
+  });
 });

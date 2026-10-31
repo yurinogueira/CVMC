@@ -118,4 +118,17 @@ describe("VehicleCard", () => {
     expect(handleDelete).toHaveBeenCalledWith("car-123");
     expect(handleClick).not.toHaveBeenCalled();
   });
+
+  it("renders formatted mileageUpdatedAt date when provided", () => {
+    render(
+      <VehicleCard
+        car={{
+          ...mockCar,
+          mileageUpdatedAt: "2026-10-29T14:30:00Z",
+        }}
+      />,
+    );
+
+    expect(screen.getByText("Km atualizada em 29/10/2026")).toBeInTheDocument();
+  });
 });

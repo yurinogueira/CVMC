@@ -30,6 +30,16 @@ export function VehicleCard({
   onClick,
 }: VehicleCardProps) {
   const isClickable = Boolean(onClick);
+  const rawMileageDate = car.mileageUpdatedAt || car.updatedAt || car.createdAt;
+  const formattedMileageDate = (() => {
+    if (!rawMileageDate) return "";
+    const datePart = rawMileageDate.split("T")[0];
+    const parts = datePart.split("-");
+    if (parts.length === 3) {
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+    return "";
+  })();
 
   return (
     <Card
@@ -177,46 +187,63 @@ export function VehicleCard({
         </Box>
 
         {/* Badges / Details */}
-        <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1 }}>
-          <Chip
-            icon={<CalendarMonthRoundedIcon sx={{ "&&": { fontSize: 16 } }} />}
-            label={`${car.yearManufacture}/${car.yearModel}`}
-            size="small"
-            sx={{
-              bgcolor: "#F1F5F9",
-              color: "text.primary",
-              fontWeight: 500,
-              borderRadius: 1,
-            }}
-          />
-          <Chip
-            icon={
-              <SpeedRoundedIcon
-                sx={{ "&&": { fontSize: 16, color: "#064E3B" } }}
-              />
-            }
-            label={`${(car.lastMileage || 0).toLocaleString("pt-BR")} km`}
-            size="small"
-            sx={{
-              bgcolor: brandColors.mint,
-              color: "#064E3B",
-              fontWeight: 600,
-              borderRadius: 1,
-            }}
-          />
-          {car.fipePrice && (
+        <Box>
+          <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1 }}>
             <Chip
-              label={`FIPE: ${car.fipePrice}`}
+              icon={
+                <CalendarMonthRoundedIcon sx={{ "&&": { fontSize: 16 } }} />
+              }
+              label={`${car.yearManufacture}/${car.yearModel}`}
               size="small"
               sx={{
-                bgcolor: "rgba(76, 146, 252, 0.1)",
-                color: "primary.main",
+                bgcolor: "#F1F5F9",
+                color: "text.primary",
+                fontWeight: 500,
+                borderRadius: 1,
+              }}
+            />
+            <Chip
+              icon={
+                <SpeedRoundedIcon
+                  sx={{ "&&": { fontSize: 16, color: "#064E3B" } }}
+                />
+              }
+              label={`${(car.lastMileage || 0).toLocaleString("pt-BR")} km`}
+              size="small"
+              sx={{
+                bgcolor: brandColors.mint,
+                color: "#064E3B",
                 fontWeight: 600,
                 borderRadius: 1,
               }}
             />
+            {car.fipePrice && (
+              <Chip
+                label={`FIPE: ${car.fipePrice}`}
+                size="small"
+                sx={{
+                  bgcolor: "rgba(76, 146, 252, 0.1)",
+                  color: "primary.main",
+                  fontWeight: 600,
+                  borderRadius: 1,
+                }}
+              />
+            )}
+          </Stack>
+          {formattedMileageDate && (
+            <Typography
+              variant="caption"
+              sx={{
+                display: "block",
+                mt: 1,
+                color: "text.secondary",
+                fontSize: "0.75rem",
+              }}
+            >
+              Km atualizada em {formattedMileageDate}
+            </Typography>
           )}
-        </Stack>
+        </Box>
       </CardContent>
     </Card>
   );

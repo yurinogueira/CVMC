@@ -80,6 +80,9 @@ func (s *Service) decryptCar(car domaincar.Car) domaincar.Car {
 			car.ImageUrl = plain
 		}
 	}
+	if car.MileageUpdatedAt.IsZero() {
+		car.MileageUpdatedAt = car.EffectiveMileageUpdatedAt()
+	}
 	return car
 }
 
@@ -135,22 +138,23 @@ func (s *Service) Create(ctx context.Context, ownerID string, input CreateInput)
 	}
 
 	car := domaincar.Car{
-		OwnerID:         ownerID,
-		Name:            strings.TrimSpace(input.Name),
-		Manufacturer:    strings.TrimSpace(input.Manufacturer),
-		Model:           strings.TrimSpace(input.Model),
-		YearManufacture: input.YearManufacture,
-		YearModel:       input.YearModel,
-		InitialMileage:  input.LastMileage,
-		LastMileage:     input.LastMileage,
-		VehicleType:     strings.TrimSpace(input.VehicleType),
-		ImageUrl:        storedImg,
-		FIPECode:        strings.TrimSpace(input.FIPECode),
-		FIPEPrice:       strings.TrimSpace(input.FIPEPrice),
-		Fuel:            strings.TrimSpace(input.Fuel),
-		SharedWith:      []string{},
-		CreatedAt:       s.now().UTC(),
-		UpdatedAt:       s.now().UTC(),
+		OwnerID:          ownerID,
+		Name:             strings.TrimSpace(input.Name),
+		Manufacturer:     strings.TrimSpace(input.Manufacturer),
+		Model:            strings.TrimSpace(input.Model),
+		YearManufacture:  input.YearManufacture,
+		YearModel:        input.YearModel,
+		InitialMileage:   input.LastMileage,
+		LastMileage:      input.LastMileage,
+		VehicleType:      strings.TrimSpace(input.VehicleType),
+		ImageUrl:         storedImg,
+		FIPECode:         strings.TrimSpace(input.FIPECode),
+		FIPEPrice:        strings.TrimSpace(input.FIPEPrice),
+		Fuel:             strings.TrimSpace(input.Fuel),
+		SharedWith:       []string{},
+		MileageUpdatedAt: s.now().UTC(),
+		CreatedAt:        s.now().UTC(),
+		UpdatedAt:        s.now().UTC(),
 	}
 	created, err := s.cars.Create(ctx, car)
 	if err != nil {
@@ -217,6 +221,9 @@ func (s *Service) Update(ctx context.Context, actorID, carID string, input Updat
 		car.YearModel = input.YearModel
 	}
 	if input.LastMileage >= 0 {
+		if input.LastMileage != car.LastMileage || car.MileageUpdatedAt.IsZero() {
+			car.MileageUpdatedAt = s.now().UTC()
+		}
 		car.LastMileage = input.LastMileage
 	}
 	if input.VehicleType != "" {

@@ -41,7 +41,14 @@ func TestMaintenanceServiceUpdatesMileage(t *testing.T) {
 		t.Fatalf("create car failed: %v", err)
 	}
 
+	// Simulate a stale mileage timestamp to verify it advances when mileage increases.
+	staleCar, _ := cars.GetByID(ctx, createdCar.ID)
+	staleCar.MileageUpdatedAt = time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
+	_, _ = cars.Update(ctx, staleCar)
+
 	service := NewService(maintrepo.NewRepository(), cars)
+	fixedNow := time.Date(2026, 10, 30, 12, 0, 0, 0, time.UTC)
+	service.now = func() time.Time { return fixedNow }
 	createdMaintenance, err := service.Create(ctx, owner.User.ID, createdCar.ID, CreateInput{Title: "Troca de óleo", Description: "Filtro e óleo", Date: time.Now().UTC(), Mileage: 12000})
 	if err != nil {
 		t.Fatalf("create maintenance failed: %v", err)
@@ -55,6 +62,9 @@ func TestMaintenanceServiceUpdatesMileage(t *testing.T) {
 	}
 	if updatedCar.LastMileage != 12000 {
 		t.Fatalf("expected last mileage updated, got %d", updatedCar.LastMileage)
+	}
+	if !updatedCar.MileageUpdatedAt.Equal(fixedNow) {
+		t.Fatalf("expected mileageUpdatedAt=%v, got %v", fixedNow, updatedCar.MileageUpdatedAt)
 	}
 }
 

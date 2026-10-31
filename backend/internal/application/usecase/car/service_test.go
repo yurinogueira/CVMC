@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"cvmc/internal/application/usecase/auth"
 	domaincar "cvmc/internal/domain/car"
@@ -241,5 +242,52 @@ func TestCarServiceUpdate(t *testing.T) {
 	_, err = service.Update(ctx, owner.User.ID, created.ID, UpdateInput{LastMileage: -10})
 	if err != ErrInvalidPayload {
 		t.Fatalf("expected ErrInvalidPayload for negative mileage, got: %v", err)
+	}
+}
+
+func TestCarServiceMileageUpdatedAt(t *testing.T) {
+	users := memoryuser.NewRepository()
+	hasher := bcrypt.NewHasher()
+	tokens := jwtauth.NewProvider("access-secret", "refresh-secret")
+	authService := auth.NewService(users, hasher, tokens, nil)
+	ctx := context.Background()
+
+	owner, err := authService.Register(ctx, auth.RegisterInput{Name: "Owner", Email: "owner@example.com", Password: "secret123"})
+	if err != nil {
+		t.Fatalf("owner register failed: %v", err)
+	}
+	owner.User.EmailVerified = true
+	_, _ = users.Update(ctx, owner.User)
+
+	service := NewService(carrepo.NewRepository(), users)
+	now := time.Date(2026, 10, 1, 10, 0, 0, 0, time.UTC)
+	service.now = func() time.Time { return now }
+
+	created, err := service.Create(ctx, owner.User.ID, CreateInput{Name: "Carro", Manufacturer: "Fiat", Model: "Uno", LastMileage: 1000})
+	if err != nil {
+		t.Fatalf("create failed: %v", err)
+	}
+	if !created.MileageUpdatedAt.Equal(now) {
+		t.Fatalf("expected mileageUpdatedAt=%v on create, got %v", now, created.MileageUpdatedAt)
+	}
+
+	// Updating other fields with the same mileage keeps the timestamp.
+	now = now.Add(48 * time.Hour)
+	updated, err := service.Update(ctx, owner.User.ID, created.ID, UpdateInput{Name: "Carro Novo", LastMileage: 1000})
+	if err != nil {
+		t.Fatalf("update failed: %v", err)
+	}
+	if !updated.MileageUpdatedAt.Equal(created.MileageUpdatedAt) {
+		t.Fatalf("expected mileageUpdatedAt unchanged, got %v", updated.MileageUpdatedAt)
+	}
+
+	// Changing mileage refreshes the timestamp.
+	now = now.Add(48 * time.Hour)
+	updated, err = service.Update(ctx, owner.User.ID, created.ID, UpdateInput{LastMileage: 1500})
+	if err != nil {
+		t.Fatalf("update failed: %v", err)
+	}
+	if !updated.MileageUpdatedAt.Equal(now) {
+		t.Fatalf("expected mileageUpdatedAt=%v after mileage change, got %v", now, updated.MileageUpdatedAt)
 	}
 }

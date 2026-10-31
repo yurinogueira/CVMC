@@ -426,7 +426,22 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/httpx.SuccessEnvelope"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.SuccessEnvelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/handlers.CarResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "401": {
@@ -469,7 +484,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/httpx.SuccessEnvelope"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.SuccessEnvelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/handlers.CarResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -515,7 +542,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/httpx.SuccessEnvelope"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.SuccessEnvelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/handlers.CarResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "401": {
@@ -571,7 +610,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/httpx.SuccessEnvelope"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.SuccessEnvelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/handlers.CarResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -913,7 +964,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/httpx.SuccessEnvelope"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.SuccessEnvelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/handlers.CarResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "401": {
@@ -966,7 +1029,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/httpx.SuccessEnvelope"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.SuccessEnvelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/handlers.CarResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "401": {
@@ -2500,6 +2575,91 @@ const docTemplate = `{
                 "size": {
                     "type": "integer",
                     "example": 1048576
+                }
+            }
+        },
+        "handlers.CarResponse": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string",
+                    "example": "2026-10-01T10:00:00Z"
+                },
+                "fipeCode": {
+                    "type": "string",
+                    "example": "005487-9"
+                },
+                "fipePrice": {
+                    "type": "string",
+                    "example": "R$ 150.000,00"
+                },
+                "fuel": {
+                    "type": "string",
+                    "example": "Gasolina"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "67123abc456def7890123456"
+                },
+                "imageUrl": {
+                    "type": "string",
+                    "example": "https://images.unsplash.com/photo-1590362891988-39cb01f6ec08"
+                },
+                "initialMileage": {
+                    "type": "integer",
+                    "example": 30000
+                },
+                "lastMileage": {
+                    "type": "integer",
+                    "example": 35000
+                },
+                "maintenanceIntervals": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/handlers.MaintenanceIntervalRequest"
+                    }
+                },
+                "manufacturer": {
+                    "type": "string",
+                    "example": "Honda"
+                },
+                "mileageUpdatedAt": {
+                    "type": "string",
+                    "example": "2026-10-29T12:00:00Z"
+                },
+                "model": {
+                    "type": "string",
+                    "example": "Civic Touring"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Meu Civic"
+                },
+                "ownerId": {
+                    "type": "string",
+                    "example": "67123abc456def7890123400"
+                },
+                "sharedWith": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "updatedAt": {
+                    "type": "string",
+                    "example": "2026-10-29T12:00:00Z"
+                },
+                "vehicleType": {
+                    "type": "string",
+                    "example": "cars"
+                },
+                "yearManufacture": {
+                    "type": "integer",
+                    "example": 2023
+                },
+                "yearModel": {
+                    "type": "integer",
+                    "example": 2024
                 }
             }
         },

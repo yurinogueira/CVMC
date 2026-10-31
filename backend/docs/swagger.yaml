@@ -21,6 +21,68 @@ definitions:
         example: 1048576
         type: integer
     type: object
+  handlers.CarResponse:
+    properties:
+      createdAt:
+        example: "2026-10-01T10:00:00Z"
+        type: string
+      fipeCode:
+        example: 005487-9
+        type: string
+      fipePrice:
+        example: R$ 150.000,00
+        type: string
+      fuel:
+        example: Gasolina
+        type: string
+      id:
+        example: 67123abc456def7890123456
+        type: string
+      imageUrl:
+        example: https://images.unsplash.com/photo-1590362891988-39cb01f6ec08
+        type: string
+      initialMileage:
+        example: 30000
+        type: integer
+      lastMileage:
+        example: 35000
+        type: integer
+      maintenanceIntervals:
+        additionalProperties:
+          $ref: '#/definitions/handlers.MaintenanceIntervalRequest'
+        type: object
+      manufacturer:
+        example: Honda
+        type: string
+      mileageUpdatedAt:
+        example: "2026-10-29T12:00:00Z"
+        type: string
+      model:
+        example: Civic Touring
+        type: string
+      name:
+        example: Meu Civic
+        type: string
+      ownerId:
+        example: 67123abc456def7890123400
+        type: string
+      sharedWith:
+        items:
+          type: string
+        type: array
+      updatedAt:
+        example: "2026-10-29T12:00:00Z"
+        type: string
+      vehicleType:
+        example: cars
+        type: string
+      yearManufacture:
+        example: 2023
+        type: integer
+      yearModel:
+        example: 2024
+        type: integer
+    type: object
   handlers.CreateCarRequest:
     properties:
       fipeCode:
@@ -620,7 +682,14 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/httpx.SuccessEnvelope'
+            allOf:
+            - $ref: '#/definitions/httpx.SuccessEnvelope'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/handlers.CarResponse'
+                  type: array
+              type: object
         "401":
           description: Unauthorized
           schema:
@@ -647,7 +716,12 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/httpx.SuccessEnvelope'
+            allOf:
+            - $ref: '#/definitions/httpx.SuccessEnvelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/handlers.CarResponse'
+              type: object
         "400":
           description: Bad Request
           schema:
@@ -708,7 +782,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/httpx.SuccessEnvelope'
+            allOf:
+            - $ref: '#/definitions/httpx.SuccessEnvelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/handlers.CarResponse'
+              type: object
         "401":
           description: Unauthorized
           schema:
@@ -744,7 +823,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/httpx.SuccessEnvelope'
+            allOf:
+            - $ref: '#/definitions/httpx.SuccessEnvelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/handlers.CarResponse'
+              type: object
         "400":
           description: Bad Request
           schema:
@@ -934,7 +1018,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/httpx.SuccessEnvelope'
+            allOf:
+            - $ref: '#/definitions/httpx.SuccessEnvelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/handlers.CarResponse'
+              type: object
         "401":
           description: Unauthorized
           schema:
@@ -968,7 +1057,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/httpx.SuccessEnvelope'
+            allOf:
+            - $ref: '#/definitions/httpx.SuccessEnvelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/handlers.CarResponse'
+              type: object
         "401":
           description: Unauthorized
           schema:

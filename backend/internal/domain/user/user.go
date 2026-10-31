@@ -67,4 +67,3 @@ func SanitizeAvatarURL(raw string) string {
 	}
 	return trimmed
 }
-

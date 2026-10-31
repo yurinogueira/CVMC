@@ -46,6 +46,7 @@ type Car struct {
     Fuel                 string                               `json:"fuel,omitempty"`
     SharedWith           []string                             `json:"sharedWith,omitempty"`
     MaintenanceIntervals map[string]MaintenanceIntervalConfig `json:"maintenanceIntervals,omitempty"`
+    MileageUpdatedAt     time.Time                            `json:"mileageUpdatedAt,omitempty"`
     CreatedAt            time.Time                            `json:"createdAt"`
     UpdatedAt            time.Time                            `json:"updatedAt"`
 }
@@ -64,6 +65,10 @@ type Car struct {
    - Cada veículo armazena em `MaintenanceIntervals` suas metas específicas de quilometragem e meses para cada item preventivo (`Óleo de Motor`, filtros, etc.).
    - Quando não configurado, o sistema adota os valores recomendados de fábrica para a categoria (`cars`, `trucks`, `motorcycles`).
    - A estrutura é aberta e suporta novos componentes no futuro sem migrações de schema.
+4. **Rastreamento de Atualização de Quilometragem e Lembrete Semanal (`MileageUpdatedAt`)**:
+   - O campo `MileageUpdatedAt` registra o timestamp UTC exato da última alteração de `LastMileage` (inicializado em `CreateCar`, atualizado em `UpdateCar` quando a quilometragem muda, e avançado em `maintenance.Service` quando uma manutenção supera a quilometragem atual).
+   - Para veículos legados sem `mileageUpdatedAt`, o método `EffectiveMileageUpdatedAt()` realiza fallback automático para `UpdatedAt` e `CreatedAt`.
+   - O cronjob `MileageReminderCron` (`MILEAGE_REMINDER_CRON_INTERVAL`, padrão `168h` / 7 dias) avalia os veículos de usuários com tokens FCM ativos e envia uma notificação push (`Lembrete de Quilometragem 🚗`, `type: mileage_reminder`, rota `/cars/{id}`) caso o veículo esteja há mais de 3 dias sem atualização de quilometragem, respeitando cooldown de 7 dias por veículo/usuário.
 
 ---
 

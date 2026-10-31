@@ -31,6 +31,7 @@ type carDoc struct {
 	Fuel                 string                                         `bson:"fuel,omitempty"`
 	SharedWith           []string                                       `bson:"sharedWith"`
 	MaintenanceIntervals map[string]domaincar.MaintenanceIntervalConfig `bson:"maintenanceIntervals,omitempty"`
+	MileageUpdatedAt     time.Time                                      `bson:"mileageUpdatedAt,omitempty"`
 	CreatedAt            time.Time                                      `bson:"createdAt"`
 	UpdatedAt            time.Time                                      `bson:"updatedAt"`
 }
@@ -275,6 +276,7 @@ func toCarDoc(c domaincar.Car) carDoc {
 		Fuel:                 strings.TrimSpace(c.Fuel),
 		SharedWith:           shared,
 		MaintenanceIntervals: c.MaintenanceIntervals,
+		MileageUpdatedAt:     c.MileageUpdatedAt,
 		CreatedAt:            c.CreatedAt,
 		UpdatedAt:            c.UpdatedAt,
 	}
@@ -285,7 +287,7 @@ func toDomainCar(d carDoc) domaincar.Car {
 	if shared == nil {
 		shared = []string{}
 	}
-	return domaincar.Car{
+	car := domaincar.Car{
 		ID:                   d.ID,
 		OwnerID:              d.OwnerID,
 		Name:                 d.Name,
@@ -302,7 +304,11 @@ func toDomainCar(d carDoc) domaincar.Car {
 		Fuel:                 d.Fuel,
 		SharedWith:           shared,
 		MaintenanceIntervals: d.MaintenanceIntervals,
+		MileageUpdatedAt:     d.MileageUpdatedAt,
 		CreatedAt:            d.CreatedAt,
 		UpdatedAt:            d.UpdatedAt,
 	}
+	// Legacy documents without mileageUpdatedAt fall back to updatedAt/createdAt.
+	car.MileageUpdatedAt = car.EffectiveMileageUpdatedAt()
+	return car
 }

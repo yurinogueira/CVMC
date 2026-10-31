@@ -446,7 +446,10 @@ export function VehicleDetailsPage() {
                   sx={{
                     alignItems: { xs: "stretch", sm: "center" },
                     flexWrap: "wrap",
-                    mb: 3,
+                    mb:
+                      car.mileageUpdatedAt || car.updatedAt || car.createdAt
+                        ? 1
+                        : 3,
                   }}
                 >
                   <Stack
@@ -518,6 +521,22 @@ export function VehicleDetailsPage() {
                     Ajustar Intervalos de Revisão
                   </Button>
                 </Stack>
+                {(car.mileageUpdatedAt || car.updatedAt || car.createdAt) && (
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      display: "block",
+                      color: "text.secondary",
+                      fontWeight: 500,
+                      mb: 2.5,
+                    }}
+                  >
+                    Km atualizada em{" "}
+                    {formatMaintenanceDate(
+                      car.mileageUpdatedAt || car.updatedAt || car.createdAt,
+                    )}
+                  </Typography>
+                )}
 
                 <Divider sx={{ my: 2 }} />
 
