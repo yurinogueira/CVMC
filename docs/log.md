@@ -6,14 +6,17 @@ tags:
   - log
   - audit
   - history
-timestamp: 2026-10-31
+timestamp: 2026-11-07
 ---
 
 # 🕒 Diário de Bordo & Histórico Cronológico — CVMC
 
-Este documento funciona como o índice mestre de todas as mudanças de engenharia aplicadas ao projeto **CVMC (Como Vai Meu Carro)**. Cada entrada detalhada reside em um arquivo diário específico na pasta [docs/logs/2026-10-31.md](logs/2026-10-31.md), garantindo economia de tokens e histórico auditável.
+Este documento funciona como o índice mestre de todas as mudanças de engenharia aplicadas ao projeto **CVMC (Como Vai Meu Carro)**. Cada entrada detalhada reside em um arquivo diário específico na pasta [docs/logs/2026-11-07.md](logs/2026-11-07.md), garantindo economia de tokens e histórico auditável.
 
 Para navegação geral, retorne ao [Catálogo Canônico](index.md).
+
+## 📅 [2026-11-07](logs/2026-11-07.md) — Atualização da Versão do Aplicativo Mobile para 1.0.0
+- **Bump da Versão do App para 1.0.0**: Atualização do `versionCode` (de 2 para 3) e `versionName` (de `"0.5.1"` para `"1.0.0"`) no `frontend/android/app/build.gradle`, alinhando os metadados do pacote com a versão `"1.0.0"` em `frontend/package.json` e `frontend/package-lock.json` para suportar o lançamento oficial `1.0.0` no Google Play Console.
 
 ## 📅 [2026-10-31](logs/2026-10-31.md) — Lembrete Semanal de Atualização de Quilometragem (#143)
 - **Timestamp de Atualização de Quilometragem (`MileageUpdatedAt`) & Persistência (#143)**: Inclusão do campo `MileageUpdatedAt` na entidade `Car`, repositórios MongoDB/memória e `CarResponse` (Swagger), atualizado automaticamente no cadastro do veículo, na edição de quilometragem e no avanço de odômetro via manutenções, com fallback transparente (`EffectiveMileageUpdatedAt`) para registros legados.
