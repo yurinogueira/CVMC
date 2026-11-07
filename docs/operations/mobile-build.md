@@ -9,7 +9,7 @@ tags:
   - build
   - google-play
   - runbook
-timestamp: 2026-10-28
+timestamp: 2026-11-07
 ---
 
 # 📱 Empacotamento Mobile Android e Guia de Build com Capacitor
