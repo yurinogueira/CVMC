@@ -4,7 +4,7 @@ terraform {
   required_providers {
     oci = {
       source  = "oracle/oci"
-      version = "~> 9.12.1"
+      version = "~> 9.13.0"
     }
     mongodbatlas = {
       source  = "mongodb/mongodbatlas"
@@ -16,7 +16,7 @@ terraform {
     }
     cloudflare = {
       source  = "cloudflare/cloudflare"
-      version = "~> 5.28.0"
+      version = "~> 5.29.0"
     }
   }
 }
