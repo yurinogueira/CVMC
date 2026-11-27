@@ -7,7 +7,7 @@ tags:
   - docker
   - docker-compose
   - local-dev
-timestamp: 2026-10-10
+timestamp: 2026-11-26
 ---
 
 # 🐳 Docker e Ambiente de Desenvolvimento Local — CVMC
@@ -19,6 +19,8 @@ Para navegação geral, retorne ao [Catálogo Canônico](../index.md).
 ---
 
 ## 🚀 Inicialização Rápida
+
+Antes de iniciar os containers pela primeira vez, crie `.env` a partir de `.env.example` e substitua `JWT_SECRET`, `JWT_REFRESH_SECRET` e `FILE_ENCRYPTION_KEY` por segredos fortes (por exemplo, `openssl rand -base64 32`), pois `docker-compose.yml` e o startup do backend rejeitam placeholders e chaves padrão.
 
 O script `./scripts/dev.sh` facilita as rotinas diárias:
 

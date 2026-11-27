@@ -72,6 +72,41 @@ func TestValidateJWTSecrets(t *testing.T) {
 			wantErr:       true,
 			errContains:   "JWT_SECRET and JWT_REFRESH_SECRET must be different",
 		},
+		{
+			name:          "rejects docker-compose dev JWT_SECRET",
+			secret:        "cvmc_dev_jwt_access_secret_key_at_least_32_chars!",
+			refreshSecret: validRefresh,
+			wantErr:       true,
+			errContains:   "JWT_SECRET cannot use insecure default placeholder value",
+		},
+		{
+			name:          "rejects docker-compose dev JWT_REFRESH_SECRET",
+			secret:        validSecret,
+			refreshSecret: "cvmc_dev_jwt_refresh_secret_key_at_least_32_chars!",
+			wantErr:       true,
+			errContains:   "JWT_REFRESH_SECRET cannot use insecure default placeholder value",
+		},
+		{
+			name:          "rejects .env.example placeholder JWT_SECRET",
+			secret:        "substitua_por_uma_chave_secreta_jwt_forte_com_no_minimo_32_chars",
+			refreshSecret: validRefresh,
+			wantErr:       true,
+			errContains:   "JWT_SECRET cannot use insecure default placeholder value",
+		},
+		{
+			name:          "rejects deploy backend.env.example placeholder JWT_REFRESH_SECRET",
+			secret:        validSecret,
+			refreshSecret: "substitua_por_uma_chave_secreta_refresh_forte",
+			wantErr:       true,
+			errContains:   "JWT_REFRESH_SECRET cannot use insecure default placeholder value",
+		},
+		{
+			name:          "rejects whitespace-padded short secret",
+			secret:        "   short                                ",
+			refreshSecret: validRefresh,
+			wantErr:       true,
+			errContains:   "JWT_SECRET must be at least 32 characters long",
+		},
 	}
 
 	for _, tt := range tests {
@@ -123,5 +158,72 @@ func TestParseCommaSeparated(t *testing.T) {
 		if item != expected[i] {
 			t.Errorf("item[%d] = %s, want %s", i, item, expected[i])
 		}
+	}
+}
+
+func TestConfigValidateFileEncryptionKey(t *testing.T) {
+	validJWT := "12345678901234567890123456789012"
+	validRefresh := "abcdefghijklmnopqrstuvwxyz1234567890"
+	validFileKey := "custom-high-entropy-file-encryption-key-32chars!"
+
+	tests := []struct {
+		name        string
+		fileKey     string
+		wantErr     bool
+		errContains string
+	}{
+		{
+			name:    "allows empty FILE_ENCRYPTION_KEY when derived from JWT_SECRET",
+			fileKey: "",
+			wantErr: false,
+		},
+		{
+			name:    "allows strong custom FILE_ENCRYPTION_KEY",
+			fileKey: validFileKey,
+			wantErr: false,
+		},
+		{
+			name:        "rejects docker-compose dev FILE_ENCRYPTION_KEY",
+			fileKey:     "cvmc_dev_file_encryption_master_secret_key_32_chars!",
+			wantErr:     true,
+			errContains: "FILE_ENCRYPTION_KEY cannot use insecure default placeholder value",
+		},
+		{
+			name:        "rejects .env.example placeholder FILE_ENCRYPTION_KEY",
+			fileKey:     "substitua_por_uma_chave_de_criptografia_de_arquivos_com_no_minimo_32_chars",
+			wantErr:     true,
+			errContains: "FILE_ENCRYPTION_KEY cannot use insecure default placeholder value",
+		},
+		{
+			name:        "rejects legacy filecipher fallback key",
+			fileKey:     "cvmc-default-fallback-file-encryption-secret-key",
+			wantErr:     true,
+			errContains: "FILE_ENCRYPTION_KEY cannot use insecure default placeholder value",
+		},
+		{
+			name:        "rejects short FILE_ENCRYPTION_KEY",
+			fileKey:     "short-key",
+			wantErr:     true,
+			errContains: "FILE_ENCRYPTION_KEY must be at least 32 characters long",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := Config{
+				JWTSecret:         validJWT,
+				JWTRefreshSecret:  validRefresh,
+				FileEncryptionKey: tt.fileKey,
+			}
+			err := cfg.Validate()
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("Config.Validate() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if tt.wantErr && tt.errContains != "" {
+				if err == nil || !strings.Contains(err.Error(), tt.errContains) {
+					t.Fatalf("expected error containing %q, got %v", tt.errContains, err)
+				}
+			}
+		})
 	}
 }

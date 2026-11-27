@@ -8,7 +8,7 @@ tags:
   - auth
   - httponly
   - owasp
-timestamp: 2026-10-10
+timestamp: 2026-11-26
 ---
 
 # 🔒 Autenticação e Segurança em Camadas — CVMC
@@ -42,8 +42,9 @@ Para navegação geral, retorne ao [Catálogo Canônico](../index.md).
 - **Hashing de Senhas com BCrypt**:
   - Senhas são armazenadas utilizando `bcrypt` com custo padrão.
   - Para evitar ataques de exaustão de CPU (DoS em bcrypt), senhas são validadas estritamente no intervalo `8 <= len(password) <= 72`.
-- **Validação de Segredos JWT no Startup**:
-  - O método `Config.Validate()` aborta a inicialização da aplicação (`log.Fatalf`) caso `JWT_SECRET` ou `JWT_REFRESH_SECRET` estejam vazios, utilizem padrões inseguros (`change-me`), possuam menos de 32 caracteres ou sejam idênticos.
+- **Validação de Segredos JWT e Criptografia no Startup**:
+  - O método `Config.Validate()` (via `ValidateJWTSecrets` e `ValidateFileEncryptionKey`) aborta a inicialização da aplicação (`log.Fatalf`) caso `JWT_SECRET`, `JWT_REFRESH_SECRET` ou `FILE_ENCRYPTION_KEY` (quando explícito) utilizem padrões ou placeholders conhecidos do repositório (`change-me*`, `cvmc_dev_*`, `substitua_por_*`, `cvmc-default-fallback-file-encryption-secret-key`), possuam menos de 32 caracteres (desconsiderando espaços nas extremidades), estejam vazios (`JWT_SECRET`/`JWT_REFRESH_SECRET`) ou tenham segredos de acesso e refresh idênticos.
+  - O `docker-compose.yml` falha explicitamente (`:?`) caso `JWT_SECRET`, `JWT_REFRESH_SECRET` ou `FILE_ENCRYPTION_KEY` não sejam fornecidos via `.env` ou ambiente, eliminando fallbacks hardcoded.
 - **Hashes Criptográficos para Tokens Temporários**:
   - Tokens de redefinição de senha e confirmação de e-mail nunca são salvos em texto plano; o banco armazena o hash `SHA-256` do token gerado via `crypto/rand`.
 - **Validação de ID Tokens do Google sem Intermediários**:

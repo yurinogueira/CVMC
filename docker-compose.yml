@@ -13,8 +13,8 @@ services:
       - mongo
     environment:
       PORT: ${PORT:-8080}
-      JWT_SECRET: ${JWT_SECRET:-cvmc_dev_jwt_access_secret_key_at_least_32_chars!}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-cvmc_dev_jwt_refresh_secret_key_at_least_32_chars!}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env (min 32 chars)}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?Set JWT_REFRESH_SECRET in .env (min 32 chars)}
       MONGO_URI: mongodb://mongo:27017
       MONGO_DATABASE: ${MONGO_DATABASE:-cvmc}
       UPLOAD_PATH: ${UPLOAD_PATH:-/app/uploads}
@@ -38,7 +38,7 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       FIREBASE_CREDENTIALS_JSON: ${FIREBASE_CREDENTIALS_JSON:-}
       FIREBASE_CREDENTIALS_FILE: ${FIREBASE_CREDENTIALS_FILE:-}
-      FILE_ENCRYPTION_KEY: ${FILE_ENCRYPTION_KEY:-cvmc_dev_file_encryption_master_secret_key_32_chars!}
+      FILE_ENCRYPTION_KEY: ${FILE_ENCRYPTION_KEY:?Set FILE_ENCRYPTION_KEY in .env (min 32 chars)}
     ports:
       - "8080:8080"
     volumes:
