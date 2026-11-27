@@ -17,6 +17,7 @@ var (
 	ErrJWTRefreshSecretEmpty    = errors.New("JWT_REFRESH_SECRET must not be empty")
 	ErrJWTSecretInsecure        = errors.New("JWT_SECRET cannot use insecure default placeholder value ('change-me')")
 	ErrJWTRefreshSecretInsecure = errors.New("JWT_REFRESH_SECRET cannot use insecure default placeholder value ('change-me-too')")
+	ErrFileEncryptionInsecure   = errors.New("FILE_ENCRYPTION_KEY cannot use insecure default placeholder value")
 	ErrJWTSecretTooShort        = fmt.Errorf("JWT_SECRET must be at least %d characters long", MinJWTSecretLength)
 	ErrJWTRefreshSecretTooShort = fmt.Errorf("JWT_REFRESH_SECRET must be at least %d characters long", MinJWTSecretLength)
 	ErrJWTSecretsIdentical      = errors.New("JWT_SECRET and JWT_REFRESH_SECRET must be different")
@@ -25,32 +26,65 @@ var (
 var defaultInsecureSecrets = map[string]struct{}{
 	"change-me":     {},
 	"change-me-too": {},
+	"cvmc_dev_jwt_access_secret_key_at_least_32_chars!":                          {},
+	"cvmc_dev_jwt_refresh_secret_key_at_least_32_chars!":                         {},
+	"cvmc_dev_file_encryption_master_secret_key_32_chars!":                       {},
+	"cvmc-default-fallback-file-encryption-secret-key":                           {},
+	"substitua_por_uma_chave_secreta_jwt_forte":                                  {},
+	"substitua_por_uma_chave_secreta_refresh_forte":                              {},
+	"substitua_por_uma_chave_secreta_jwt_forte_com_no_minimo_32_chars":           {},
+	"substitua_por_uma_chave_secreta_refresh_forte_com_no_minimo_32_chars":       {},
+	"substitua_por_uma_chave_de_criptografia_de_arquivos_com_no_minimo_32_chars": {},
+}
+
+func isInsecureDefaultSecret(value string) bool {
+	trimmed := strings.TrimSpace(value)
+	if _, insecure := defaultInsecureSecrets[trimmed]; insecure {
+		return true
+	}
+	lower := strings.ToLower(trimmed)
+	return strings.HasPrefix(lower, "change-me") ||
+		strings.HasPrefix(lower, "cvmc_dev_") ||
+		strings.HasPrefix(lower, "substitua_por_")
+}
+
+func validateSecret(name, value string, emptyErr, insecureErr error) error {
+	if value == "" {
+		return emptyErr
+	}
+	if isInsecureDefaultSecret(value) {
+		return insecureErr
+	}
+	if len(strings.TrimSpace(value)) < MinJWTSecretLength {
+		return fmt.Errorf("%s must be at least %d characters long (got %d)", name, MinJWTSecretLength, len(strings.TrimSpace(value)))
+	}
+	return nil
 }
 
 // ValidateJWTSecrets ensures JWT secrets meet minimum entropy requirements and are not known insecure defaults.
 func ValidateJWTSecrets(secret, refreshSecret string) error {
-	if secret == "" {
-		return ErrJWTSecretEmpty
+	if err := validateSecret("JWT_SECRET", secret, ErrJWTSecretEmpty, ErrJWTSecretInsecure); err != nil {
+		return err
 	}
-	if _, insecure := defaultInsecureSecrets[secret]; insecure {
-		return ErrJWTSecretInsecure
+	if err := validateSecret("JWT_REFRESH_SECRET", refreshSecret, ErrJWTRefreshSecretEmpty, ErrJWTRefreshSecretInsecure); err != nil {
+		return err
 	}
-	if len(secret) < MinJWTSecretLength {
-		return fmt.Errorf("JWT_SECRET must be at least %d characters long (got %d)", MinJWTSecretLength, len(secret))
-	}
-
-	if refreshSecret == "" {
-		return ErrJWTRefreshSecretEmpty
-	}
-	if _, insecure := defaultInsecureSecrets[refreshSecret]; insecure {
-		return ErrJWTRefreshSecretInsecure
-	}
-	if len(refreshSecret) < MinJWTSecretLength {
-		return fmt.Errorf("JWT_REFRESH_SECRET must be at least %d characters long (got %d)", MinJWTSecretLength, len(refreshSecret))
-	}
-
 	if secret == refreshSecret {
 		return ErrJWTSecretsIdentical
+	}
+	return nil
+}
+
+// ValidateFileEncryptionKey ensures an explicit FILE_ENCRYPTION_KEY is not a known default/placeholder and meets minimum length.
+func ValidateFileEncryptionKey(key string) error {
+	if key == "" {
+		return nil
+	}
+	if isInsecureDefaultSecret(key) {
+		return ErrFileEncryptionInsecure
+	}
+	if len(strings.TrimSpace(key)) < MinJWTSecretLength {
+		return fmt.Errorf("FILE_ENCRYPTION_KEY must be at least %d characters long when provided", MinJWTSecretLength)
 	}
 	return nil
 }
@@ -93,10 +127,7 @@ func (c Config) Validate() error {
 	if err := ValidateJWTSecrets(c.JWTSecret, c.JWTRefreshSecret); err != nil {
 		return err
 	}
-	if c.FileEncryptionKey != "" && len(c.FileEncryptionKey) < MinJWTSecretLength {
-		return fmt.Errorf("FILE_ENCRYPTION_KEY must be at least %d characters long when provided", MinJWTSecretLength)
-	}
-	return nil
+	return ValidateFileEncryptionKey(c.FileEncryptionKey)
 }
 
 func Load() Config {

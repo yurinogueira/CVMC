@@ -7,7 +7,7 @@ tags:
   - configuration
   - env
   - secrets
-timestamp: 2026-10-10
+timestamp: 2026-11-26
 ---
 
 # ⚙️ Ambiente e Configuração — CVMC
@@ -46,7 +46,8 @@ Para navegação geral, retorne ao [Catálogo Canônico](../index.md).
 ## 🔒 Regras de Segurança para Segredos
 
 - **Proibido Comitar Arquivos `.env`**: Somente `.env.example` pode ser versionado.
-- **Validação de Inicialização**: Chaves fracas (`change-me`) causam interrupção imediata na inicialização do backend.
+- **Zero Fallbacks Inseguros no Docker Compose**: `docker-compose.yml` exige a definição explícita de `JWT_SECRET`, `JWT_REFRESH_SECRET` e `FILE_ENCRYPTION_KEY` via `.env` ou variáveis de ambiente (`:?`).
+- **Validação de Inicialização**: Chaves fracas (`< 32` chars), idênticas ou equivalentes a defaults/placeholders conhecidos (`change-me*`, `cvmc_dev_*`, `substitua_por_*`, `cvmc-default-fallback-file-encryption-secret-key`) causam interrupção imediata na inicialização do backend tanto para JWT quanto para `FILE_ENCRYPTION_KEY`.
 
 ---
 
